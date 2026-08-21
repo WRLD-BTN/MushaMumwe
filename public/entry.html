@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MushaMumwe — Department Portal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  :root{ --bg:#0B1220; --surface:#141C2E; --surface-2:#1B2540; --line:#26314D; --text:#E7ECF5; --muted:#8D97AF; --accent:#4F8CFF; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; padding:28px; max-width:720px; margin:0 auto;}
+  h1{font-family:'Space Grotesk',sans-serif; font-size:19px; margin-bottom:4px;}
+  .sub{color:var(--muted); font-size:12px; font-family:'JetBrains Mono',monospace; margin-bottom:22px;}
+  .panel{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:20px; margin-bottom:18px;}
+  label{display:block; font-size:12px; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.4px;}
+  input, select{
+    width:100%; background:var(--surface-2); border:1px solid var(--line); color:var(--text);
+    padding:10px 12px; border-radius:6px; font-size:13.5px; margin-bottom:14px; font-family:'Inter',sans-serif;
+  }
+  input:focus, select:focus{outline:none; border-color:var(--accent);}
+  button{background:var(--accent); color:#fff; border:none; padding:11px 18px; border-radius:6px; font-size:13.5px; font-weight:600; cursor:pointer; width:100%;}
+  button:hover{opacity:0.9;}
+  .link-btn{background:none; color:var(--muted); text-decoration:underline; padding:6px 0; width:auto; font-size:12px;}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .status-msg{font-family:'JetBrains Mono',monospace; font-size:12px; margin-top:10px; min-height:16px;}
+  .status-msg.ok{color:#2FBF71;} .status-msg.err{color:#F04A4A;}
+  .whoami{display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin-bottom:18px; font-size:12.5px;}
+  .whoami .role-tag{font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--muted); background:#101728; border:1px solid var(--line); padding:2px 8px; border-radius:4px;}
+  .list{margin-top:4px;}
+  .item{display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--line); font-size:13px;}
+  .item:last-child{border-bottom:none;}
+  .item .pid{font-family:'JetBrains Mono',monospace; color:var(--muted); font-size:10.5px;}
+  select.inline{width:auto; margin:0; padding:6px 10px; font-size:12px;}
+  .step{display:none;}
+  .step.active{display:block;}
+  a.back{color:var(--muted); font-size:11.5px; text-decoration:none; font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+
+  <h1>MushaMumwe — Department Portal</h1>
+  <div class="sub"><a href="/" class="back">← Back to public dashboard</a></div>
+
+  <!-- STEP 1: choose department -->
+  <div class="step active" id="stepChoose">
+    <div class="panel">
+      <label>Select your department</label>
+      <select id="deptSelect">
+        <option value="">— Choose department —</option>
+        <option value="nurses">Nurses / Ward Staff</option>
+        <option value="records">Records</option>
+        <option value="accounts">Accounts</option>
+        <option value="it">IT / Admin</option>
+      </select>
+      <button onclick="goToLogin()">Continue</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: login for chosen department -->
+  <div class="step" id="stepLogin">
+    <div class="panel">
+      <div class="sub" id="loginDeptLabel" style="margin-bottom:16px;"></div>
+      <label>Username</label>
+      <input id="usernameInput" placeholder="e.g. nurse1">
+      <label>Password</label>
+      <input id="passwordInput" type="password" placeholder="••••••••">
+      <button onclick="login()">Sign in</button>
+      <button class="link-btn" onclick="goBackToChoose()">← Choose a different department</button>
+      <div class="status-msg" id="loginMsg"></div>
+    </div>
+  </div>
+
+  <!-- STEP 3: signed-in workspace -->
+  <div class="step" id="stepWorkspace">
+    <div class="whoami">
+      <span id="whoamiText">—</span>
+      <span style="display:flex; gap:8px; align-items:center;">
+        <span class="role-tag" id="roleTag">role</span>
+        <button class="link-btn" style="padding:0;" onclick="logout()">Sign out</button>
+      </span>
+    </div>
+
+    <div class="panel">
+      <h2 style="font-size:14px; margin-bottom:12px;">Register / Update Patient</h2>
+      <div class="row">
+        <div>
+          <label>Full Name</label>
+          <input id="nameInput" placeholder="Patient full name">
+        </div>
+        <div>
+          <label>National ID (optional)</label>
+          <input id="nidInput" placeholder="e.g. 63-XXXXXXX-X-00">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Ward</label>
+          <select id="wardInput">
+            <option value="1">Ward A</option><option value="2">Ward B</option><option value="3">ICU</option>
+            <option value="4">Maternity</option><option value="5">Surgical</option><option value="6">Paediatrics</option>
+          </select>
+        </div>
+        <div>
+          <label>Status</label>
+          <select id="statusInput">
+            <option value="admitted">Admitted</option>
+            <option value="treatment">In Treatment</option>
+            <option value="discharged">Discharged</option>
+            <option value="deceased">Deceased</option>
+          </select>
+        </div>
+      </div>
+      <button onclick="registerPatient()">Save Record → updates public dashboard</button>
+      <div class="status-msg" id="entryMsg"></div>
+    </div>
+
+    <div class="panel">
+      <h2 style="font-size:14px; margin-bottom:12px;" id="listTitle">Update Existing Case Status</h2>
+      <div class="list" id="patientList">Loading...</div>
+    </div>
+  </div>
+
+<script>
+const API_BASE = "";
+
+function getToken(){ return localStorage.getItem("token") || ""; }
+function getUser(){ try{ return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; } }
+
+function showStep(id){
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goToLogin(){
+  const dept = document.getElementById('deptSelect').value;
+  if(!dept){ return; }
+  localStorage.setItem('pendingDept', dept);
+  const labels = { nurses:"Nurses / Ward Staff", records:"Records", accounts:"Accounts", it:"IT / Admin" };
+  document.getElementById('loginDeptLabel').textContent = "Signing in to: " + labels[dept];
+  showStep('stepLogin');
+}
+
+function goBackToChoose(){ showStep('stepChoose'); }
+
+async function login(){
+  const username = document.getElementById('usernameInput').value.trim();
+  const password = document.getElementById('passwordInput').value;
+  const expectedDept = localStorage.getItem('pendingDept');
+
+  if(!username || !password){ setMsg('loginMsg', 'Enter username and password.', false); return; }
+
+  try{
+    const res = await fetch(API_BASE + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Login failed');
+
+    // Admin/IT can access any department's workspace; others must match their selected department
+    if(data.user.department !== expectedDept && data.user.role !== 'admin'){
+      setMsg('loginMsg', `This account belongs to a different department (${data.user.department}).`, false);
+      return;
+    }
+
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    enterWorkspace();
+  }catch(err){
+    setMsg('loginMsg', err.message, false);
+  }
+}
+
+function logout(){
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('pendingDept');
+  document.getElementById('usernameInput').value = '';
+  document.getElementById('passwordInput').value = '';
+  showStep('stepChoose');
+}
+
+function setMsg(id, text, ok){
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'status-msg ' + (ok ? 'ok' : 'err');
+}
+
+async function api(path, opts={}){
+  const res = await fetch(API_BASE + path, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken(), ...(opts.headers||{}) }
+  });
+  if(!res.ok){
+    const body = await res.json().catch(()=>({}));
+    throw new Error(body.error || ('Request failed: ' + res.status));
+  }
+  return res.json();
+}
+
+function enterWorkspace(){
+  const user = getUser();
+  document.getElementById('whoamiText').textContent = `${user.fullName} · ${user.department}`;
+  document.getElementById('roleTag').textContent = user.role;
+  document.getElementById('listTitle').textContent =
+    user.role === 'admin' ? 'All Departments — Case Overview' : 'Update Existing Case Status';
+  showStep('stepWorkspace');
+  loadPatientList();
+}
+
+async function registerPatient(){
+  try{
+    const payload = {
+      name: document.getElementById('nameInput').value.trim(),
+      nationalId: document.getElementById('nidInput').value.trim() || undefined,
+      wardId: Number(document.getElementById('wardInput').value),
+      status: document.getElementById('statusInput').value
+    };
+    if(!payload.name){ setMsg('entryMsg', 'Name is required.', false); return; }
+
+    await api('/api/patients', { method: 'POST', body: JSON.stringify(payload) });
+    setMsg('entryMsg', 'Saved. Public dashboard updates automatically.', true);
+    document.getElementById('nameInput').value = '';
+    document.getElementById('nidInput').value = '';
+    loadPatientList();
+  }catch(err){
+    setMsg('entryMsg', err.message, false);
+  }
+}
+
+async function loadPatientList(){
+  try{
+    const patients = await api('/api/patients');
+    const container = document.getElementById('patientList');
+    container.innerHTML = '';
+    patients.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'item';
+      row.innerHTML = `
+        <div>
+          <div>${p.name}</div>
+          <div class="pid">#${p.id} · ${p.ward ? p.ward.name : '—'}</div>
+        </div>
+        <select class="inline" onchange="updateStatus(${p.id}, this.value)">
+          <option value="admitted" ${p.status==='admitted'?'selected':''}>Admitted</option>
+          <option value="treatment" ${p.status==='treatment'?'selected':''}>In Treatment</option>
+          <option value="discharged" ${p.status==='discharged'?'selected':''}>Discharged</option>
+          <option value="deceased" ${p.status==='deceased'?'selected':''}>Deceased</option>
+        </select>`;
+      container.appendChild(row);
+    });
+  }catch(err){
+    document.getElementById('patientList').textContent = 'Could not load: ' + err.message;
+  }
+}
+
+async function updateStatus(id, newStatus){
+  try{
+    await api(`/api/patients/${id}/status`, { method: 'PATCH', body: JSON.stringify({ newStatus }) });
+  }catch(err){
+    alert('Update failed: ' + err.message);
+  }
+}
+
+// Resume session if already logged in
+(function init(){
+  if(getToken() && getUser()){
+    enterWorkspace();
+  }
+})();
+</script>
+</body>
+</html>

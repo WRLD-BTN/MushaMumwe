@@ -1,0 +1,29 @@
+[
+  {
+    "id": "sally-mugabe",
+    "name": "Sally Mugabe Central Hospital",
+    "mode": "native",
+    "databaseUrl": "postgresql://dashboard_user:password@192.168.1.50:5432/hospital_records?schema=public",
+    "notifyChannel": "patient_updates_sallymugabe"
+  },
+  {
+    "id": "example-generic",
+    "name": "Example Hospital (existing schema, not MushaMumwe's)",
+    "mode": "generic",
+    "databaseUrl": "postgresql://dashboard_user:password@10.0.0.20:5432/theirdb?schema=public",
+    "notifyChannel": "patient_updates_example",
+    "mapping": {
+      "table": "tblpatients",
+      "idColumn": "patient_id",
+      "statusColumn": "current_state",
+      "wardColumn": "ward_code",
+      "updatedAtColumn": "last_modified",
+      "statusValues": {
+        "admitted": "ADM",
+        "treatment": "TRT",
+        "discharged": "DIS",
+        "deceased": "DEC"
+      }
+    }
+  }
+]
