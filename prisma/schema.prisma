@@ -1,27 +1,10 @@
-// This is a PLACEHOLDER schema so the project runs standalone with a fresh DB.
-// Against the real hospital database, run `npm run prisma:pull` instead —
-// that will overwrite this file with their actual table structure.
-// Keep this version only if you're prototyping against your own local Postgres.
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
-}
-
-model User {
-  id           Int      @id @default(autoincrement())
-  username     String   @unique
-  passwordHash String
-  fullName     String
-  department   String   // e.g. nurses, accounts, it, records, admin
-  role         String   // e.g. staff, supervisor, admin
-  wardId       Int?     // optional: scopes a nurse to one ward
-  ward         Ward?    @relation(fields: [wardId], references: [id])
-  createdAt    DateTime @default(now())
 }
 
 model Ward {
@@ -29,7 +12,6 @@ model Ward {
   name      String
   capacity  Int
   patients  Patient[]
-  users     User[]
 }
 
 model Patient {
@@ -41,7 +23,7 @@ model Patient {
   admissionDate   DateTime     @default(now())
   wardId          Int?
   ward            Ward?        @relation(fields: [wardId], references: [id])
-  status          String       @default("admitted") // admitted | treatment | discharged | deceased
+  status          String       @default("admitted")
   attendingDoctor String?
   updatedAt       DateTime     @updatedAt
   statusLogs      StatusLog[]
@@ -55,4 +37,14 @@ model StatusLog {
   newStatus  String
   changedBy  String
   timestamp  DateTime @default(now())
+}
+
+model User {
+  id           Int     @id @default(autoincrement())
+  username     String  @unique
+  passwordHash String
+  fullName     String
+  department   String
+  role         String  @default("staff")
+  wardId       Int?
 }

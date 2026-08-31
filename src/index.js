@@ -27,7 +27,11 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => console.log("Dashboard client disconnected:", socket.id));
 });
 
-startPgListener(io);
+//startPgListener(io);
+// Only start pg listener if using PostgreSQL (not SQLite)
+if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes("file:")) {
+  startPgListener(io);
+}
 
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, "0.0.0.0", () => {
