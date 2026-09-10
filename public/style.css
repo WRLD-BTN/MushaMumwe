@@ -1,0 +1,894 @@
+/* ==========================================================================
+   MushaMumwe - Hospital Operations Portal
+   Unified Stylesheet for Entry & Live Board
+   ========================================================================== */
+
+/* ==========================================================================
+   1. Google Fonts Import
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ==========================================================================
+   2. CSS Variables (Design Tokens)
+   ========================================================================== */
+:root {
+  /* Entry Portal Colors */
+  --primary: #1a365d;
+  --primary-hover: #0d1f38;
+  --bg: #f5f5f5;
+  --surface: #ffffff;
+  --error: #d32f2f;
+  --error-bg: #ffebee;
+  --success: #388e3c;
+  --success-bg: #e8f5e9;
+  
+  /* Live Board Colors */
+  --board-bg: #0B1220;
+  --board-surface: #141C2E;
+  --board-surface-2: #1B2540;
+  --board-line: #26314D;
+  --board-text: #E7ECF5;
+  --board-muted: #8D97AF;
+  
+  /* Status Colors */
+  --status-admitted: #3B82F6;
+  --status-treatment: #F0A93A;
+  --status-discharged: #2FBF71;
+  --status-deceased: #7A8199;
+  
+  /* Employee Status Colors */
+  --emp-active: #2e7d32;
+  --emp-active-bg: #e8f5e9;
+  --emp-leave: #e65100;
+  --emp-leave-bg: #fff3e0;
+  --emp-sick: #c2185b;
+  --emp-sick-bg: #fce4ec;
+  --emp-total: #6a1b9a;
+  --emp-total-bg: #f3e5f5;
+  
+  /* Typography */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* ==========================================================================
+   3. CSS Reset & Base Styles
+   ========================================================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  line-height: 1.6;
+  color: #333;
+}
+
+/* Entry Portal Body */
+body.entry-portal {
+  background: var(--bg);
+}
+
+/* Live Board Body */
+body.live-board {
+  background: var(--board-bg);
+  color: var(--board-text);
+  min-height: 100vh;
+  padding: 0 0 48px 0;
+}
+
+/* ==========================================================================
+   4. Layout Container (Entry Portal)
+   ========================================================================== */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* ==========================================================================
+   5. Header Styles (Entry Portal)
+   ========================================================================== */
+header {
+  background: var(--primary);
+  color: white;
+  padding: 20px;
+  margin-bottom: 30px;
+  border-radius: 8px;
+}
+
+header h1 {
+  font-size: 24px;
+  margin-bottom: 5px;
+}
+
+header p {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* ==========================================================================
+   6. Top Bar (Live Board)
+   ========================================================================== */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--board-line);
+  background: linear-gradient(180deg, #0D1526, #0B1220);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand h1 {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.brand .sub {
+  font-size: 12px;
+  color: var(--board-muted);
+  font-family: var(--font-mono);
+}
+
+.pulse-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--status-discharged);
+  animation: blink 1.6s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.sync-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--board-muted);
+}
+
+.clock {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  min-width: 150px;
+  text-align: right;
+}
+
+.staff-login-link {
+  color: var(--board-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-decoration: none;
+  border: 1px solid var(--board-line);
+  padding: 6px 12px;
+  border-radius: 6px;
+  margin-left: 14px;
+  transition: all 0.3s ease;
+}
+
+.staff-login-link:hover {
+  color: var(--board-text);
+  border-color: var(--board-muted);
+  background: var(--board-surface-2);
+}
+
+/* ==========================================================================
+   7. Login Section (Entry Portal)
+   ========================================================================== */
+.login-section {
+  background: var(--surface);
+  padding: 30px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.login-section h2 {
+  font-size: 20px;
+  margin-bottom: 20px;
+  color: var(--primary);
+}
+
+/* ==========================================================================
+   8. Form Elements
+   ========================================================================== */
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: var(--font-body);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(26, 54, 93, 0.1);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* ==========================================================================
+   9. Buttons
+   ========================================================================== */
+button {
+  background: var(--primary);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: var(--font-body);
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+button:hover {
+  background: var(--primary-hover);
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+.logout-btn {
+  background: var(--error);
+  margin-top: 20px;
+}
+
+.logout-btn:hover {
+  background: #b71c1c;
+}
+
+/* ==========================================================================
+   10. Portal Sections (Entry Portal)
+   ========================================================================== */
+.portal {
+  display: none;
+}
+
+.portal.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+.portal h2 {
+  font-size: 18px;
+  margin-bottom: 20px;
+  color: var(--primary);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   11. Grid Layout
+   ========================================================================== */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* ==========================================================================
+   12. Card Styles
+   ========================================================================== */
+.card {
+  background: var(--surface);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card h3 {
+  margin-bottom: 15px;
+  color: var(--primary);
+  font-size: 16px;
+}
+
+/* ==========================================================================
+   13. Alert Messages
+   ========================================================================== */
+.error {
+  color: var(--error);
+  padding: 10px;
+  background: var(--error-bg);
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.success {
+  color: var(--success);
+  padding: 10px;
+  background: var(--success-bg);
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+/* ==========================================================================
+   14. Toast Notification (Live Board)
+   ========================================================================== */
+.toast {
+  position: fixed;
+  top: 74px;
+  right: 28px;
+  background: var(--board-surface-2);
+  border: 1px solid var(--board-line);
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--board-muted);
+  font-family: var(--font-mono);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: all .35s ease;
+  z-index: 20;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast b {
+  color: var(--status-discharged);
+}
+
+/* ==========================================================================
+   15. Statistics Cards (Live Board)
+   ========================================================================== */
+.stats {
+  display: flex;
+  gap: 14px;
+  padding: 20px 28px 4px 28px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  background: var(--board-surface);
+  border: 1px solid var(--board-line);
+  border-radius: 8px;
+  padding: 14px 18px;
+  min-width: 130px;
+  flex: 1;
+  position: relative;
+}
+
+.stat .n {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.stat .pct {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--board-muted);
+  margin-left: 6px;
+}
+
+.stat .l {
+  font-size: 11px;
+  color: var(--board-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-top: 2px;
+}
+
+.stat.admitted .n { color: var(--status-admitted); }
+.stat.treatment .n { color: var(--status-treatment); }
+.stat.discharged .n { color: var(--status-discharged); }
+.stat.deceased .n { color: var(--status-deceased); }
+
+/* ==========================================================================
+   16. Distribution Bar (Live Board)
+   ========================================================================== */
+.distbar {
+  display: flex;
+  padding: 4px 28px 0 28px;
+  gap: 2px;
+}
+
+.distbar .seg {
+  height: 6px;
+  border-radius: 2px;
+  transition: width .5s ease;
+}
+
+.distbar-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 28px 0 28px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--board-muted);
+}
+
+/* ==========================================================================
+   17. Board Layout (Live Board)
+   ========================================================================== */
+.board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 20px 28px;
+}
+
+.col {
+  background: var(--board-surface);
+  border: 1px solid var(--board-line);
+  border-radius: 10px;
+  padding: 14px;
+  min-height: 200px;
+}
+
+.col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--board-line);
+}
+
+.col-head .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.col-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.col-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--board-muted);
+}
+
+.col.admitted .dot { background: var(--status-admitted); }
+.col.treatment .dot { background: var(--status-treatment); }
+.col.discharged .dot { background: var(--status-discharged); }
+.col.deceased .dot { background: var(--status-deceased); }
+
+/* Patient Card in Live Board */
+.patient-card {
+  background: var(--board-surface-2);
+  border: 1px solid var(--board-line);
+  border-radius: 8px;
+  padding: 11px 12px;
+  margin-bottom: 10px;
+}
+
+.patient-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.patient-name {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.patient-id {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--board-muted);
+}
+
+.patient-card-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--board-muted);
+}
+
+.ward-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: #101728;
+  border: 1px solid var(--board-line);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* ==========================================================================
+   18. Employee Dashboard Summary (Both Pages)
+   ========================================================================== */
+.employee-summary {
+  margin-top: 40px;
+  padding: 20px;
+  background: var(--surface);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.live-board .employee-summary {
+  background: var(--board-surface);
+  border: 1px solid var(--board-line);
+  box-shadow: none;
+}
+
+.employee-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.employee-summary-header h2 {
+  color: var(--primary);
+  font-size: 18px;
+}
+
+.live-board .employee-summary-header h2 {
+  color: var(--board-text);
+}
+
+.toggle-btn {
+  padding: 8px 15px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.3s ease;
+}
+
+.toggle-btn:hover {
+  background: var(--primary-hover);
+}
+
+/* Employee Stats Cards */
+.employee-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.employee-stat-card {
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.employee-stat-card.on-duty {
+  background: var(--emp-active-bg);
+}
+
+.employee-stat-card.on-leave {
+  background: var(--emp-leave-bg);
+}
+
+.employee-stat-card.sick-leave {
+  background: var(--emp-sick-bg);
+}
+
+.employee-stat-card.total-staff {
+  background: var(--emp-total-bg);
+}
+
+.employee-stat-number {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.employee-stat-label {
+  font-size: 13px;
+}
+
+.employee-stat-card.on-duty .employee-stat-number {
+  color: var(--emp-active);
+}
+
+.employee-stat-card.on-duty .employee-stat-label {
+  color: #558b2f;
+}
+
+.employee-stat-card.on-leave .employee-stat-number {
+  color: var(--emp-leave);
+}
+
+.employee-stat-card.on-leave .employee-stat-label {
+  color: #f57f17;
+}
+
+.employee-stat-card.sick-leave .employee-stat-number {
+  color: var(--emp-sick);
+}
+
+.employee-stat-card.sick-leave .employee-stat-label {
+  color: #880e4f;
+}
+
+.employee-stat-card.total-staff .employee-stat-number {
+  color: var(--emp-total);
+}
+
+.employee-stat-card.total-staff .employee-stat-label {
+  color: #4a148c;
+}
+
+/* Department Breakdown */
+.dept-breakdown {
+  display: none;
+  margin-top: 20px;
+}
+
+.dept-breakdown.active {
+  display: block;
+}
+
+.dept-breakdown h3 {
+  color: var(--primary);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.live-board .dept-breakdown h3 {
+  color: var(--board-text);
+}
+
+.dept-list {
+  font-size: 13px;
+}
+
+/* ==========================================================================
+   19. Footer (Live Board)
+   ========================================================================== */
+.footer-note {
+  padding: 16px 28px;
+  font-size: 11px;
+  color: var(--board-muted);
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+/* ==========================================================================
+   20. Utility Classes
+   ========================================================================== */
+.text-center {
+  text-align: center;
+}
+
+.mt-20 {
+  margin-top: 20px;
+}
+
+.mb-20 {
+  margin-bottom: 20px;
+}
+
+.hidden {
+  display: none;
+}
+
+/* ==========================================================================
+   21. Responsive Design
+   ========================================================================== */
+@media (max-width: 1000px) {
+  .board {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+  
+  header {
+    padding: 15px;
+  }
+  
+  header h1 {
+    font-size: 20px;
+  }
+  
+  .login-section,
+  .card {
+    padding: 15px;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  button {
+    width: 100%;
+    padding: 12px;
+  }
+  
+  .logout-btn {
+    width: auto;
+    margin-top: 15px;
+  }
+  
+  .employee-summary {
+    padding: 15px;
+  }
+  
+  .employee-summary-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .employee-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .topbar {
+    padding: 14px 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .clock {
+    min-width: auto;
+    font-size: 11px;
+  }
+  
+  .stats {
+    padding: 16px 16px 4px 16px;
+  }
+  
+  .board {
+    padding: 16px;
+  }
+  
+  .distbar,
+  .distbar-labels {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+@media (max-width: 620px) {
+  .board {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  header h1 {
+    font-size: 18px;
+  }
+  
+  header p {
+    font-size: 12px;
+  }
+  
+  .portal h2 {
+    font-size: 16px;
+  }
+  
+  .card h3 {
+    font-size: 14px;
+  }
+  
+  input,
+  select,
+  textarea {
+    font-size: 13px;
+    padding: 8px;
+  }
+  
+  .employee-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   22. Print Styles
+   ========================================================================== */
+@media print {
+  .logout-btn,
+  button,
+  .toggle-btn {
+    display: none;
+  }
+  
+  .card,
+  .employee-summary {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+  
+  body {
+    background: white;
+  }
+  
+  .live-board {
+    background: white;
+    color: #333;
+  }
+  
+  .topbar {
+    position: static;
+    background: #f0f0f0;
+    border-bottom: 1px solid #ccc;
+  }
+  
+  .toast,
+  .live-dot,
+  .pulse-wrap {
+    display: none;
+  }
+  
+  .board {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .col {
+    border: 1px solid #ccc;
+    background: white;
+  }
+  
+  .patient-card {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+  }
+}

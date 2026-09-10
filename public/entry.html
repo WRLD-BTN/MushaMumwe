@@ -1,273 +1,1034 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>MushaMumwe — Department Portal</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
-  :root{ --bg:#0B1220; --surface:#141C2E; --surface-2:#1B2540; --line:#26314D; --text:#E7ECF5; --muted:#8D97AF; --accent:#4F8CFF; }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  body{background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; padding:28px; max-width:720px; margin:0 auto;}
-  h1{font-family:'Space Grotesk',sans-serif; font-size:19px; margin-bottom:4px;}
-  .sub{color:var(--muted); font-size:12px; font-family:'JetBrains Mono',monospace; margin-bottom:22px;}
-  .panel{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:20px; margin-bottom:18px;}
-  label{display:block; font-size:12px; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.4px;}
-  input, select{
-    width:100%; background:var(--surface-2); border:1px solid var(--line); color:var(--text);
-    padding:10px 12px; border-radius:6px; font-size:13.5px; margin-bottom:14px; font-family:'Inter',sans-serif;
-  }
-  input:focus, select:focus{outline:none; border-color:var(--accent);}
-  button{background:var(--accent); color:#fff; border:none; padding:11px 18px; border-radius:6px; font-size:13.5px; font-weight:600; cursor:pointer; width:100%;}
-  button:hover{opacity:0.9;}
-  .link-btn{background:none; color:var(--muted); text-decoration:underline; padding:6px 0; width:auto; font-size:12px;}
-  .row{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
-  .status-msg{font-family:'JetBrains Mono',monospace; font-size:12px; margin-top:10px; min-height:16px;}
-  .status-msg.ok{color:#2FBF71;} .status-msg.err{color:#F04A4A;}
-  .whoami{display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin-bottom:18px; font-size:12.5px;}
-  .whoami .role-tag{font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--muted); background:#101728; border:1px solid var(--line); padding:2px 8px; border-radius:4px;}
-  .list{margin-top:4px;}
-  .item{display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--line); font-size:13px;}
-  .item:last-child{border-bottom:none;}
-  .item .pid{font-family:'JetBrains Mono',monospace; color:var(--muted); font-size:10.5px;}
-  select.inline{width:auto; margin:0; padding:6px 10px; font-size:12px;}
-  .step{display:none;}
-  .step.active{display:block;}
-  a.back{color:var(--muted); font-size:11.5px; text-decoration:none; font-family:'JetBrains Mono',monospace;}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MushaMumwe — Department Portal</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="entry-portal">
+  <div class="container">
+    <header>
+      <h1>MushaMumwe</h1>
+      <p>Hospital Operations Portal</p>
+    </header>
 
-  <h1>MushaMumwe — Department Portal</h1>
-  <div class="sub"><a href="/" class="back">← Back to public dashboard</a></div>
+    <!-- Login Section -->
+    <div id="login" class="login-section">
+      <h2>Department Login</h2>
+      <div id="loginError" class="error" style="display:none;"></div>
+      
+      <div class="form-group">
+        <label for="department">Select Department:</label>
+        <select id="department" required>
+          <option value="">-- Choose Department --</option>
+          <option value="Nurses">Nurses / Ward Staff</option>
+          <option value="IT">IT Management</option>
+          <option value="Procurement">Procurement</option>
+          <option value="Stores">Stores / Inventory</option>
+          <option value="HR">Human Resources</option>
+        </select>
+      </div>
 
-  <!-- STEP 1: choose department -->
-  <div class="step active" id="stepChoose">
-    <div class="panel">
-      <label>Select your department</label>
-      <select id="deptSelect">
-        <option value="">— Choose department —</option>
-        <option value="nurses">Nurses / Ward Staff</option>
-        <option value="records">Records</option>
-        <option value="accounts">Accounts</option>
-        <option value="it">IT / Admin</option>
-      </select>
-      <button onclick="goToLogin()">Continue</button>
-    </div>
-  </div>
+      <div class="form-group">
+        <label for="username">Username:</label>
+        <input type="text" id="username" placeholder="Enter username" required>
+      </div>
 
-  <!-- STEP 2: login for chosen department -->
-  <div class="step" id="stepLogin">
-    <div class="panel">
-      <div class="sub" id="loginDeptLabel" style="margin-bottom:16px;"></div>
-      <label>Username</label>
-      <input id="usernameInput" placeholder="e.g. nurse1">
-      <label>Password</label>
-      <input id="passwordInput" type="password" placeholder="••••••••">
-      <button onclick="login()">Sign in</button>
-      <button class="link-btn" onclick="goBackToChoose()">← Choose a different department</button>
-      <div class="status-msg" id="loginMsg"></div>
-    </div>
-  </div>
+      <div class="form-group">
+        <label for="password">Password:</label>
+        <input type="password" id="password" placeholder="Enter password" required>
+      </div>
 
-  <!-- STEP 3: signed-in workspace -->
-  <div class="step" id="stepWorkspace">
-    <div class="whoami">
-      <span id="whoamiText">—</span>
-      <span style="display:flex; gap:8px; align-items:center;">
-        <span class="role-tag" id="roleTag">role</span>
-        <button class="link-btn" style="padding:0;" onclick="logout()">Sign out</button>
-      </span>
+      <button onclick="login()">Login</button>
     </div>
 
-    <div class="panel">
-      <h2 style="font-size:14px; margin-bottom:12px;">Register / Update Patient</h2>
-      <div class="row">
-        <div>
-          <label>Full Name</label>
-          <input id="nameInput" placeholder="Patient full name">
+    <!-- Nurses Portal -->
+    <div id="nursesPortal" class="portal">
+      <h2>Nurses Department — Patient Management</h2>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      
+      <div class="grid">
+        <div class="card">
+          <h3>Register New Patient</h3>
+          <div class="form-group">
+            <label for="patientName">Patient Name:</label>
+            <input type="text" id="patientName" placeholder="Full name">
+          </div>
+          <div class="form-group">
+            <label for="patientID">National ID (optional):</label>
+            <input type="text" id="patientID" placeholder="ID number">
+          </div>
+          <div class="form-group">
+            <label for="wardSelect">Ward:</label>
+            <select id="wardSelect"></select>
+          </div>
+          <div class="form-group">
+            <label for="statusSelect">Status:</label>
+            <select id="statusSelect">
+              <option value="admitted">Admitted</option>
+              <option value="in_treatment">In Treatment</option>
+              <option value="discharged">Discharged</option>
+              <option value="deceased">Deceased</option>
+            </select>
+          </div>
+          <button onclick="registerPatient()">Save Record</button>
+          <div id="patientMessage"></div>
         </div>
-        <div>
-          <label>National ID (optional)</label>
-          <input id="nidInput" placeholder="e.g. 63-XXXXXXX-X-00">
+
+        <div class="card">
+          <h3>Update Patient Status</h3>
+          <div class="form-group">
+            <label for="patientSelect">Select Patient:</label>
+            <select id="patientSelect"></select>
+          </div>
+          <div class="form-group">
+            <label for="newStatus">New Status:</label>
+            <select id="newStatus">
+              <option value="admitted">Admitted</option>
+              <option value="in_treatment">In Treatment</option>
+              <option value="discharged">Discharged</option>
+              <option value="deceased">Deceased</option>
+            </select>
+          </div>
+          <button onclick="updatePatient()">Update Status</button>
+          <div id="updateMessage"></div>
+        </div>
+
+        <div class="card">
+          <h3>Account Settings</h3>
+          <div class="form-group">
+            <label for="newPassword">New Password:</label>
+            <input type="password" id="newPassword" placeholder="Enter new password">
+          </div>
+          <button onclick="changePassword()">Change Password</button>
+          <div id="passwordMessage"></div>
         </div>
       </div>
-      <div class="row">
-        <div>
-          <label>Ward</label>
-          <select id="wardInput">
-            <option value="1">Ward A</option><option value="2">Ward B</option><option value="3">ICU</option>
-            <option value="4">Maternity</option><option value="5">Surgical</option><option value="6">Paediatrics</option>
-          </select>
+    </div>
+
+    <!-- IT Portal -->
+    <div id="itPortal" class="portal">
+      <h2>IT Department — User Management</h2>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      
+      <div class="grid">
+        <div class="card">
+          <h3>Create User Account</h3>
+          <div class="form-group">
+            <label for="newUsername">Username:</label>
+            <input type="text" id="newUsername" placeholder="e.g. nurse3">
+          </div>
+          <div class="form-group">
+            <label for="newUserFullName">Full Name:</label>
+            <input type="text" id="newUserFullName" placeholder="Full name">
+          </div>
+          <div class="form-group">
+            <label for="newUserDept">Department:</label>
+            <select id="newUserDept">
+              <option value="Nurses">Nurses</option>
+              <option value="Procurement">Procurement</option>
+              <option value="Stores">Stores</option>
+              <option value="HR">HR</option>
+            </select>
+          </div>
+          <button onclick="createUser()">Generate Temporary Password</button>
+          <div id="createUserMessage"></div>
         </div>
-        <div>
-          <label>Status</label>
-          <select id="statusInput">
-            <option value="admitted">Admitted</option>
-            <option value="treatment">In Treatment</option>
-            <option value="discharged">Discharged</option>
-            <option value="deceased">Deceased</option>
-          </select>
+
+        <div class="card">
+          <h3>System Status</h3>
+          <p>Total Active Users: <strong id="totalUsers">-</strong></p>
+          <p>Database: <strong>Connected</strong></p>
+          <button onclick="loadSystemStatus()">Refresh Status</button>
         </div>
       </div>
-      <button onclick="registerPatient()">Save Record → updates public dashboard</button>
-      <div class="status-msg" id="entryMsg"></div>
     </div>
 
-    <div class="panel">
-      <h2 style="font-size:14px; margin-bottom:12px;" id="listTitle">Update Existing Case Status</h2>
-      <div class="list" id="patientList">Loading...</div>
+    <!-- Procurement Portal -->
+    <div id="procurementPortal" class="portal">
+      <h2>Procurement Department — Order Management</h2>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      
+      <div class="grid">
+        <!-- All Pending Orders -->
+        <div class="card" style="grid-column: span 2;">
+          <h3>Pending Order Requests</h3>
+          <div style="max-height: 400px; overflow-y: auto;">
+            <div id="pendingOrdersList">
+              <p>Loading pending orders...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Approved & Ordered -->
+        <div class="card">
+          <h3>Approved Orders</h3>
+          <div id="approvedOrdersList" style="font-size:13px; max-height:300px; overflow-y:auto;">
+            <p>Loading...</p>
+          </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="card">
+          <h3>Order Summary</h3>
+          <p>Pending: <strong id="procPending">-</strong></p>
+          <p>Approved: <strong id="procApproved">-</strong></p>
+          <p>Ordered: <strong id="procOrdered">-</strong></p>
+          <p>In Storage: <strong id="procInStorage">-</strong></p>
+          <button onclick="loadProcurementDashboard()" class="mt-20">Refresh</button>
+        </div>
+      </div>
     </div>
+
+    <!-- Stores Portal -->
+    <div id="storesPortal" class="portal">
+      <h2>Stores Department — Inventory Management</h2>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      
+      <div class="grid">
+        <!-- Receive Items -->
+        <div class="card">
+          <h3>Receive Items</h3>
+          <div class="form-group">
+            <label for="procOrderId">Procurement Order ID:</label>
+            <input type="number" id="procOrderId" placeholder="Order ID">
+          </div>
+          <div class="form-group">
+            <label for="receiveItemName">Item Name:</label>
+            <input type="text" id="receiveItemName" placeholder="Item name">
+          </div>
+          <div class="form-group">
+            <label for="receiveQty">Quantity Received:</label>
+            <input type="number" id="receiveQty" placeholder="Quantity">
+          </div>
+          <div class="form-group">
+            <label for="receiveNotes">Notes (optional):</label>
+            <textarea id="receiveNotes" placeholder="Condition, damage, etc."></textarea>
+          </div>
+          <button onclick="receiveItems()">Record Receipt</button>
+          <div id="receiveMessage"></div>
+        </div>
+
+        <!-- Current Inventory -->
+        <div class="card" style="grid-column: span 2;">
+          <h3>Current Inventory</h3>
+          <div style="max-height: 400px; overflow-y: auto;">
+            <div id="inventoryList">
+              <p>Loading inventory...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventory Summary -->
+        <div class="card">
+          <h3>Stock Levels</h3>
+          <div style="font-size:14px;">
+            <p>Critical (less than 10): <strong id="invCritical" style="color:#c2185b;">-</strong></p>
+            <p>Low (10-50): <strong id="invLow" style="color:#e65100;">-</strong></p>
+            <p>Adequate (50+): <strong id="invAdequate" style="color:#2e7d32;">-</strong></p>
+            <p style="border-top:1px solid #ddd; padding-top:10px; margin-top:10px;">Total Items: <strong id="invTotal">-</strong></p>
+          </div>
+          <button onclick="loadStoresInventory()" class="mt-20">Refresh</button>
+        </div>
+
+        <!-- Receive History -->
+        <div class="card" style="grid-column: span 2;">
+          <h3>Recent Receipts</h3>
+          <div id="receiveHistoryList" style="font-size:12px; max-height:300px; overflow-y:auto;">
+            <p>Loading...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HR Portal -->
+    <div id="hrPortal" class="portal">
+      <h2>HR Department — Staff Management</h2>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      
+      <div class="grid">
+        <!-- Add Employee -->
+        <div class="card">
+          <h3>Add New Employee (Hire)</h3>
+          <div class="form-group">
+            <label for="empName">Employee Name:</label>
+            <input type="text" id="empName" placeholder="Full name">
+          </div>
+          <div class="form-group">
+            <label for="empDept">Department:</label>
+            <select id="empDept">
+              <option value="Medical">Medical / Doctors</option>
+              <option value="Nurses">Nurses</option>
+              <option value="Pharmacy">Pharmacy</option>
+              <option value="Laboratory">Laboratory</option>
+              <option value="Admin">Admin</option>
+              <option value="Support">Support / Cleaning</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Security">Security</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="empWard">Assigned Ward (optional):</label>
+            <select id="empWard"></select>
+          </div>
+          <div class="form-group">
+            <label for="empHireDate">Hire Date:</label>
+            <input type="date" id="empHireDate">
+          </div>
+          <button onclick="addEmployee()">Hire Employee</button>
+          <div id="empAddMessage"></div>
+        </div>
+
+        <!-- Employee Roster -->
+        <div class="card" style="grid-column: span 2;">
+          <h3>Staff Roster</h3>
+          <div class="emp-search-box">
+            <input type="text" id="empSearchBox" placeholder="Search by name or department..." onkeyup="searchEmployees()">
+          </div>
+          <div id="empRosterTable" class="emp-roster-table">
+            <p>Loading staff roster...</p>
+          </div>
+        </div>
+
+        <!-- Staffing Summary -->
+        <div class="card">
+          <h3>Staffing Summary</h3>
+          <div class="emp-summary">
+            <p><strong>On Duty:</strong> <span id="empOnDuty">-</span></p>
+            <p><strong>On Leave:</strong> <span id="empOnLeave">-</span></p>
+            <p><strong>Sick:</strong> <span id="empSick">-</span></p>
+            <p><strong>Terminated:</strong> <span id="empTerminated">-</span></p>
+            <p class="total-row"><strong>Total Active:</strong> <span id="empTotal">-</span></p>
+          </div>
+          <button onclick="loadStaffingSummary()" class="mt-20">Refresh</button>
+        </div>
+      </div>
+
+      <!-- Employee Status Modal -->
+      <div id="empStatusModal" class="emp-status-modal">
+        <h3 id="modalEmpName"></h3>
+        <div class="form-group">
+          <label for="empStatusSelect">Change Status:</label>
+          <select id="empStatusSelect">
+            <option value="active">Active (On Duty)</option>
+            <option value="on_leave">On Leave</option>
+            <option value="sick">Sick</option>
+            <option value="terminated">Terminated</option>
+          </select>
+        </div>
+        <button onclick="updateEmployeeStatus()">Update</button>
+        <button onclick="closeEmpModal()" class="logout-btn">Cancel</button>
+        <div id="empStatusMessage"></div>
+      </div>
+
+      <!-- Modal backdrop -->
+      <div id="empModalBackdrop" onclick="closeEmpModal()" class="emp-modal-backdrop"></div>
+    </div>
+
   </div>
 
-<script>
-const API_BASE = "";
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let currentUser = null;
+    let currentDept = null;
 
-function getToken(){ return localStorage.getItem("token") || ""; }
-function getUser(){ try{ return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; } }
+    // ========== AUTH FUNCTIONS ==========
+    async function login() {
+      const dept = document.getElementById('department').value;
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
 
-function showStep(id){
-  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
+      if (!dept || !username || !password) {
+        showLoginError('All fields required');
+        return;
+      }
 
-function goToLogin(){
-  const dept = document.getElementById('deptSelect').value;
-  if(!dept){ return; }
-  localStorage.setItem('pendingDept', dept);
-  const labels = { nurses:"Nurses / Ward Staff", records:"Records", accounts:"Accounts", it:"IT / Admin" };
-  document.getElementById('loginDeptLabel').textContent = "Signing in to: " + labels[dept];
-  showStep('stepLogin');
-}
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, department: dept })
+        });
 
-function goBackToChoose(){ showStep('stepChoose'); }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Login failed');
 
-async function login(){
-  const username = document.getElementById('usernameInput').value.trim();
-  const password = document.getElementById('passwordInput').value;
-  const expectedDept = localStorage.getItem('pendingDept');
-
-  if(!username || !password){ setMsg('loginMsg', 'Enter username and password.', false); return; }
-
-  try{
-    const res = await fetch(API_BASE + '/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.error || 'Login failed');
-
-    // Admin/IT can access any department's workspace; others must match their selected department
-    if(data.user.department !== expectedDept && data.user.role !== 'admin'){
-      setMsg('loginMsg', `This account belongs to a different department (${data.user.department}).`, false);
-      return;
+        currentUser = data.user;
+        currentDept = dept;
+        localStorage.setItem('token', data.token);
+        
+        showPortal(dept);
+        loadPortalData(dept);
+      } catch (e) {
+        showLoginError(e.message);
+      }
     }
 
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    enterWorkspace();
-  }catch(err){
-    setMsg('loginMsg', err.message, false);
-  }
-}
+    function showPortal(dept) {
+      document.getElementById('login').style.display = 'none';
+      document.querySelectorAll('.portal').forEach(p => p.classList.remove('active'));
+      
+      const portals = {
+        'Nurses': 'nursesPortal',
+        'IT': 'itPortal',
+        'Procurement': 'procurementPortal',
+        'Stores': 'storesPortal',
+        'HR': 'hrPortal'
+      };
+      
+      if (portals[dept]) {
+        document.getElementById(portals[dept]).classList.add('active');
+      }
+    }
 
-function logout(){
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  localStorage.removeItem('pendingDept');
-  document.getElementById('usernameInput').value = '';
-  document.getElementById('passwordInput').value = '';
-  showStep('stepChoose');
-}
+    function showLoginError(msg) {
+      const errorDiv = document.getElementById('loginError');
+      errorDiv.textContent = msg;
+      errorDiv.style.display = 'block';
+    }
 
-function setMsg(id, text, ok){
-  const el = document.getElementById(id);
-  el.textContent = text;
-  el.className = 'status-msg ' + (ok ? 'ok' : 'err');
-}
+    function logout() {
+      localStorage.removeItem('token');
+      currentUser = null;
+      currentDept = null;
+      document.getElementById('login').style.display = 'block';
+      document.querySelectorAll('.portal').forEach(p => p.classList.remove('active'));
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+      document.getElementById('department').value = '';
+    }
 
-async function api(path, opts={}){
-  const res = await fetch(API_BASE + path, {
-    ...opts,
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken(), ...(opts.headers||{}) }
-  });
-  if(!res.ok){
-    const body = await res.json().catch(()=>({}));
-    throw new Error(body.error || ('Request failed: ' + res.status));
-  }
-  return res.json();
-}
+    async function loadPortalData(dept) {
+      if (dept === 'Nurses') {
+        loadWards();
+        loadPatients();
+      } else if (dept === 'IT') {
+        loadSystemStatus();
+      } else if (dept === 'Procurement') {
+        loadProcurementDashboard();
+      } else if (dept === 'Stores') {
+        loadStoresInventory();
+      } else if (dept === 'HR') {
+        loadWards();
+        loadStaffRoster();
+        loadStaffingSummary();
+      }
+    }
 
-function enterWorkspace(){
-  const user = getUser();
-  document.getElementById('whoamiText').textContent = `${user.fullName} · ${user.department}`;
-  document.getElementById('roleTag').textContent = user.role;
-  document.getElementById('listTitle').textContent =
-    user.role === 'admin' ? 'All Departments — Case Overview' : 'Update Existing Case Status';
-  showStep('stepWorkspace');
-  loadPatientList();
-}
+    // ========== NURSES FUNCTIONS ==========
+    async function loadWards() {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/wards', { headers: { 'Authorization': `Bearer ${token}` } });
+        const wards = await res.json();
+        
+        const wardSelect = document.getElementById('wardSelect');
+        if (wardSelect) {
+          wardSelect.innerHTML = wards.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+        }
+        
+        const empWardSelect = document.getElementById('empWard');
+        if (empWardSelect) {
+          empWardSelect.innerHTML = '<option value="">None</option>' + 
+            wards.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+        }
+      } catch (e) {
+        console.error('Failed to load wards:', e);
+      }
+    }
 
-async function registerPatient(){
-  try{
-    const payload = {
-      name: document.getElementById('nameInput').value.trim(),
-      nationalId: document.getElementById('nidInput').value.trim() || undefined,
-      wardId: Number(document.getElementById('wardInput').value),
-      status: document.getElementById('statusInput').value
-    };
-    if(!payload.name){ setMsg('entryMsg', 'Name is required.', false); return; }
+    async function loadPatients() {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/patients', { headers: { 'Authorization': `Bearer ${token}` } });
+        const patients = await res.json();
+        
+        const patientSelect = document.getElementById('patientSelect');
+        patientSelect.innerHTML = patients.map(p => `<option value="${p.id}">${p.name} (${p.status})</option>`).join('');
+      } catch (e) {
+        console.error('Failed to load patients:', e);
+      }
+    }
 
-    await api('/api/patients', { method: 'POST', body: JSON.stringify(payload) });
-    setMsg('entryMsg', 'Saved. Public dashboard updates automatically.', true);
-    document.getElementById('nameInput').value = '';
-    document.getElementById('nidInput').value = '';
-    loadPatientList();
-  }catch(err){
-    setMsg('entryMsg', err.message, false);
-  }
-}
+    async function registerPatient() {
+      const token = localStorage.getItem('token');
+      const name = document.getElementById('patientName').value;
+      const nationalId = document.getElementById('patientID').value;
+      const wardId = document.getElementById('wardSelect').value;
+      const status = document.getElementById('statusSelect').value;
 
-async function loadPatientList(){
-  try{
-    const patients = await api('/api/patients');
-    const container = document.getElementById('patientList');
-    container.innerHTML = '';
-    patients.forEach(p => {
-      const row = document.createElement('div');
-      row.className = 'item';
-      row.innerHTML = `
-        <div>
-          <div>${p.name}</div>
-          <div class="pid">#${p.id} · ${p.ward ? p.ward.name : '—'}</div>
+      if (!name || !wardId) {
+        document.getElementById('patientMessage').innerHTML = '<div class="error">Name and ward required</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/patients', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ name, nationalId, wardId: parseInt(wardId), status })
+        });
+
+        if (!res.ok) throw new Error('Registration failed');
+        
+        document.getElementById('patientMessage').innerHTML = '<div class="success">Patient registered successfully</div>';
+        document.getElementById('patientName').value = '';
+        document.getElementById('patientID').value = '';
+        loadPatients();
+      } catch (e) {
+        document.getElementById('patientMessage').innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    }
+
+    async function updatePatient() {
+      const token = localStorage.getItem('token');
+      const patientId = document.getElementById('patientSelect').value;
+      const status = document.getElementById('newStatus').value;
+
+      if (!patientId) {
+        document.getElementById('updateMessage').innerHTML = '<div class="error">Select a patient</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/patients/${patientId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ status })
+        });
+
+        if (!res.ok) throw new Error('Update failed');
+        
+        document.getElementById('updateMessage').innerHTML = '<div class="success">Status updated</div>';
+        loadPatients();
+      } catch (e) {
+        document.getElementById('updateMessage').innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    }
+
+    async function changePassword() {
+      const token = localStorage.getItem('token');
+      const newPassword = document.getElementById('newPassword').value;
+
+      if (!newPassword || newPassword.length < 6) {
+        document.getElementById('passwordMessage').innerHTML = '<div class="error">Password must be at least 6 characters</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ newPassword })
+        });
+
+        if (!res.ok) throw new Error('Password change failed');
+        
+        document.getElementById('passwordMessage').innerHTML = '<div class="success">Password changed</div>';
+        document.getElementById('newPassword').value = '';
+      } catch (e) {
+        document.getElementById('passwordMessage').innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    }
+
+    // ========== IT FUNCTIONS ==========
+    async function createUser() {
+      const token = localStorage.getItem('token');
+      const username = document.getElementById('newUsername').value;
+      const fullName = document.getElementById('newUserFullName').value;
+      const department = document.getElementById('newUserDept').value;
+
+      if (!username || !fullName) {
+        document.getElementById('createUserMessage').innerHTML = '<div class="error">All fields required</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/admin/create-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ username, fullName, department })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'User creation failed');
+        
+        document.getElementById('createUserMessage').innerHTML = `<div class="success">User created<br>Temp Password: <strong>${data.tempPassword}</strong></div>`;
+        document.getElementById('newUsername').value = '';
+        document.getElementById('newUserFullName').value = '';
+      } catch (e) {
+        document.getElementById('createUserMessage').innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    }
+
+    async function loadSystemStatus() {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/auth/system-status', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('totalUsers').textContent = data.totalUsers || '?';
+        }
+      } catch (e) {
+        console.error('Failed to load system status:', e);
+      }
+    }
+
+    // ========== PROCUREMENT FUNCTIONS ==========
+    async function loadProcurementDashboard() {
+      const token = localStorage.getItem('token');
+      
+      try {
+        const res = await fetch('/api/orders/requests', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const orders = await res.json();
+        
+        renderProcurementOrders(orders);
+        loadProcurementSummary();
+      } catch (e) {
+        console.error('Failed to load orders:', e);
+      }
+    }
+
+    function renderProcurementOrders(orders) {
+      const pending = orders.filter(o => o.status === 'pending');
+      const approved = orders.filter(o => o.status === 'approved' || o.status === 'ordered');
+      
+      // Pending orders
+      if (pending.length === 0) {
+        document.getElementById('pendingOrdersList').innerHTML = '<p>No pending orders</p>';
+      } else {
+        const html = pending.map(order => `
+          <div style="border:1px solid #ddd; padding:10px; margin-bottom:10px; border-radius:4px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+              <strong>${order.itemName} x${order.quantity}</strong>
+              <span style="font-size:11px; color:#999;">#${order.id}</span>
+            </div>
+            <div style="font-size:12px; margin-bottom:8px;">
+              <p>From: <strong>${order.requestingDepartment}</strong></p>
+              <p>By: ${order.requestingBy}</p>
+              <p>Reason: ${order.reason}</p>
+            </div>
+            <div style="display:flex; gap:5px;">
+              <button onclick="approveOrder(${order.id})" style="flex:1; padding:6px; background:#4caf50; color:white; border:none; border-radius:3px; cursor:pointer; font-size:12px;">Approve</button>
+              <button onclick="rejectOrder(${order.id})" style="flex:1; padding:6px; background:#f44336; color:white; border:none; border-radius:3px; cursor:pointer; font-size:12px;">Reject</button>
+            </div>
+          </div>
+        `).join('');
+        document.getElementById('pendingOrdersList').innerHTML = html;
+      }
+      
+      // Approved/Ordered
+      if (approved.length === 0) {
+        document.getElementById('approvedOrdersList').innerHTML = '<p>No approved orders</p>';
+      } else {
+        const html = approved.map(order => `
+          <div style="border-left:3px solid #2196F3; padding:8px; margin-bottom:8px;">
+            <p style="margin:0; font-weight:600;">${order.itemName} x${order.quantity}</p>
+            <p style="margin:0; font-size:11px; color:#666;">${order.requestingDepartment}</p>
+            <p style="margin:0; font-size:11px; color:#2196F3;">${order.status.toUpperCase()}</p>
+            ${order.status === 'approved' ? `<button onclick="sendOrder(${order.id})" style="margin-top:5px; padding:4px 8px; font-size:11px; background:#2196F3; color:white; border:none; border-radius:2px; cursor:pointer;">Send Order</button>` : ''}
+          </div>
+        `).join('');
+        document.getElementById('approvedOrdersList').innerHTML = html;
+      }
+    }
+
+    async function loadProcurementSummary() {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/orders/summary', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const summary = await res.json();
+        
+        document.getElementById('procPending').textContent = summary.pending;
+        document.getElementById('procApproved').textContent = summary.approved;
+        document.getElementById('procOrdered').textContent = summary.ordered;
+        document.getElementById('procInStorage').textContent = summary.inStorage;
+      } catch (e) {
+        console.error('Failed to load summary:', e);
+      }
+    }
+
+    async function approveOrder(orderId) {
+      const token = localStorage.getItem('token');
+      const supplierName = prompt('Enter supplier name:');
+      
+      if (!supplierName) return;
+      
+      try {
+        const res = await fetch(`/api/orders/requests/${orderId}/approve`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ supplierName })
+        });
+        
+        if (!res.ok) throw new Error('Failed to approve');
+        
+        loadProcurementDashboard();
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function rejectOrder(orderId) {
+      const token = localStorage.getItem('token');
+      const reason = prompt('Enter rejection reason:');
+      
+      if (!reason) return;
+      
+      try {
+        const res = await fetch(`/api/orders/requests/${orderId}/reject`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ reason })
+        });
+        
+        if (!res.ok) throw new Error('Failed to reject');
+        
+        loadProcurementDashboard();
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function sendOrder(orderId) {
+      const token = localStorage.getItem('token');
+      
+      try {
+        const res = await fetch(`/api/orders/requests/${orderId}/send`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({})
+        });
+        
+        if (!res.ok) throw new Error('Failed to send order');
+        
+        alert('Order sent to supplier!');
+        loadProcurementDashboard();
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    // ========== STORES FUNCTIONS ==========
+    async function loadStoresInventory() {
+      const token = localStorage.getItem('token');
+      
+      try {
+        const [invRes, summaryRes, historyRes] = await Promise.all([
+          fetch('/api/inventory', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/inventory/summary', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/inventory/receive-history', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+        
+        const items = await invRes.json();
+        const summary = await summaryRes.json();
+        const history = await historyRes.json();
+        
+        renderInventory(items);
+        renderInventorySummary(summary);
+        renderReceiveHistory(history);
+      } catch (e) {
+        console.error('Failed to load inventory:', e);
+      }
+    }
+
+    function renderInventory(items) {
+      if (items.length === 0) {
+        document.getElementById('inventoryList').innerHTML = '<p>No inventory items yet</p>';
+        return;
+      }
+
+      const html = `
+        <table style="width:100%; font-size:12px; border-collapse:collapse;">
+          <thead>
+            <tr style="background:#f0f0f0; position:sticky; top:0;">
+              <th style="padding:6px; text-align:left; border-bottom:1px solid #ddd;">Item</th>
+              <th style="padding:6px; text-align:center; border-bottom:1px solid #ddd;">Qty</th>
+              <th style="padding:6px; text-align:center; border-bottom:1px solid #ddd;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map(item => {
+              let status = 'Adequate';
+              let color = '#2e7d32';
+              if (item.quantity < 10) {
+                status = 'Critical';
+                color = '#c2185b';
+              } else if (item.quantity < 50) {
+                status = 'Low';
+                color = '#e65100';
+              }
+              return `
+                <tr style="border-bottom:1px solid #eee;">
+                  <td style="padding:6px;">${item.name}</td>
+                  <td style="padding:6px; text-align:center;"><strong>${item.quantity}</strong></td>
+                  <td style="padding:6px; text-align:center; color:${color}; font-weight:600; font-size:11px;">${status}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('inventoryList').innerHTML = html;
+    }
+
+    function renderInventorySummary(summary) {
+      document.getElementById('invCritical').textContent = summary.critical;
+      document.getElementById('invLow').textContent = summary.low;
+      document.getElementById('invAdequate').textContent = summary.adequate;
+      document.getElementById('invTotal').textContent = summary.totalItems;
+    }
+
+    function renderReceiveHistory(history) {
+      if (history.length === 0) {
+        document.getElementById('receiveHistoryList').innerHTML = '<p>No receive history</p>';
+        return;
+      }
+
+      const html = history.slice(0, 10).map(rec => `
+        <div style="border-left:3px solid #4caf50; padding:6px; margin-bottom:6px;">
+          <p style="margin:0; font-weight:600;">${rec.inventoryItem.name} x${rec.quantityReceived}</p>
+          <p style="margin:0; font-size:11px; color:#666;">By: ${rec.receivedBy}</p>
+          <p style="margin:0; font-size:10px; color:#999;">${new Date(rec.receivedAt).toLocaleDateString()}</p>
         </div>
-        <select class="inline" onchange="updateStatus(${p.id}, this.value)">
-          <option value="admitted" ${p.status==='admitted'?'selected':''}>Admitted</option>
-          <option value="treatment" ${p.status==='treatment'?'selected':''}>In Treatment</option>
-          <option value="discharged" ${p.status==='discharged'?'selected':''}>Discharged</option>
-          <option value="deceased" ${p.status==='deceased'?'selected':''}>Deceased</option>
-        </select>`;
-      container.appendChild(row);
+      `).join('');
+      document.getElementById('receiveHistoryList').innerHTML = html;
+    }
+
+    async function receiveItems() {
+      const token = localStorage.getItem('token');
+      const procOrderId = document.getElementById('procOrderId').value;
+      const itemName = document.getElementById('receiveItemName').value;
+      const quantityReceived = document.getElementById('receiveQty').value;
+      const notes = document.getElementById('receiveNotes').value;
+      const msgDiv = document.getElementById('receiveMessage');
+
+      if (!procOrderId || !itemName || !quantityReceived) {
+        msgDiv.innerHTML = '<div class="error">All fields required</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/inventory/receive', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            procurementOrderId: parseInt(procOrderId),
+            itemName,
+            quantityReceived: parseInt(quantityReceived),
+            notes
+          })
+        });
+
+        if (!res.ok) throw new Error('Failed to receive items');
+
+        msgDiv.innerHTML = '<div class="success">Items received and inventory updated</div>';
+        document.getElementById('procOrderId').value = '';
+        document.getElementById('receiveItemName').value = '';
+        document.getElementById('receiveQty').value = '';
+        document.getElementById('receiveNotes').value = '';
+        
+        loadStoresInventory();
+      } catch (e) {
+        msgDiv.innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    }
+
+    // ========== HR FUNCTIONS ==========
+    async function addEmployee() {
+      const token = localStorage.getItem('token');
+      const name = document.getElementById('empName').value;
+      const department = document.getElementById('empDept').value;
+      const wardId = document.getElementById('empWard').value;
+      const hireDate = document.getElementById('empHireDate').value;
+
+      if (!name || !hireDate) {
+        document.getElementById('empAddMessage').innerHTML = '<div class="error">Name and hire date required</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/employees', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ 
+            name, 
+            department, 
+            wardId: wardId ? parseInt(wardId) : null,
+            hireDate 
+          })
+        });
+
+        if (!res.ok) throw new Error('Failed to add employee');
+        
+        document.getElementById('empAddMessage').innerHTML = '<div class="success">Employee hired successfully</div>';
+        document.getElementById('empName').value = '';
+        document.getElementById('empHireDate').value = '';
+        loadStaffRoster();
+        loadStaffingSummary();
+      } catch (e) {
+        document.getElementById('empAddMessage').innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    }
+
+    async function loadStaffRoster() {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/employees', { headers: { 'Authorization': `Bearer ${token}` } });
+        const employees = await res.json();
+        
+        const rosterDiv = document.getElementById('empRosterTable');
+        if (employees.length === 0) {
+          rosterDiv.innerHTML = '<p>No employees found</p>';
+          return;
+        }
+
+        let tableHTML = '<table style="width:100%; border-collapse: collapse;">';
+        tableHTML += '<tr style="border-bottom: 2px solid #ddd;">';
+        tableHTML += '<th style="padding: 8px; text-align: left;">Name</th>';
+        tableHTML += '<th style="padding: 8px; text-align: left;">Department</th>';
+        tableHTML += '<th style="padding: 8px; text-align: left;">Status</th>';
+        tableHTML += '<th style="padding: 8px; text-align: left;">Action</th>';
+        tableHTML += '</tr>';
+        
+        employees.forEach(emp => {
+          tableHTML += '<tr style="border-bottom: 1px solid #eee;">';
+          tableHTML += `<td style="padding: 8px;">${emp.name}</td>`;
+          tableHTML += `<td style="padding: 8px;">${emp.department}</td>`;
+          tableHTML += `<td style="padding: 8px;">${emp.status}</td>`;
+          tableHTML += `<td style="padding: 8px;"><button onclick="openEmpModal(${emp.id}, '${emp.name}', '${emp.status}')">Update</button></td>`;
+          tableHTML += '</tr>';
+        });
+        
+        tableHTML += '</table>';
+        rosterDiv.innerHTML = tableHTML;
+      } catch (e) {
+        document.getElementById('empRosterTable').innerHTML = '<p>Failed to load roster</p>';
+      }
+    }
+
+    async function loadStaffingSummary() {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/employees/summary', { headers: { 'Authorization': `Bearer ${token}` } });
+        const summary = await res.json();
+        
+        document.getElementById('empOnDuty').textContent = summary.active || 0;
+        document.getElementById('empOnLeave').textContent = summary.on_leave || 0;
+        document.getElementById('empSick').textContent = summary.sick || 0;
+        document.getElementById('empTerminated').textContent = summary.terminated || 0;
+        document.getElementById('empTotal').textContent = summary.total || 0;
+      } catch (e) {
+        console.error('Failed to load summary:', e);
+      }
+    }
+
+    let selectedEmployeeId = null;
+
+    function openEmpModal(id, name, status) {
+      selectedEmployeeId = id;
+      document.getElementById('modalEmpName').textContent = name;
+      document.getElementById('empStatusSelect').value = status;
+      document.getElementById('empStatusModal').classList.add('active');
+      document.getElementById('empModalBackdrop').classList.add('active');
+    }
+
+    function closeEmpModal() {
+      document.getElementById('empStatusModal').classList.remove('active');
+      document.getElementById('empModalBackdrop').classList.remove('active');
+      selectedEmployeeId = null;
+      document.getElementById('empStatusMessage').innerHTML = '';
+    }
+
+    async function updateEmployeeStatus() {
+      const token = localStorage.getItem('token');
+      const status = document.getElementById('empStatusSelect').value;
+
+      if (!selectedEmployeeId) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/employees/${selectedEmployeeId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ status })
+        });
+
+        if (!res.ok) throw new Error('Update failed');
+        
+        document.getElementById('empStatusMessage').innerHTML = '<div class="success">Status updated</div>';
+        setTimeout(() => {
+          closeEmpModal();
+          loadStaffRoster();
+          loadStaffingSummary();
+        }, 1000);
+      } catch (e) {
+        document.getElementById('empStatusMessage').innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    }
+
+    function searchEmployees() {
+      const searchTerm = document.getElementById('empSearchBox').value.toLowerCase();
+      const rows = document.querySelectorAll('#empRosterTable table tr:not(:first-child)');
+      
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    }
+
+    // ========== SOCKET EVENT LISTENERS ==========
+    socket.on('connect', () => {
+      console.log('Connected to server');
     });
-  }catch(err){
-    document.getElementById('patientList').textContent = 'Could not load: ' + err.message;
-  }
-}
 
-async function updateStatus(id, newStatus){
-  try{
-    await api(`/api/patients/${id}/status`, { method: 'PATCH', body: JSON.stringify({ newStatus }) });
-  }catch(err){
-    alert('Update failed: ' + err.message);
-  }
-}
+    socket.on('disconnect', () => {
+      console.log('Disconnected from server');
+    });
 
-// Resume session if already logged in
-(function init(){
-  if(getToken() && getUser()){
-    enterWorkspace();
-  }
-})();
-</script>
+    socket.on('patientUpdate', () => {
+      if (currentDept === 'Nurses') {
+        loadPatients();
+      }
+    });
+
+    socket.on('order:updated', () => {
+      if (currentDept === 'Procurement') {
+        loadProcurementDashboard();
+      }
+    });
+
+    socket.on('inventory:updated', () => {
+      if (currentDept === 'Stores') {
+        loadStoresInventory();
+      }
+    });
+
+    socket.on('employeeUpdate', () => {
+      if (currentDept === 'HR') {
+        loadStaffRoster();
+        loadStaffingSummary();
+      }
+    });
+  </script>
 </body>
 </html>

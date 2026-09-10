@@ -12,6 +12,7 @@ model Ward {
   name      String
   capacity  Int
   patients  Patient[]
+  employees Employee[]
 }
 
 model Patient {
@@ -37,6 +38,92 @@ model StatusLog {
   newStatus  String
   changedBy  String
   timestamp  DateTime @default(now())
+}
+
+model Employee {
+  id                Int                @id @default(autoincrement())
+  name              String
+  department        String
+  wardId            Int?
+  ward              Ward?              @relation(fields: [wardId], references: [id])
+  status            String             @default("active")
+  hireDate          DateTime           @default(now())
+  terminationDate   DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  statusLogs        EmployeeStatusLog[]
+}
+
+model EmployeeStatusLog {
+  id         Int      @id @default(autoincrement())
+  employeeId Int
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  oldStatus  String
+  newStatus  String
+  changedBy  String
+  timestamp  DateTime @default(now())
+}
+
+model OrderRequest {
+  id                    Int                       @id @default(autoincrement())
+  requestingDepartment  String
+  requestingBy          String
+  itemName              String
+  quantity              Int
+  reason                String
+  status                String                    @default("pending")
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+  statusLogs            OrderRequestStatusLog[]
+  procurementOrder      ProcurementOrder?
+}
+
+model OrderRequestStatusLog {
+  id           Int          @id @default(autoincrement())
+  orderRequestId Int
+  orderRequest OrderRequest @relation(fields: [orderRequestId], references: [id])
+  oldStatus    String
+  newStatus    String
+  changedBy    String
+  notes        String?
+  timestamp    DateTime     @default(now())
+}
+
+model ProcurementOrder {
+  id              Int          @id @default(autoincrement())
+  orderRequestId  Int          @unique
+  orderRequest    OrderRequest @relation(fields: [orderRequestId], references: [id])
+  supplierName    String
+  orderDate       DateTime     @default(now())
+  expectedDate    DateTime?
+  status          String       @default("ordered")
+  itemReceives    ItemReceive[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model InventoryItem {
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
+  quantity     Int           @default(0)
+  unit         String
+  lastReceived DateTime?
+  itemReceives ItemReceive[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model ItemReceive {
+  id                 Int              @id @default(autoincrement())
+  procurementOrderId Int
+  procurementOrder   ProcurementOrder @relation(fields: [procurementOrderId], references: [id])
+  inventoryItemId    Int
+  inventoryItem      InventoryItem    @relation(fields: [inventoryItemId], references: [id])
+  quantityReceived   Int
+  receivedBy         String
+  receivedAt         DateTime         @default(now())
+  notes              String?
+  createdAt          DateTime         @default(now())
 }
 
 model User {
