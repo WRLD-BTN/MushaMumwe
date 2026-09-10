@@ -2,58 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MushaMumwe — Live Board</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
-  :root{
-    --bg:#0B1220; --surface:#141C2E; --surface-2:#1B2540; --line:#26314D;
-    --text:#E7ECF5; --muted:#8D97AF;
-    --admitted:#3B82F6; --treatment:#F0A93A; --discharged:#2FBF71; --deceased-line:#7A8199;
-  }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  body{background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; padding:0 0 48px 0;}
-  .topbar{display:flex; align-items:center; justify-content:space-between; padding:18px 28px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,#0D1526,#0B1220); position:sticky; top:0; z-index:10;}
-  .brand h1{font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:600;}
-  .brand .sub{font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace;}
-  .pulse-wrap{display:flex; align-items:center; gap:10px;}
-  .live-dot{width:8px; height:8px; border-radius:50%; background:var(--discharged); animation:blink 1.6s infinite;}
-  @keyframes blink{0%,100%{opacity:1;} 50%{opacity:0.25;}}
-  .sync-text{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);}
-  .clock{font-family:'JetBrains Mono',monospace; font-size:13px; min-width:150px; text-align:right;}
-  .toast{position:fixed; top:74px; right:28px; background:var(--surface-2); border:1px solid var(--line); padding:10px 16px; border-radius:6px; font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; opacity:0; transform:translateY(-6px); transition:all .35s ease; z-index:20;}
-  .toast.show{opacity:1; transform:translateY(0);}
-  .toast b{color:var(--discharged);}
-  .stats{display:flex; gap:14px; padding:20px 28px 4px 28px; flex-wrap:wrap;}
-  .stat{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:14px 18px; min-width:130px; flex:1; position:relative;}
-  .stat .n{font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; display:inline-block;}
-  .stat .pct{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); margin-left:6px;}
-  .stat .l{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; margin-top:2px;}
-  .stat.admitted .n{color:var(--admitted);} .stat.treatment .n{color:var(--treatment);}
-  .stat.discharged .n{color:var(--discharged);} .stat.deceased .n{color:var(--deceased-line);}
-  .distbar{display:flex; padding:4px 28px 0 28px; gap:2px;}
-  .distbar .seg{height:6px; border-radius:2px; transition:width .5s ease;}
-  .distbar-labels{display:flex; justify-content:space-between; padding:6px 28px 0 28px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted);}
-  .board{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; padding:20px 28px;}
-  @media (max-width:1000px){ .board{grid-template-columns:repeat(2,1fr);} }
-  @media (max-width:620px){ .board{grid-template-columns:1fr;} .stats{flex-direction:column;} }
-  .col{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:14px; min-height:200px;}
-  .col-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--line);}
-  .col-head .dot{width:9px; height:9px; border-radius:50%; display:inline-block; margin-right:8px;}
-  .col-title{font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; letter-spacing:0.3px; text-transform:uppercase;}
-  .col-count{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted);}
-  .col.admitted .dot{background:var(--admitted);} .col.treatment .dot{background:var(--treatment);}
-  .col.discharged .dot{background:var(--discharged);} .col.deceased .dot{background:var(--deceased-line);}
-  .card{background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:11px 12px; margin-bottom:10px;}
-  .card-top{display:flex; justify-content:space-between; align-items:baseline;}
-  .patient-name{font-size:13.5px; font-weight:600;}
-  .patient-id{font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--muted);}
-  .card-meta{display:flex; justify-content:space-between; margin-top:6px; font-size:11.5px; color:var(--muted);}
-  .ward-tag{font-family:'JetBrains Mono',monospace; font-size:10px; background:#101728; border:1px solid var(--line); padding:2px 6px; border-radius:4px;}
-  .footer-note{padding:16px 28px; font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace; text-align:center;}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="live-board">
 
+  <!-- Top Bar -->
   <div class="topbar">
     <div class="brand">
       <h1>MUSHAMUMWE — LIVE BOARD</h1>
@@ -64,18 +19,45 @@
       <span class="sync-text" id="syncText">CONNECTING</span>
     </div>
     <div class="clock" id="clock">--:--:--</div>
-    <a href="/entry.html" style="color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:11px; text-decoration:none; border:1px solid var(--line); padding:6px 12px; border-radius:6px; margin-left:14px;">Staff Login →</a>
+    <a href="/entry.html" class="staff-login-link">Staff Login</a>
   </div>
 
+  <!-- Toast Notification -->
   <div class="toast" id="toast"></div>
 
+  <!-- Patient Statistics -->
   <div class="stats">
-    <div class="stat admitted"><div><span class="n" id="countAdmitted">0</span><span class="pct" id="pctAdmitted">0%</span></div><div class="l">Admitted</div></div>
-    <div class="stat treatment"><div><span class="n" id="countTreatment">0</span><span class="pct" id="pctTreatment">0%</span></div><div class="l">In Treatment</div></div>
-    <div class="stat discharged"><div><span class="n" id="countDischarged">0</span><span class="pct" id="pctDischarged">0%</span></div><div class="l">Discharged</div></div>
-    <div class="stat deceased"><div><span class="n" id="countDeceased">0</span><span class="pct" id="pctDeceased">0%</span></div><div class="l">Deceased</div></div>
+    <div class="stat admitted">
+      <div>
+        <span class="n" id="countAdmitted">0</span>
+        <span class="pct" id="pctAdmitted">0%</span>
+      </div>
+      <div class="l">Admitted</div>
+    </div>
+    <div class="stat treatment">
+      <div>
+        <span class="n" id="countTreatment">0</span>
+        <span class="pct" id="pctTreatment">0%</span>
+      </div>
+      <div class="l">In Treatment</div>
+    </div>
+    <div class="stat discharged">
+      <div>
+        <span class="n" id="countDischarged">0</span>
+        <span class="pct" id="pctDischarged">0%</span>
+      </div>
+      <div class="l">Discharged</div>
+    </div>
+    <div class="stat deceased">
+      <div>
+        <span class="n" id="countDeceased">0</span>
+        <span class="pct" id="pctDeceased">0%</span>
+      </div>
+      <div class="l">Deceased</div>
+    </div>
   </div>
 
+  <!-- Distribution Bar -->
   <div class="distbar" id="distbar">
     <div class="seg" id="segA" style="background:#3B82F6;"></div>
     <div class="seg" id="segT" style="background:#F0A93A;"></div>
@@ -87,116 +69,361 @@
     <span id="totalCount">0 total</span>
   </div>
 
+  <!-- Patient Board -->
   <div class="board">
-    <div class="col admitted"><div class="col-head"><div><span class="dot"></span><span class="col-title">Admitted</span></div><span class="col-count" id="cA">0</span></div><div id="colAdmitted"></div></div>
-    <div class="col treatment"><div class="col-head"><div><span class="dot"></span><span class="col-title">In Treatment</span></div><span class="col-count" id="cT">0</span></div><div id="colTreatment"></div></div>
-    <div class="col discharged"><div class="col-head"><div><span class="dot"></span><span class="col-title">Discharged</span></div><span class="col-count" id="cD">0</span></div><div id="colDischarged"></div></div>
-    <div class="col deceased"><div class="col-head"><div><span class="dot"></span><span class="col-title">Deceased</span></div><span class="col-count" id="cX">0</span></div><div id="colDeceased"></div></div>
+    <div class="col admitted">
+      <div class="col-head">
+        <div>
+          <span class="dot"></span>
+          <span class="col-title">Admitted</span>
+        </div>
+        <span class="col-count" id="cA">0</span>
+      </div>
+      <div id="colAdmitted"></div>
+    </div>
+    <div class="col treatment">
+      <div class="col-head">
+        <div>
+          <span class="dot"></span>
+          <span class="col-title">In Treatment</span>
+        </div>
+        <span class="col-count" id="cT">0</span>
+      </div>
+      <div id="colTreatment"></div>
+    </div>
+    <div class="col discharged">
+      <div class="col-head">
+        <div>
+          <span class="dot"></span>
+          <span class="col-title">Discharged</span>
+        </div>
+        <span class="col-count" id="cD">0</span>
+      </div>
+      <div id="colDischarged"></div>
+    </div>
+    <div class="col deceased">
+      <div class="col-head">
+        <div>
+          <span class="dot"></span>
+          <span class="col-title">Deceased</span>
+        </div>
+        <span class="col-count" id="cX">0</span>
+      </div>
+      <div id="colDeceased"></div>
+    </div>
   </div>
 
-  <div class="footer-note">Live data from PostgreSQL via REST + Socket.io — set AUTH_TOKEN below once your login flow issues one</div>
+  <!-- Employee Dashboard Summary -->
+  <div class="employee-summary">
+    <div class="employee-summary-header">
+      <h2>Staff Status Overview</h2>
+      <button onclick="toggleEmployeeView()" class="toggle-btn">View Details</button>
+    </div>
+
+    <!-- Employee Stats Cards -->
+    <div class="employee-stats">
+      <div class="employee-stat-card on-duty">
+        <div class="employee-stat-number" id="staffOnDuty">-</div>
+        <div class="employee-stat-label">On Duty</div>
+      </div>
+      <div class="employee-stat-card on-leave">
+        <div class="employee-stat-number" id="staffOnLeave">-</div>
+        <div class="employee-stat-label">On Leave</div>
+      </div>
+      <div class="employee-stat-card sick-leave">
+        <div class="employee-stat-number" id="staffSick">-</div>
+        <div class="employee-stat-label">Sick Leave</div>
+      </div>
+      <div class="employee-stat-card total-staff">
+        <div class="employee-stat-number" id="staffTotal">-</div>
+        <div class="employee-stat-label">Total Staff</div>
+      </div>
+    </div>
+
+    <!-- Department Breakdown -->
+    <div id="deptBreakdown" class="dept-breakdown">
+      <h3>Staff by Department</h3>
+      <div id="deptList" class="dept-list">
+        <p>Loading...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer-note">
+    Live data from PostgreSQL via REST + Socket.io — real-time updates enabled
+  </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-// ---- CONFIG ----
+// ========== CONFIGURATION ==========
 const API_BASE = ""; // same-origin; change if frontend is hosted separately
 const AUTH_TOKEN = localStorage.getItem("token") || ""; // set this after login
 
-const targets = { admitted:"colAdmitted", treatment:"colTreatment", discharged:"colDischarged", deceased:"colDeceased" };
+// Status to column mapping
+const targets = {
+  admitted: "colAdmitted", 
+  treatment: "colTreatment", 
+  discharged: "colDischarged", 
+  deceased: "colDeceased"
+};
 
-function fmtTime(iso){
-  return new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+// ========== UTILITY FUNCTIONS ==========
+function fmtTime(iso) {
+  return new Date(iso).toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 }
 
-async function fetchJSON(url){
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
+async function fetchJSON(url) {
   const res = await fetch(API_BASE + url, {
     headers: AUTH_TOKEN ? { Authorization: "Bearer " + AUTH_TOKEN } : {}
   });
-  if(!res.ok) throw new Error("API error " + res.status);
+  if (!res.ok) throw new Error("API error " + res.status);
   return res.json();
 }
 
-function renderCard(p){
-  // No patient name here by design — case ID only, for shared-screen display.
+// ========== PATIENT BOARD FUNCTIONS ==========
+function renderPatientCard(p) {
+  // No patient name here by design — case ID only, for shared-screen display
   const el = document.createElement('div');
-  el.className = 'card';
+  el.className = 'patient-card';
   el.innerHTML = `
-    <div class="card-top">
+    <div class="patient-card-top">
       <span class="patient-name">Case #${p.id}</span>
+      <span class="patient-id">${p.nationalId || 'N/A'}</span>
     </div>
-    <div class="card-meta">
+    <div class="patient-card-meta">
       <span class="ward-tag">${p.ward ? p.ward.name : '—'}</span>
       <span>${fmtTime(p.updatedAt)}</span>
     </div>`;
   return el;
 }
 
-async function loadAll(){
-  const [patients, summary] = await Promise.all([
-    fetchJSON('/api/patients/board'),   // PII-stripped feed — no names on this screen
-    fetchJSON('/api/patients/summary')
-  ]);
+async function loadPatientBoard() {
+  try {
+    const [patients, summary] = await Promise.all([
+      fetchJSON('/api/patients/board'),   // PII-stripped feed — no names on this screen
+      fetchJSON('/api/patients/summary')
+    ]);
 
-  Object.values(targets).forEach(id => document.getElementById(id).innerHTML = "");
-  patients.forEach(p => {
-    const target = targets[p.status];
-    if(target) document.getElementById(target).appendChild(renderCard(p));
-  });
+    // Clear existing cards
+    Object.values(targets).forEach(id => {
+      document.getElementById(id).innerHTML = "";
+    });
 
-  applySummary(summary);
-  document.getElementById('syncText').textContent = 'SYNCED';
-  document.getElementById('apiTarget').textContent = 'Connected · ' + window.location.host;
+    // Render patient cards
+    patients.forEach(p => {
+      const target = targets[p.status];
+      if (target) {
+        document.getElementById(target).appendChild(renderPatientCard(p));
+      }
+    });
+
+    // Update summary
+    applyPatientSummary(summary);
+    
+    // Update sync status
+    document.getElementById('syncText').textContent = 'SYNCED';
+    document.getElementById('apiTarget').textContent = 'Connected · ' + window.location.host;
+  } catch (err) {
+    document.getElementById('syncText').textContent = 'OFFLINE';
+    document.getElementById('apiTarget').textContent = 'Could not reach API — check server/token';
+    console.error('Failed to load patient board:', err);
+  }
 }
 
-function applySummary(summary){
-  const c = summary.counts, p = summary.percentages;
+function applyPatientSummary(summary) {
+  const c = summary.counts;
+  const p = summary.percentages;
+  
+  // Update stat cards
   document.getElementById('countAdmitted').textContent = c.admitted;
   document.getElementById('countTreatment').textContent = c.treatment;
   document.getElementById('countDischarged').textContent = c.discharged;
   document.getElementById('countDeceased').textContent = c.deceased;
+  
+  // Update column counts
   document.getElementById('cA').textContent = c.admitted;
   document.getElementById('cT').textContent = c.treatment;
   document.getElementById('cD').textContent = c.discharged;
   document.getElementById('cX').textContent = c.deceased;
 
+  // Update percentages
   document.getElementById('pctAdmitted').textContent = p.admitted + '%';
   document.getElementById('pctTreatment').textContent = p.treatment + '%';
   document.getElementById('pctDischarged').textContent = p.discharged + '%';
   document.getElementById('pctDeceased').textContent = p.deceased + '%';
+  
+  // Update total
   document.getElementById('totalCount').textContent = summary.total + ' total';
 
+  // Update distribution bar
   document.getElementById('segA').style.width = p.admitted + '%';
   document.getElementById('segT').style.width = p.treatment + '%';
   document.getElementById('segD').style.width = p.discharged + '%';
   document.getElementById('segX').style.width = p.deceased + '%';
 }
 
-function showToast(msg){
+// ========== EMPLOYEE SUMMARY FUNCTIONS ==========
+async function loadEmployeeSummary() {
+  try {
+    const res = await fetch('/api/employees/summary', {
+      headers: AUTH_TOKEN ? { Authorization: "Bearer " + AUTH_TOKEN } : {}
+    });
+    
+    if (!res.ok) throw new Error('Failed to load employee summary');
+    
+    const summary = await res.json();
+    
+    // Update employee stat cards
+    document.getElementById('staffOnDuty').textContent = summary.active || 0;
+    document.getElementById('staffOnLeave').textContent = summary.on_leave || 0;
+    document.getElementById('staffSick').textContent = summary.sick || 0;
+    document.getElementById('staffTotal').textContent = (summary.total - summary.terminated) || 0;
+    
+    // Build department list
+    if (summary.byDepartment && summary.byDepartment.length > 0) {
+      const deptHtml = summary.byDepartment
+        .map(d => `<p>${d.department}: <strong>${d.count}</strong></p>`)
+        .join('');
+      document.getElementById('deptList').innerHTML = deptHtml;
+    } else {
+      document.getElementById('deptList').innerHTML = '<p>No department data available</p>';
+    }
+  } catch (e) {
+    console.error('Failed to load employee summary:', e);
+    document.getElementById('deptList').innerHTML = '<p>Failed to load data</p>';
+  }
+}
+
+function toggleEmployeeView() {
+  const deptDiv = document.getElementById('deptBreakdown');
+  deptDiv.classList.toggle('active');
+}
+
+// ========== TOAST NOTIFICATION ==========
+function showToast(msg) {
   const t = document.getElementById('toast');
   t.innerHTML = msg;
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2500);
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-function tickClock(){
+// ========== CLOCK ==========
+function tickClock() {
   document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB');
 }
+
+// ========== INITIALIZATION ==========
 tickClock();
 setInterval(tickClock, 1000);
 
-// Initial load, then real-time updates take over — no polling needed
-loadAll().catch(err => {
-  document.getElementById('syncText').textContent = 'OFFLINE';
-  document.getElementById('apiTarget').textContent = 'Could not reach API — check server/token';
-  console.error(err);
+// Initial load
+loadPatientBoard();
+loadEmployeeSummary();
+
+// ========== SOCKET EVENT LISTENERS ==========
+const socket = io();
+
+socket.on('connect', () => {
+  console.log('Socket connected');
+  document.getElementById('syncText').textContent = 'CONNECTED';
 });
 
-const socket = io();
-socket.on('connect', () => console.log('Socket connected'));
-socket.on('patient:updated', (payload) => {
-  showToast(`<b>#${payload.id}</b> ${payload.name} → ${String(payload.status).toUpperCase()}`);
-  loadAll(); // re-fetch full list + summary; simplest correct approach for a ward board
+socket.on('disconnect', () => {
+  console.log('Socket disconnected');
+  document.getElementById('syncText').textContent = 'DISCONNECTED';
 });
+
+// Patient updates
+socket.on('patient:updated', (payload) => {
+  showToast(`Case #${payload.id} → ${String(payload.status).toUpperCase()}`);
+  loadPatientBoard(); // Re-fetch full list + summary
+});
+
+socket.on('patient:created', (payload) => {
+  showToast(`New patient registered: Case #${payload.id}`);
+  loadPatientBoard();
+});
+
+socket.on('patient:deleted', (payload) => {
+  showToast(`Patient record archived: Case #${payload.id}`);
+  loadPatientBoard();
+});
+
+// Employee updates
+socket.on('employee:updated', () => {
+  console.log('Employee data updated');
+  loadEmployeeSummary();
+});
+
+socket.on('employee:created', (payload) => {
+  showToast(`New employee added: ${payload.name}`);
+  loadEmployeeSummary();
+});
+
+// Inventory updates
+socket.on('inventory:updated', () => {
+  showToast('Inventory updated');
+  // Reload if needed
+});
+
+// Order updates
+socket.on('order:updated', () => {
+  showToast('Order status updated');
+  // Reload if needed
+});
+
+// ========== AUTO-REFRESH (Fallback if socket fails) ==========
+// Refresh every 5 minutes as fallback
+setInterval(() => {
+  if (document.getElementById('syncText').textContent === 'OFFLINE') {
+    loadPatientBoard();
+    loadEmployeeSummary();
+  }
+}, 300000); // 5 minutes
+
+// ========== KEYBOARD SHORTCUTS ==========
+document.addEventListener('keydown', (e) => {
+  // Press 'R' to refresh manually
+  if (e.key === 'r' || e.key === 'R') {
+    loadPatientBoard();
+    loadEmployeeSummary();
+    showToast('Manual refresh triggered');
+  }
+  
+  // Press 'T' to toggle employee details
+  if (e.key === 't' || e.key === 'T') {
+    toggleEmployeeView();
+  }
+  
+  // Press 'ESC' to close employee details
+  if (e.key === 'Escape') {
+    const deptDiv = document.getElementById('deptBreakdown');
+    deptDiv.classList.remove('active');
+  }
+});
+
+// ========== VISIBILITY API (Refresh when tab becomes visible) ==========
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    loadPatientBoard();
+    loadEmployeeSummary();
+  }
+});
+
+console.log('MushaMumwe Live Board initialized');
+console.log('Keyboard shortcuts: R=Refresh, T=Toggle Details, ESC=Close');
 </script>
 </body>
 </html>
