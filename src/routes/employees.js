@@ -1,13 +1,14 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../prismaClient');
 const { requireAuth } = require('../auth');
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
-// GET all employees (HR only)
+// ============================================================
+// LIST employees (HR + IT only) — full record
+// ============================================================
 router.get('/', requireAuth, async (req, res) => {
-  if (req.user.department !== 'HR' && req.user.role !== 'admin') {
+  if (req.user.department !== 'HR' && req.user.department !== 'IT') {
     return res.status(403).json({ error: 'Unauthorized' });
   }
 
@@ -22,7 +23,10 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-// GET employee summary (public - for dashboard)
+// ============================================================
+// SUMMARY — PUBLIC (no auth) — counts + department breakdown
+// No PII — safe for the shared live-board display.
+// ============================================================
 router.get('/summary', async (req, res) => {
   try {
     const counts = await prisma.employee.groupBy({
@@ -38,7 +42,6 @@ router.get('/summary', async (req, res) => {
       total: counts.reduce((sum, c) => sum + c._count, 0),
     };
 
-    // By department
     const byDept = await prisma.employee.groupBy({
       by: ['department'],
       _count: true,
@@ -56,13 +59,59 @@ router.get('/summary', async (req, res) => {
   }
 });
 
-// CREATE new employee
+// ============================================================
+// CSV EXPORT (HR + IT only)
+// ============================================================
+router.get('/export', requireAuth, async (req, res) => {
+  if (req.user.department !== 'HR' && req.user.department !== 'IT') {
+    return res.status(403).json({ error: 'Only HR can export staff data' });
+  }
+
+  try {
+    const employees = await prisma.employee.findMany({
+      include: { ward: true },
+      orderBy: { name: 'asc' },
+    });
+
+    const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+
+    const header = [
+      'ID', 'Name', 'Department', 'Ward', 'Status',
+      'Hire Date', 'Termination Date',
+    ].join(',');
+
+    const rows = employees.map(e => [
+      e.id,
+      escape(e.name),
+      escape(e.department),
+      escape(e.ward?.name || 'N/A'),
+      escape(e.status),
+      escape(e.hireDate ? e.hireDate.toISOString().split('T')[0] : ''),
+      escape(e.terminationDate ? e.terminationDate.toISOString().split('T')[0] : ''),
+    ].join(','));
+
+    const csv = [header, ...rows].join('\n');
+    const filename = `mushamumwe-staff-${new Date().toISOString().split('T')[0]}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csv);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ============================================================
+// CREATE employee (HR + IT only)
+// ============================================================
 router.post('/', requireAuth, async (req, res) => {
-  if (req.user.department !== 'HR' && req.user.role !== 'admin') {
+  if (req.user.department !== 'HR' && req.user.department !== 'IT') {
     return res.status(403).json({ error: 'Unauthorized' });
   }
 
   const { name, department, wardId, hireDate } = req.body;
+
+  if (!name) return res.status(400).json({ error: 'Name is required' });
 
   try {
     const employee = await prisma.employee.create({
@@ -80,9 +129,11 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-// UPDATE employee status
+// ============================================================
+// UPDATE status (HR + IT only)
+// ============================================================
 router.patch('/:id/status', requireAuth, async (req, res) => {
-  if (req.user.department !== 'HR' && req.user.role !== 'admin') {
+  if (req.user.department !== 'HR' && req.user.department !== 'IT') {
     return res.status(403).json({ error: 'Unauthorized' });
   }
 
@@ -95,8 +146,7 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
 
     const oldStatus = employee.status;
 
-    // Handle termination
-    let updateData = { status };
+    const updateData = { status };
     if (status === 'terminated') {
       updateData.terminationDate = new Date();
     }
@@ -107,7 +157,6 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
       include: { ward: true },
     });
 
-    // Log status change
     await prisma.employeeStatusLog.create({
       data: {
         employeeId: parseInt(id),
@@ -117,15 +166,23 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
       },
     });
 
+    req.app.locals.emit('employee:updated', {
+      id: updated.id,
+      name: updated.name,
+      status: updated.status,
+    });
+
     res.json(updated);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// DELETE (terminate) employee
+// ============================================================
+// TERMINATE (HR + IT only)
+// ============================================================
 router.delete('/:id', requireAuth, async (req, res) => {
-  if (req.user.department !== 'HR' && req.user.role !== 'admin') {
+  if (req.user.department !== 'HR' && req.user.department !== 'IT') {
     return res.status(403).json({ error: 'Unauthorized' });
   }
 
@@ -135,16 +192,11 @@ router.delete('/:id', requireAuth, async (req, res) => {
     const employee = await prisma.employee.findUnique({ where: { id: parseInt(id) } });
     if (!employee) return res.status(404).json({ error: 'Employee not found' });
 
-    // Mark as terminated instead of deleting
     const updated = await prisma.employee.update({
       where: { id: parseInt(id) },
-      data: {
-        status: 'terminated',
-        terminationDate: new Date(),
-      },
+      data: { status: 'terminated', terminationDate: new Date() },
     });
 
-    // Log termination
     await prisma.employeeStatusLog.create({
       data: {
         employeeId: parseInt(id),

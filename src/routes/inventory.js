@@ -1,12 +1,10 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../prismaClient');
 const { requireAuth } = require('../auth');
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
-// GET all inventory items
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
     const items = await prisma.inventoryItem.findMany({
       orderBy: { name: 'asc' },
@@ -18,58 +16,95 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET inventory summary (for dashboard)
-router.get('/summary', async (req, res) => {
+router.get('/summary', requireAuth, async (req, res) => {
   try {
     const items = await prisma.inventoryItem.findMany({
       select: { name: true, quantity: true, unit: true },
     });
-
     const critical = items.filter(i => i.quantity < 10).length;
     const low = items.filter(i => i.quantity >= 10 && i.quantity < 50).length;
     const adequate = items.filter(i => i.quantity >= 50).length;
-
-    res.json({
-      totalItems: items.length,
-      critical,
-      low,
-      adequate,
-      items,
-    });
+    res.json({ totalItems: items.length, critical, low, adequate, items });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// RECEIVE items (Stores only)
+// ============================================================
+// CSV EXPORT — Inventory
+// ============================================================
+router.get('/export', requireAuth, async (req, res) => {
+  try {
+    const items = await prisma.inventoryItem.findMany({ orderBy: { name: 'asc' } });
+
+    const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const header = ['ID', 'Name', 'Quantity', 'Unit', 'Last Received'].join(',');
+    const rows = items.map(i => [
+      i.id,
+      escape(i.name),
+      i.quantity,
+      escape(i.unit),
+      escape(i.lastReceived ? i.lastReceived.toISOString() : ''),
+    ].join(','));
+
+    const csv = [header, ...rows].join('\n');
+    const filename = `inventory-${new Date().toISOString().split('T')[0]}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csv);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.get('/approved-orders', requireAuth, async (req, res) => {
+  try {
+    const orders = await prisma.orderRequest.findMany({
+      where: { status: { in: ['approved', 'ordered'] } },
+      include: { procurementOrder: true },
+      orderBy: { updatedAt: 'desc' },
+    });
+    res.json(orders);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.post('/receive', requireAuth, async (req, res) => {
-  if (req.user.department !== 'Stores' && req.user.role !== 'admin') {
+  if (req.user.department !== 'Stores' && req.user.department !== 'IT') {
     return res.status(403).json({ error: 'Only Stores can receive items' });
   }
 
-  const { procurementOrderId, itemName, quantityReceived, notes } = req.body;
+  const { procurementOrderId, orderRequestId, itemName, quantityReceived, notes } = req.body;
 
-  if (!procurementOrderId || !itemName || !quantityReceived) {
-    return res.status(400).json({ error: 'procurementOrderId, itemName, and quantityReceived are required' });
+  if (!itemName || !quantityReceived) {
+    return res.status(400).json({ error: 'itemName and quantityReceived required' });
   }
 
   try {
-    // Find or create inventory item
-    let inventoryItem = await prisma.inventoryItem.findUnique({
-      where: { name: itemName },
-    });
-
-    if (!inventoryItem) {
-      inventoryItem = await prisma.inventoryItem.create({
-        data: {
-          name: itemName,
-          quantity: 0,
-          unit: 'units',
-        },
+    let procOrder = null;
+    if (procurementOrderId) {
+      procOrder = await prisma.procurementOrder.findUnique({
+        where: { id: parseInt(procurementOrderId) },
+      });
+    } else if (orderRequestId) {
+      procOrder = await prisma.procurementOrder.findUnique({
+        where: { orderRequestId: parseInt(orderRequestId) },
       });
     }
 
-    // Update inventory quantity
+    if (!procOrder) {
+      return res.status(404).json({ error: 'Procurement order not found' });
+    }
+
+    let inventoryItem = await prisma.inventoryItem.findUnique({ where: { name: itemName } });
+    if (!inventoryItem) {
+      inventoryItem = await prisma.inventoryItem.create({
+        data: { name: itemName, quantity: 0, unit: 'units' },
+      });
+    }
+
     const updated = await prisma.inventoryItem.update({
       where: { id: inventoryItem.id },
       data: {
@@ -78,10 +113,9 @@ router.post('/receive', requireAuth, async (req, res) => {
       },
     });
 
-    // Record item receive
     const itemReceive = await prisma.itemReceive.create({
       data: {
-        procurementOrderId: parseInt(procurementOrderId),
+        procurementOrderId: procOrder.id,
         inventoryItemId: inventoryItem.id,
         quantityReceived: parseInt(quantityReceived),
         receivedBy: req.user.fullName,
@@ -89,42 +123,45 @@ router.post('/receive', requireAuth, async (req, res) => {
       },
     });
 
-    // Update procurement order status
-    const procOrder = await prisma.procurementOrder.findUnique({
-      where: { id: parseInt(procurementOrderId) },
-      include: { orderRequest: true },
+    const orderRequest = await prisma.orderRequest.findUnique({
+      where: { id: procOrder.orderRequestId },
     });
 
-    if (procOrder) {
-      // Update related order request status to 'in_storage'
+    if (orderRequest && orderRequest.status !== 'received') {
       await prisma.orderRequest.update({
-        where: { id: procOrder.orderRequestId },
-        data: { status: 'in_storage', updatedAt: new Date() },
+        where: { id: orderRequest.id },
+        data: { status: 'received' },
       });
 
-      // Log status change
       await prisma.orderRequestStatusLog.create({
         data: {
-          orderRequestId: procOrder.orderRequestId,
-          oldStatus: 'ordered',
-          newStatus: 'in_storage',
+          orderRequestId: orderRequest.id,
+          oldStatus: orderRequest.status,
+          newStatus: 'received',
           changedBy: req.user.fullName,
-          notes: `Items received: ${itemName} x${quantityReceived}`,
+          notes: `Received ${itemName} x${quantityReceived}`,
         },
+      });
+
+      req.app.locals.emit('order:updated', {
+        id: orderRequest.id,
+        status: 'received',
+        department: orderRequest.requestingDepartment,
       });
     }
 
-    res.json({
-      message: 'Items received and inventory updated',
-      itemReceive,
-      inventoryItem: updated,
+    req.app.locals.emit('inventory:updated', {
+      itemId: updated.id,
+      name: updated.name,
+      quantity: updated.quantity,
     });
+
+    res.json({ message: 'Items received', itemReceive, inventoryItem: updated });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// GET item receive history
 router.get('/receive-history', requireAuth, async (req, res) => {
   try {
     const history = await prisma.itemReceive.findMany({
@@ -135,28 +172,7 @@ router.get('/receive-history', requireAuth, async (req, res) => {
       orderBy: { receivedAt: 'desc' },
       take: 50,
     });
-
     res.json(history);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// UPDATE inventory item (manual adjustment - Stores only)
-router.patch('/:id', requireAuth, async (req, res) => {
-  if (req.user.department !== 'Stores' && req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Only Stores can update inventory' });
-  }
-
-  const { quantity, notes } = req.body;
-
-  try {
-    const item = await prisma.inventoryItem.update({
-      where: { id: parseInt(req.params.id) },
-      data: { quantity: parseInt(quantity) },
-    });
-
-    res.json(item);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
