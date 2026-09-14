@@ -1,0 +1,3978 @@
+]633;E;echo "════════════════════════════════════════════════════════";540fc9e7-e94e-454e-95c3-07d4b2078895]633;C════════════════════════════════════════════════════════
+  MUSHAMUMWE — COMPLETE PROJECT DUMP
+  Generated: Fri 11 Sep 2026 11:49:53 CAT
+════════════════════════════════════════════════════════
+
+
+════════════════════════════════════════════════════════
+📄 FILE: package.json
+════════════════════════════════════════════════════════
+{
+  "name": "mushamumwe",
+  "version": "1.0.0",
+  "description": "MushaMumwe — real-time ward status dashboard on PostgreSQL + LAN",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node src/index.js",
+    "prisma:pull": "prisma db pull",
+    "prisma:generate": "prisma generate",
+    "seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.18.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.12.0",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "prisma": "^5.18.0"
+  }
+}
+
+
+════════════════════════════════════════════════════════
+📄 FILE: .env.example
+════════════════════════════════════════════════════════
+# Point this at the hospital's existing Postgres instance on the LAN
+DATABASE_URL="postgresql://postgres:#Brandon19062004june@db.itecgogzzwswprdzmqxa.supabase.co:5432/postgres
+# Local port for the dashboard server"
+PORT=4000
+
+# Secret for signing JWT session tokens (generate a long random string)
+JWT_SECRET="change_this_to_a_long_random_string"
+
+
+════════════════════════════════════════════════════════
+📄 FILE: UPDATE_INSTRUCTIONS.md
+════════════════════════════════════════════════════════
+# MushaMumwe Update — New Departments
+
+## Changes Made
+
+### Removed Departments:
+- ❌ Accounts
+- ❌ Records
+
+### Added Departments:
+- ✅ **Procurement** — manage item requests, track tender status
+- ✅ **Stores** — receive items, manage inventory
+- ✅ **HR** — staff management, staffing levels
+
+### Updated Features:
+- ✅ New department login options in entry portal
+- ✅ IT password allocation in their department login (no separate admin page)
+- ✅ Nurses login kept as baseline
+- ✅ Test users created for all departments
+- ✅ Updated seed data with new departments
+
+---
+
+## How to Apply Updates
+
+### Step 1: Replace Seed File
+```bash
+# Backup old seed file (optional)
+cp prisma/seed.js prisma/seed.js.bak
+
+# Copy new seed file
+cp path/to/seed.js prisma/seed.js
+```
+
+### Step 2: Replace Entry Portal
+```bash
+# Copy new entry portal
+cp path/to/entry.html public/entry.html
+```
+
+### Step 3: Regenerate Database
+```bash
+# Clear old database
+rm -f dev.db dev.db-shm dev.db-wal
+
+# Run new migration and seed
+npm run prisma:generate
+npx prisma migrate dev --name init
+npm run seed
+```
+
+### Step 4: Start Server
+```bash
+npm run dev
+```
+
+---
+
+## New Test Accounts
+
+### Nurses Department
+- `nurse1` / `nurse123`
+- `nurse2` / `nurse123`
+
+### IT Department (Admin)
+- `it1` / `it123` ← Can create users and allocate passwords
+- `it2` / `it123`
+
+### Procurement Department
+- `procurement1` / `proc123`
+- `procurement2` / `proc123`
+
+### Stores Department
+- `stores1` / `store123`
+- `stores2` / `store123`
+
+### HR Department
+- `hr1` / `hr123`
+- `hr2` / `hr123`
+
+---
+
+## Quick Setup (All at Once)
+
+```bash
+cat > .env << 'EOF'
+DATABASE_URL="file:./dev.db"
+PORT=4000
+JWT_SECRET="your-secret-key"
+EOF
+
+# Replace files
+cp seed.js prisma/seed.js
+cp entry.html public/entry.html
+
+# Reset database and seed
+rm -f dev.db dev.db-shm dev.db-wal
+npm run prisma:generate
+npx prisma migrate dev --name init
+npm run seed
+npm run dev
+```
+
+---
+
+## Next Steps for Development
+
+1. **Procurement Portal** — Add request submission and tender tracking
+2. **Stores Portal** — Add inventory tracking and item receiving
+3. **HR Portal** — Add staff roster and attendance tracking
+4. **IT Dashboard** — Finalize password allocation feature
+5. **Public Dashboard** — Update to show data from all departments
+
+---
+
+## Database Tables (No Changes)
+
+All existing tables remain the same:
+- User (updated with new departments)
+- Patient
+- Ward
+- StatusLog
+
+Department field now has values: `Nurses`, `IT`, `Procurement`, `Stores`, `HR`
+
+---
+
+Questions? Let me know!
+
+
+════════════════════════════════════════════════════════
+📄 FILE: setup.sh
+════════════════════════════════════════════════════════
+#!/bin/bash
+set -e
+
+echo "🚀 MushaMumwe Setup — One Command"
+echo ""
+
+if ! command -v psql &> /dev/null; then
+  echo "📦 Installing PostgreSQL..."
+  sudo apt update
+  sudo apt install -y postgresql postgresql-contrib
+fi
+
+echo "🗄️  Starting PostgreSQL..."
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+
+echo "🔐 Creating database and user..."
+sudo -u postgres psql <<SQL
+  DROP DATABASE IF EXISTS mushamumwe_test;
+  DROP USER IF EXISTS dashboard_user;
+  CREATE DATABASE mushamumwe_test;
+  CREATE USER dashboard_user WITH PASSWORD 'testpass123';
+  ALTER ROLE dashboard_user WITH CREATEDB;
+  GRANT ALL PRIVILEGES ON DATABASE mushamumwe_test TO dashboard_user;
+SQL
+
+echo "⚙️  Creating .env..."
+cat > .env <<ENV
+DATABASE_URL="postgresql://dashboard_user:testpass123@localhost:5432/mushamumwe_test?schema=public"
+PORT=4000
+JWT_SECRET="$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")"
+ENV
+
+echo "📊 Creating database tables..."
+npx prisma migrate dev --name init --skip-generate
+
+echo "🔧 Generating Prisma client..."
+npm run prisma:generate
+
+echo "🌱 Seeding test data..."
+npm run seed
+
+echo ""
+echo "✅ Setup complete! Test credentials:"
+echo ""
+echo "  Nurses:   nurse1 / nurse123"
+echo "  Records:  records1 / records123"
+echo "  Accounts: accounts1 / accounts123"
+echo "  IT/Admin: it1 / it123"
+echo ""
+echo "🌐 Starting server on http://localhost:4000..."
+npm run dev
+
+
+════════════════════════════════════════════════════════
+📄 FILE: config/hospitals.example.json
+════════════════════════════════════════════════════════
+[
+  {
+    "id": "sally-mugabe",
+    "name": "Sally Mugabe Central Hospital",
+    "mode": "native",
+    "databaseUrl": "postgresql://dashboard_user:password@192.168.1.50:5432/hospital_records?schema=public",
+    "notifyChannel": "patient_updates_sallymugabe"
+  },
+  {
+    "id": "example-generic",
+    "name": "Example Hospital (existing schema, not MushaMumwe's)",
+    "mode": "generic",
+    "databaseUrl": "postgresql://dashboard_user:password@10.0.0.20:5432/theirdb?schema=public",
+    "notifyChannel": "patient_updates_example",
+    "mapping": {
+      "table": "tblpatients",
+      "idColumn": "patient_id",
+      "statusColumn": "current_state",
+      "wardColumn": "ward_code",
+      "updatedAtColumn": "last_modified",
+      "statusValues": {
+        "admitted": "ADM",
+        "treatment": "TRT",
+        "discharged": "DIS",
+        "deceased": "DEC"
+      }
+    }
+  }
+]
+
+
+════════════════════════════════════════════════════════
+📄 FILE: sql/trigger.sql
+════════════════════════════════════════════════════════
+-- Run this once against the hospital's Postgres database.
+-- It fires a NOTIFY every time a row in "Patient" changes,
+-- so the dashboard updates instantly even if the change came
+-- from the hospital's existing records system, not just this app.
+
+-- IMPORTANT: this payload is what gets broadcast live to every connected
+-- dashboard over the LAN. Deliberately excludes name/dob/nationalId so PII
+-- never leaves the database, even transiently over the socket connection.
+CREATE OR REPLACE FUNCTION notify_patient_update() RETURNS trigger AS $$
+BEGIN
+  PERFORM pg_notify(
+    'patient_updates',
+    json_build_object(
+      'id', NEW.id,
+      'status', NEW.status,
+      'wardId', NEW."wardId",
+      'updatedAt', NEW."updatedAt"
+    )::text
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS patient_update_trigger ON "Patient";
+
+CREATE TRIGGER patient_update_trigger
+AFTER INSERT OR UPDATE ON "Patient"
+FOR EACH ROW EXECUTE FUNCTION notify_patient_update();
+
+-- Suggested scoped role for the dashboard app (adjust table name/case to match real schema):
+-- CREATE ROLE dashboard_user WITH LOGIN PASSWORD 'change_me';
+-- GRANT SELECT ON ALL TABLES IN SCHEMA public TO dashboard_user;
+-- GRANT UPDATE (status, "updatedAt") ON "Patient" TO dashboard_user;
+-- GRANT INSERT ON "StatusLog" TO dashboard_user;
+
+
+════════════════════════════════════════════════════════
+📄 FILE: prisma/schema.prisma
+════════════════════════════════════════════════════════
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Ward {
+  id        Int       @id @default(autoincrement())
+  name      String
+  capacity  Int
+  patients  Patient[]
+  employees Employee[]
+}
+
+model Patient {
+  id              Int          @id @default(autoincrement())
+  name            String
+  dob             DateTime?
+  gender          String?
+  nationalId      String?      @unique
+  admissionDate   DateTime     @default(now())
+  wardId          Int?
+  ward            Ward?        @relation(fields: [wardId], references: [id])
+  status          String       @default("admitted")
+  attendingDoctor String?
+  updatedAt       DateTime     @updatedAt
+  statusLogs      StatusLog[]
+}
+
+model StatusLog {
+  id         Int      @id @default(autoincrement())
+  patientId  Int
+  patient    Patient  @relation(fields: [patientId], references: [id])
+  oldStatus  String
+  newStatus  String
+  changedBy  String
+  timestamp  DateTime @default(now())
+}
+
+model Employee {
+  id                Int                @id @default(autoincrement())
+  name              String
+  department        String
+  wardId            Int?
+  ward              Ward?              @relation(fields: [wardId], references: [id])
+  status            String             @default("active")
+  hireDate          DateTime           @default(now())
+  terminationDate   DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  statusLogs        EmployeeStatusLog[]
+}
+
+model EmployeeStatusLog {
+  id         Int      @id @default(autoincrement())
+  employeeId Int
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  oldStatus  String
+  newStatus  String
+  changedBy  String
+  timestamp  DateTime @default(now())
+}
+
+model OrderRequest {
+  id                    Int                       @id @default(autoincrement())
+  requestingDepartment  String
+  requestingBy          String
+  itemName              String
+  quantity              Int
+  reason                String
+  status                String                    @default("pending")
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+  statusLogs            OrderRequestStatusLog[]
+  procurementOrder      ProcurementOrder?
+}
+
+model OrderRequestStatusLog {
+  id             Int          @id @default(autoincrement())
+  orderRequestId Int
+  orderRequest   OrderRequest @relation(fields: [orderRequestId], references: [id])
+  oldStatus      String
+  newStatus      String
+  changedBy      String
+  notes          String?
+  timestamp      DateTime     @default(now())
+}
+
+model ProcurementOrder {
+  id              Int          @id @default(autoincrement())
+  orderRequestId  Int          @unique
+  orderRequest    OrderRequest @relation(fields: [orderRequestId], references: [id])
+  supplierName    String
+  orderDate       DateTime     @default(now())
+  expectedDate    DateTime?
+  status          String       @default("ordered")
+  itemReceives    ItemReceive[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model InventoryItem {
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
+  quantity     Int           @default(0)
+  unit         String
+  lastReceived DateTime?
+  itemReceives ItemReceive[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model ItemReceive {
+  id                 Int              @id @default(autoincrement())
+  procurementOrderId Int
+  procurementOrder   ProcurementOrder @relation(fields: [procurementOrderId], references: [id])
+  inventoryItemId    Int
+  inventoryItem      InventoryItem    @relation(fields: [inventoryItemId], references: [id])
+  quantityReceived   Int
+  receivedBy         String
+  receivedAt         DateTime         @default(now())
+  notes              String?
+  createdAt          DateTime         @default(now())
+}
+
+model User {
+  id           Int     @id @default(autoincrement())
+  username     String  @unique
+  passwordHash String
+  fullName     String
+  department   String
+  role         String  @default("staff")
+  wardId       Int?
+}
+
+════════════════════════════════════════════════════════
+📄 FILE: prisma/seed.js
+════════════════════════════════════════════════════════
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log('Seeding database...');
+
+  try {
+    // Clear all tables in correct order (respecting foreign keys)
+    console.log('Clearing data...');
+    
+    // Delete in order of dependencies
+    await prisma.itemReceive.deleteMany();
+    await prisma.procurementOrder.deleteMany();
+    await prisma.orderRequestStatusLog.deleteMany();
+    await prisma.orderRequest.deleteMany();
+    await prisma.inventoryItem.deleteMany();
+    await prisma.statusLog.deleteMany();
+    await prisma.employeeStatusLog.deleteMany();
+    await prisma.patient.deleteMany();
+    await prisma.employee.deleteMany();
+    await prisma.user.deleteMany();
+    await prisma.ward.deleteMany();
+
+    console.log('Creating wards...');
+    // Create wards
+    const wards = await Promise.all([
+      prisma.ward.create({ data: { name: 'Ward A', capacity: 20 } }),
+      prisma.ward.create({ data: { name: 'Ward B', capacity: 20 } }),
+      prisma.ward.create({ data: { name: 'ICU', capacity: 10 } }),
+      prisma.ward.create({ data: { name: 'Maternity', capacity: 15 } }),
+      prisma.ward.create({ data: { name: 'Surgical', capacity: 18 } }),
+      prisma.ward.create({ data: { name: 'Paediatrics', capacity: 12 } }),
+    ]);
+    console.log(`  Created ${wards.length} wards`);
+
+    console.log('Creating users...');
+    // Create users
+    const users = [
+      { username: 'nurse1', password: 'nurse123', fullName: 'Sister Mutsa', department: 'Nurses', role: 'staff', wardId: wards[0].id },
+      { username: 'nurse2', password: 'nurse123', fullName: 'Nurse Tatenda', department: 'Nurses', role: 'staff', wardId: wards[1].id },
+      { username: 'it1', password: 'it123', fullName: 'IT Manager', department: 'IT', role: 'admin', wardId: null },
+      { username: 'procurement1', password: 'proc123', fullName: 'Procurement Officer', department: 'Procurement', role: 'staff', wardId: null },
+      { username: 'stores1', password: 'store123', fullName: 'Store Manager', department: 'Stores', role: 'staff', wardId: null },
+      { username: 'hr1', password: 'hr123', fullName: 'HR Manager', department: 'HR', role: 'staff', wardId: null },
+    ];
+
+    for (const u of users) {
+      const hash = await bcrypt.hash(u.password, 10);
+      await prisma.user.create({
+        data: { 
+          username: u.username, 
+          passwordHash: hash, 
+          fullName: u.fullName, 
+          department: u.department, 
+          role: u.role, 
+          wardId: u.wardId 
+        },
+      });
+      console.log(`  ${u.department}: ${u.username} / ${u.password}`);
+    }
+
+    console.log('Creating employees...');
+    // Create employees
+    const employees = [
+      { name: 'Dr. James Mwale', department: 'Medical', wardId: wards[0].id, status: 'active' },
+      { name: 'Dr. Sarah Chen', department: 'Medical', wardId: wards[2].id, status: 'active' },
+      { name: 'Nurse Rose Moyo', department: 'Nurses', wardId: wards[0].id, status: 'active' },
+      { name: 'Nurse John Dube', department: 'Nurses', wardId: wards[1].id, status: 'active' },
+      { name: 'Nurse Mary Ncube', department: 'Nurses', wardId: wards[3].id, status: 'on_leave' },
+      { name: 'Dr. Peter Sibanda', department: 'Medical', wardId: wards[4].id, status: 'active' },
+      { name: 'Pharmacist Lisa', department: 'Pharmacy', wardId: null, status: 'active' },
+      { name: 'Lab Tech Tom', department: 'Laboratory', wardId: null, status: 'active' },
+      { name: 'Admin Clerk Jane', department: 'Admin', wardId: null, status: 'active' },
+      { name: 'Cleaner Mike', department: 'Support', wardId: wards[0].id, status: 'sick' },
+      { name: 'Maintenance Bob', department: 'Maintenance', wardId: null, status: 'active' },
+      { name: 'Security Guard Sam', department: 'Security', wardId: null, status: 'active' },
+    ];
+
+    for (const emp of employees) {
+      await prisma.employee.create({
+        data: { 
+          name: emp.name, 
+          department: emp.department, 
+          wardId: emp.wardId, 
+          status: emp.status, 
+          hireDate: new Date() 
+        },
+      });
+    }
+    console.log(`  Created ${employees.length} employees`);
+
+    console.log('Creating patients...');
+    // Create patients
+    const patients = [
+      { name: 'Tendai Moyo', gender: 'M', nationalId: '63-1234567-A12', wardId: wards[0].id, status: 'admitted' },
+      { name: 'Rudo Chikafu', gender: 'F', nationalId: '63-7654321-B45', wardId: wards[1].id, status: 'admitted' },
+      { name: 'Blessing Ndlovu', gender: 'M', nationalId: '63-9876543-C78', wardId: wards[2].id, status: 'in_treatment' },
+      { name: 'Chipo Mutasa', gender: 'F', nationalId: '63-4567890-D90', wardId: wards[3].id, status: 'admitted' },
+      { name: 'Farai Zhou', gender: 'M', nationalId: '63-1122334-E11', wardId: wards[4].id, status: 'in_treatment' },
+      { name: 'Nyasha Gumbo', gender: 'F', nationalId: '63-5566778-F22', wardId: wards[5].id, status: 'admitted' },
+      { name: 'Tapiwa Mhaka', gender: 'M', nationalId: '63-9988776-G33', wardId: wards[0].id, status: 'discharged' },
+      { name: 'Sekai Dube', gender: 'F', nationalId: '63-4433221-H44', wardId: wards[1].id, status: 'discharged' },
+      { name: 'Munashe Chitongo', gender: 'M', nationalId: '63-8877665-I55', wardId: null, status: 'deceased' },
+      { name: 'Precious Nkomo', gender: 'F', nationalId: '63-3322114-J66', wardId: wards[2].id, status: 'in_treatment' },
+    ];
+
+    for (const p of patients) {
+      await prisma.patient.create({
+        data: { 
+          name: p.name, 
+          gender: p.gender, 
+          nationalId: p.nationalId,
+          wardId: p.wardId, 
+          status: p.status, 
+          admissionDate: new Date() 
+        },
+      });
+    }
+    console.log(`  Created ${patients.length} patients`);
+
+    console.log('Creating inventory items...');
+    // Create inventory items
+    const inventoryItems = [
+      { name: 'Medical Gloves (Box)', quantity: 150, unit: 'boxes' },
+      { name: 'Surgical Masks (Box)', quantity: 200, unit: 'boxes' },
+      { name: 'Syringes 5ml (Pack)', quantity: 80, unit: 'packs' },
+      { name: 'Bandages (Roll)', quantity: 45, unit: 'rolls' },
+      { name: 'IV Drip Sets', quantity: 60, unit: 'sets' },
+      { name: 'Antiseptic Solution (L)', quantity: 25, unit: 'liters' },
+      { name: 'Paracetamol 500mg (Box)', quantity: 120, unit: 'boxes' },
+      { name: 'Antibiotics (Box)', quantity: 35, unit: 'boxes' },
+      { name: 'Thermometers', quantity: 8, unit: 'pieces' },
+      { name: 'Wheelchairs', quantity: 5, unit: 'pieces' },
+    ];
+
+    for (const item of inventoryItems) {
+      await prisma.inventoryItem.create({
+        data: { 
+          name: item.name, 
+          quantity: item.quantity, 
+          unit: item.unit,
+          lastReceived: new Date()
+        },
+      });
+    }
+    console.log(`  Created ${inventoryItems.length} inventory items`);
+
+    console.log('Creating order requests...');
+    // Create sample order requests
+    const orderRequests = [
+      {
+        requestingDepartment: 'Nurses',
+        requestingBy: 'Sister Mutsa',
+        itemName: 'Medical Gloves (Box)',
+        quantity: 50,
+        reason: 'Running low on stock',
+        status: 'pending'
+      },
+      {
+        requestingDepartment: 'Nurses',
+        requestingBy: 'Nurse Tatenda',
+        itemName: 'Surgical Masks (Box)',
+        quantity: 100,
+        reason: 'Monthly restock',
+        status: 'approved'
+      },
+      {
+        requestingDepartment: 'Medical',
+        requestingBy: 'Dr. James Mwale',
+        itemName: 'Syringes 5ml (Pack)',
+        quantity: 30,
+        reason: 'Increased patient intake',
+        status: 'pending'
+      },
+      {
+        requestingDepartment: 'Pharmacy',
+        requestingBy: 'Pharmacist Lisa',
+        itemName: 'Antibiotics (Box)',
+        quantity: 20,
+        reason: 'Low stock',
+        status: 'ordered'
+      },
+    ];
+
+    for (const order of orderRequests) {
+      await prisma.orderRequest.create({
+        data: order
+      });
+    }
+    console.log(`  Created ${orderRequests.length} order requests`);
+
+    console.log('\nDatabase seeded successfully!');
+    console.log('\nTest Credentials:');
+    console.log('  Nurses: nurse1 / nurse123');
+    console.log('  Nurses: nurse2 / nurse123');
+    console.log('  IT: it1 / it123');
+    console.log('  Procurement: procurement1 / proc123');
+    console.log('  Stores: stores1 / store123');
+    console.log('  HR: hr1 / hr123');
+    console.log('');
+  } catch (e) {
+    console.error('\nError:', e.message);
+    console.error(e);
+    process.exit(1);
+  }
+}
+
+main()
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+
+════════════════════════════════════════════════════════
+📄 FILE: src/index.js
+════════════════════════════════════════════════════════
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+const dotenv = require('dotenv');
+const path = require('path');
+
+dotenv.config();
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, { cors: { origin: '*' } });
+
+// Middleware
+app.use(express.json());
+app.use(express.static('public'));
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const patientRoutes = require('./routes/patients');
+const employeeRoutes = require('./routes/employees');
+
+// Use routes
+app.use('/api/auth', authRoutes);
+app.use('/api/patients', patientRoutes);
+app.use('/api/employees', employeeRoutes);
+
+// Socket.io events
+io.on('connection', (socket) => {
+  console.log('Dashboard connected:', socket.id);
+
+  socket.on('disconnect', () => {
+    console.log('Dashboard disconnected:', socket.id);
+  });
+});
+
+// Emit patient updates
+async function broadcastPatientUpdate(data) {
+  io.emit('patient:updated', data);
+}
+
+// Emit employee updates
+async function broadcastEmployeeUpdate(data) {
+  io.emit('employee:updated', data);
+}
+
+// Export for use in routes
+app.locals.io = io;
+app.locals.broadcastPatientUpdate = broadcastPatientUpdate;
+app.locals.broadcastEmployeeUpdate = broadcastEmployeeUpdate;
+
+// Start server
+const PORT = process.env.PORT || 4000;
+server.listen(PORT, () => {
+  console.log(`\n🏥 MushaMumwe server running on http://0.0.0.0:${PORT}`);
+  console.log(`📱 Access from LAN: http://<server-ip>:${PORT}\n`);
+});
+
+module.exports = { io, app, server };
+
+════════════════════════════════════════════════════════
+📄 FILE: src/auth.js
+════════════════════════════════════════════════════════
+const jwt = require("jsonwebtoken");
+
+function requireAuth(req, res, next) {
+  const header = req.headers.authorization;
+  if (!header) return res.status(401).json({ error: "Missing token" });
+
+  const token = header.replace("Bearer ", "");
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    next();
+  } catch {
+    res.status(401).json({ error: "Invalid or expired token" });
+  }
+}
+
+function requireRole(allowedRoles) {
+  return (req, res, next) => {
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    next();
+  };
+}
+
+// Restricts a route to specific departments — e.g. only "nurses" and "it" can
+// touch patient status, while "accounts" might only reach billing-related routes.
+function requireDepartment(allowedDepartments) {
+  return (req, res, next) => {
+    if (!req.user || !allowedDepartments.includes(req.user.department)) {
+      return res.status(403).json({ error: "Not authorized for this department's actions" });
+    }
+    next();
+  };
+}
+
+module.exports = { requireAuth, requireRole, requireDepartment };
+
+
+════════════════════════════════════════════════════════
+📄 FILE: src/prismaClient.js
+════════════════════════════════════════════════════════
+const { PrismaClient } = require("@prisma/client");
+
+const prisma = new PrismaClient();
+
+module.exports = prisma;
+
+
+════════════════════════════════════════════════════════
+📄 FILE: src/pgListener.js
+════════════════════════════════════════════════════════
+const { Client } = require("pg");
+
+// Opens a dedicated, long-lived Postgres connection just for LISTEN.
+// Any INSERT/UPDATE on Patient (from this app OR the hospital's existing
+// system) fires the trigger in sql/trigger.sql, which lands here.
+function startPgListener(io) {
+  const client = new Client({ connectionString: process.env.DATABASE_URL });
+
+  client.connect().then(() => {
+    client.query("LISTEN patient_updates");
+    console.log("Listening for patient_updates on Postgres...");
+  });
+
+  client.on("notification", (msg) => {
+    try {
+      const payload = JSON.parse(msg.payload);
+      io.emit("patient:updated", payload);
+    } catch (err) {
+      console.error("Failed to parse pg_notify payload:", err);
+    }
+  });
+
+  client.on("error", (err) => {
+    console.error("Postgres listener error, retrying in 5s:", err.message);
+    setTimeout(() => startPgListener(io), 5000);
+  });
+}
+
+module.exports = { startPgListener };
+
+
+════════════════════════════════════════════════════════
+📄 FILE: src/routes/auth.js
+════════════════════════════════════════════════════════
+const express = require("express");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const prisma = require("../prismaClient");
+
+const router = express.Router();
+
+// POST /api/auth/login
+// Body: { username, password }
+// Returns a JWT carrying username, department, role, wardId — every
+// downstream route reads these claims to decide what a user can see/edit.
+router.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: "Username and password required" });
+  }
+
+  const user = await prisma.user.findUnique({ where: { username } });
+  if (!user) return res.status(401).json({ error: "Invalid credentials" });
+
+  const valid = await bcrypt.compare(password, user.passwordHash);
+  if (!valid) return res.status(401).json({ error: "Invalid credentials" });
+
+  const token = jwt.sign(
+    {
+      username: user.username,
+      fullName: user.fullName,
+      department: user.department,
+      role: user.role,
+      wardId: user.wardId,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "12h" }
+  );
+
+  res.json({
+    token,
+    user: {
+      fullName: user.fullName,
+      department: user.department,
+      role: user.role,
+    },
+  });
+});
+
+// GET /api/auth/me — lets the frontend confirm who's logged in without re-sending credentials
+router.get("/me", (req, res) => {
+  const header = req.headers.authorization;
+  if (!header) return res.status(401).json({ error: "Not signed in" });
+  try {
+    const payload = jwt.verify(header.replace("Bearer ", ""), process.env.JWT_SECRET);
+    res.json(payload);
+  } catch {
+    res.status(401).json({ error: "Session expired" });
+  }
+});
+
+module.exports = router;
+
+
+════════════════════════════════════════════════════════
+📄 FILE: src/routes/orders.js
+════════════════════════════════════════════════════════
+const express = require('express');
+const { PrismaClient } = require('@prisma/client');
+const { requireAuth } = require('../auth');
+
+const router = express.Router();
+const prisma = new PrismaClient();
+
+// CREATE order request (any department can request)
+router.post('/request', requireAuth, async (req, res) => {
+  const { itemName, quantity, reason } = req.body;
+
+  if (!itemName || !quantity || !reason) {
+    return res.status(400).json({ error: 'itemName, quantity, and reason are required' });
+  }
+
+  try {
+    const orderRequest = await prisma.orderRequest.create({
+      data: {
+        requestingDepartment: req.user.department,
+        requestingBy: req.user.fullName,
+        itemName,
+        quantity: parseInt(quantity),
+        reason,
+        status: 'pending',
+      },
+      include: { statusLogs: true },
+    });
+
+    // Create initial status log
+    await prisma.orderRequestStatusLog.create({
+      data: {
+        orderRequestId: orderRequest.id,
+        oldStatus: 'created',
+        newStatus: 'pending',
+        changedBy: req.user.fullName,
+        notes: 'Order request created',
+      },
+    });
+
+    res.json(orderRequest);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET all order requests (Procurement sees all, others see only theirs)
+router.get('/requests', requireAuth, async (req, res) => {
+  try {
+    let where = {};
+    
+    // Only Procurement and IT Admin see all requests
+    if (req.user.department !== 'Procurement' && req.user.role !== 'admin') {
+      where.requestingDepartment = req.user.department;
+    }
+
+    const requests = await prisma.orderRequest.findMany({
+      where,
+      include: {
+        statusLogs: { orderBy: { timestamp: 'desc' } },
+        procurementOrder: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json(requests);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET single order request
+router.get('/requests/:id', requireAuth, async (req, res) => {
+  try {
+    const request = await prisma.orderRequest.findUnique({
+      where: { id: parseInt(req.params.id) },
+      include: {
+        statusLogs: { orderBy: { timestamp: 'desc' } },
+        procurementOrder: { include: { itemReceives: true } },
+      },
+    });
+
+    if (!request) return res.status(404).json({ error: 'Order request not found' });
+
+    // Check authorization
+    if (req.user.department !== 'Procurement' && req.user.role !== 'admin') {
+      if (request.requestingDepartment !== req.user.department) {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+    }
+
+    res.json(request);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// APPROVE order request (Procurement only)
+router.patch('/requests/:id/approve', requireAuth, async (req, res) => {
+  if (req.user.department !== 'Procurement' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Only Procurement can approve orders' });
+  }
+
+  const { supplierName } = req.body;
+
+  try {
+    const request = await prisma.orderRequest.findUnique({
+      where: { id: parseInt(req.params.id) },
+    });
+
+    if (!request) return res.status(404).json({ error: 'Order request not found' });
+    if (request.status !== 'pending') {
+      return res.status(400).json({ error: 'Can only approve pending requests' });
+    }
+
+    // Update request status
+    const updated = await prisma.orderRequest.update({
+      where: { id: parseInt(req.params.id) },
+      data: { status: 'approved', updatedAt: new Date() },
+      include: { statusLogs: true },
+    });
+
+    // Log status change
+    await prisma.orderRequestStatusLog.create({
+      data: {
+        orderRequestId: parseInt(req.params.id),
+        oldStatus: 'pending',
+        newStatus: 'approved',
+        changedBy: req.user.fullName,
+        notes: `Approved by ${req.user.fullName}`,
+      },
+    });
+
+    // Create procurement order
+    await prisma.procurementOrder.create({
+      data: {
+        orderRequestId: parseInt(req.params.id),
+        supplierName: supplierName || 'TBD',
+        status: 'approved',
+      },
+    });
+
+    res.json(updated);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// REJECT order request (Procurement only)
+router.patch('/requests/:id/reject', requireAuth, async (req, res) => {
+  if (req.user.department !== 'Procurement' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Only Procurement can reject orders' });
+  }
+
+  const { reason } = req.body;
+
+  try {
+    const request = await prisma.orderRequest.findUnique({
+      where: { id: parseInt(req.params.id) },
+    });
+
+    if (!request) return res.status(404).json({ error: 'Order request not found' });
+
+    const updated = await prisma.orderRequest.update({
+      where: { id: parseInt(req.params.id) },
+      data: { status: 'rejected', updatedAt: new Date() },
+      include: { statusLogs: true },
+    });
+
+    await prisma.orderRequestStatusLog.create({
+      data: {
+        orderRequestId: parseInt(req.params.id),
+        oldStatus: request.status,
+        newStatus: 'rejected',
+        changedBy: req.user.fullName,
+        notes: reason || 'Rejected by Procurement',
+      },
+    });
+
+    res.json(updated);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// SEND order to supplier (Procurement only)
+router.patch('/requests/:id/send', requireAuth, async (req, res) => {
+  if (req.user.department !== 'Procurement' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Only Procurement can send orders' });
+  }
+
+  try {
+    const request = await prisma.orderRequest.findUnique({
+      where: { id: parseInt(req.params.id) },
+      include: { procurementOrder: true },
+    });
+
+    if (!request) return res.status(404).json({ error: 'Order request not found' });
+    if (request.status !== 'approved') {
+      return res.status(400).json({ error: 'Can only send approved orders' });
+    }
+
+    // Update request status
+    const updated = await prisma.orderRequest.update({
+      where: { id: parseInt(req.params.id) },
+      data: { status: 'ordered', updatedAt: new Date() },
+    });
+
+    // Update procurement order status
+    if (request.procurementOrder) {
+      await prisma.procurementOrder.update({
+        where: { id: request.procurementOrder.id },
+        data: { status: 'ordered' },
+      });
+    }
+
+    // Log status change
+    await prisma.orderRequestStatusLog.create({
+      data: {
+        orderRequestId: parseInt(req.params.id),
+        oldStatus: 'approved',
+        newStatus: 'ordered',
+        changedBy: req.user.fullName,
+        notes: 'Order sent to supplier',
+      },
+    });
+
+    res.json(updated);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET order summary (for dashboard)
+router.get('/summary', async (req, res) => {
+  try {
+    const pending = await prisma.orderRequest.count({ where: { status: 'pending' } });
+    const approved = await prisma.orderRequest.count({ where: { status: 'approved' } });
+    const ordered = await prisma.orderRequest.count({ where: { status: 'ordered' } });
+    const rejected = await prisma.orderRequest.count({ where: { status: 'rejected' } });
+    const inStorage = await prisma.orderRequest.count({ where: { status: 'in_storage' } });
+
+    res.json({
+      pending,
+      approved,
+      ordered,
+      rejected,
+      inStorage,
+      total: pending + approved + ordered + rejected + inStorage,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+module.exports = router;
+
+
+════════════════════════════════════════════════════════
+📄 FILE: src/routes/inventory.js
+════════════════════════════════════════════════════════
+const express = require('express');
+const { PrismaClient } = require('@prisma/client');
+const { requireAuth } = require('../auth');
+
+const router = express.Router();
+const prisma = new PrismaClient();
+
+// GET all inventory items
+router.get('/', async (req, res) => {
+  try {
+    const items = await prisma.inventoryItem.findMany({
+      orderBy: { name: 'asc' },
+      include: { itemReceives: { orderBy: { receivedAt: 'desc' }, take: 3 } },
+    });
+    res.json(items);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET inventory summary (for dashboard)
+router.get('/summary', async (req, res) => {
+  try {
+    const items = await prisma.inventoryItem.findMany({
+      select: { name: true, quantity: true, unit: true },
+    });
+
+    const critical = items.filter(i => i.quantity < 10).length;
+    const low = items.filter(i => i.quantity >= 10 && i.quantity < 50).length;
+    const adequate = items.filter(i => i.quantity >= 50).length;
+
+    res.json({
+      totalItems: items.length,
+      critical,
+      low,
+      adequate,
+      items,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// RECEIVE items (Stores only)
+router.post('/receive', requireAuth, async (req, res) => {
+  if (req.user.department !== 'Stores' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Only Stores can receive items' });
+  }
+
+  const { procurementOrderId, itemName, quantityReceived, notes } = req.body;
+
+  if (!procurementOrderId || !itemName || !quantityReceived) {
+    return res.status(400).json({ error: 'procurementOrderId, itemName, and quantityReceived are required' });
+  }
+
+  try {
+    // Find or create inventory item
+    let inventoryItem = await prisma.inventoryItem.findUnique({
+      where: { name: itemName },
+    });
+
+    if (!inventoryItem) {
+      inventoryItem = await prisma.inventoryItem.create({
+        data: {
+          name: itemName,
+          quantity: 0,
+          unit: 'units',
+        },
+      });
+    }
+
+    // Update inventory quantity
+    const updated = await prisma.inventoryItem.update({
+      where: { id: inventoryItem.id },
+      data: {
+        quantity: inventoryItem.quantity + parseInt(quantityReceived),
+        lastReceived: new Date(),
+      },
+    });
+
+    // Record item receive
+    const itemReceive = await prisma.itemReceive.create({
+      data: {
+        procurementOrderId: parseInt(procurementOrderId),
+        inventoryItemId: inventoryItem.id,
+        quantityReceived: parseInt(quantityReceived),
+        receivedBy: req.user.fullName,
+        notes: notes || '',
+      },
+    });
+
+    // Update procurement order status
+    const procOrder = await prisma.procurementOrder.findUnique({
+      where: { id: parseInt(procurementOrderId) },
+      include: { orderRequest: true },
+    });
+
+    if (procOrder) {
+      // Update related order request status to 'in_storage'
+      await prisma.orderRequest.update({
+        where: { id: procOrder.orderRequestId },
+        data: { status: 'in_storage', updatedAt: new Date() },
+      });
+
+      // Log status change
+      await prisma.orderRequestStatusLog.create({
+        data: {
+          orderRequestId: procOrder.orderRequestId,
+          oldStatus: 'ordered',
+          newStatus: 'in_storage',
+          changedBy: req.user.fullName,
+          notes: `Items received: ${itemName} x${quantityReceived}`,
+        },
+      });
+    }
+
+    res.json({
+      message: 'Items received and inventory updated',
+      itemReceive,
+      inventoryItem: updated,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET item receive history
+router.get('/receive-history', requireAuth, async (req, res) => {
+  try {
+    const history = await prisma.itemReceive.findMany({
+      include: {
+        inventoryItem: true,
+        procurementOrder: { include: { orderRequest: true } },
+      },
+      orderBy: { receivedAt: 'desc' },
+      take: 50,
+    });
+
+    res.json(history);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// UPDATE inventory item (manual adjustment - Stores only)
+router.patch('/:id', requireAuth, async (req, res) => {
+  if (req.user.department !== 'Stores' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Only Stores can update inventory' });
+  }
+
+  const { quantity, notes } = req.body;
+
+  try {
+    const item = await prisma.inventoryItem.update({
+      where: { id: parseInt(req.params.id) },
+      data: { quantity: parseInt(quantity) },
+    });
+
+    res.json(item);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+module.exports = router;
+
+
+════════════════════════════════════════════════════════
+📄 FILE: src/routes/employees.js
+════════════════════════════════════════════════════════
+const express = require('express');
+const { PrismaClient } = require('@prisma/client');
+const { requireAuth } = require('../auth');
+
+const router = express.Router();
+const prisma = new PrismaClient();
+
+// GET all employees (HR only)
+router.get('/', requireAuth, async (req, res) => {
+  if (req.user.department !== 'HR' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const employees = await prisma.employee.findMany({
+      include: { ward: true, statusLogs: { orderBy: { timestamp: 'desc' }, take: 1 } },
+      orderBy: { name: 'asc' },
+    });
+    res.json(employees);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET employee summary (public - for dashboard)
+router.get('/summary', async (req, res) => {
+  try {
+    const counts = await prisma.employee.groupBy({
+      by: ['status'],
+      _count: true,
+    });
+
+    const summary = {
+      active: counts.find(c => c.status === 'active')?._count || 0,
+      on_leave: counts.find(c => c.status === 'on_leave')?._count || 0,
+      sick: counts.find(c => c.status === 'sick')?._count || 0,
+      terminated: counts.find(c => c.status === 'terminated')?._count || 0,
+      total: counts.reduce((sum, c) => sum + c._count, 0),
+    };
+
+    // By department
+    const byDept = await prisma.employee.groupBy({
+      by: ['department'],
+      _count: true,
+      where: { status: { not: 'terminated' } },
+    });
+
+    summary.byDepartment = byDept.map(d => ({
+      department: d.department,
+      count: d._count,
+    }));
+
+    res.json(summary);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// CREATE new employee
+router.post('/', requireAuth, async (req, res) => {
+  if (req.user.department !== 'HR' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+
+  const { name, department, wardId, hireDate } = req.body;
+
+  try {
+    const employee = await prisma.employee.create({
+      data: {
+        name,
+        department,
+        wardId: wardId ? parseInt(wardId) : null,
+        status: 'active',
+        hireDate: hireDate ? new Date(hireDate) : new Date(),
+      },
+    });
+    res.json(employee);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// UPDATE employee status
+router.patch('/:id/status', requireAuth, async (req, res) => {
+  if (req.user.department !== 'HR' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    const employee = await prisma.employee.findUnique({ where: { id: parseInt(id) } });
+    if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+    const oldStatus = employee.status;
+
+    // Handle termination
+    let updateData = { status };
+    if (status === 'terminated') {
+      updateData.terminationDate = new Date();
+    }
+
+    const updated = await prisma.employee.update({
+      where: { id: parseInt(id) },
+      data: updateData,
+      include: { ward: true },
+    });
+
+    // Log status change
+    await prisma.employeeStatusLog.create({
+      data: {
+        employeeId: parseInt(id),
+        oldStatus,
+        newStatus: status,
+        changedBy: req.user.fullName,
+      },
+    });
+
+    res.json(updated);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE (terminate) employee
+router.delete('/:id', requireAuth, async (req, res) => {
+  if (req.user.department !== 'HR' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+
+  const { id } = req.params;
+
+  try {
+    const employee = await prisma.employee.findUnique({ where: { id: parseInt(id) } });
+    if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+    // Mark as terminated instead of deleting
+    const updated = await prisma.employee.update({
+      where: { id: parseInt(id) },
+      data: {
+        status: 'terminated',
+        terminationDate: new Date(),
+      },
+    });
+
+    // Log termination
+    await prisma.employeeStatusLog.create({
+      data: {
+        employeeId: parseInt(id),
+        oldStatus: employee.status,
+        newStatus: 'terminated',
+        changedBy: req.user.fullName,
+      },
+    });
+
+    res.json({ message: 'Employee terminated', employee: updated });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+module.exports = router;
+
+
+════════════════════════════════════════════════════════
+📄 FILE: src/routes/patients.js
+════════════════════════════════════════════════════════
+const express = require("express");
+const prisma = require("../prismaClient");
+const { requireAuth, requireRole, requireDepartment } = require("../auth");
+
+const router = express.Router();
+
+const STATUSES = ["admitted", "treatment", "discharged", "deceased"];
+
+// GET /api/patients?status=admitted
+// Full record — used by the DEPARTMENT ENTRY portal only. Requires auth.
+router.get("/", requireAuth, async (req, res) => {
+  const { status, ward } = req.query;
+  const where = {};
+  if (status) where.status = status;
+  if (ward) where.wardId = Number(ward);
+
+  const patients = await prisma.patient.findMany({
+    where,
+    include: { ward: true },
+    orderBy: { updatedAt: "desc" },
+  });
+  res.json(patients);
+});
+
+// GET /api/patients/board
+// PII-stripped feed — this is what the public/shared-screen dashboard reads.
+// No name, no DOB, no nationalId. Just enough to track status by case.
+router.get("/board", requireAuth, async (req, res) => {
+  const { status, ward } = req.query;
+  const where = {};
+  if (status) where.status = status;
+  if (ward) where.wardId = Number(ward);
+
+  const patients = await prisma.patient.findMany({
+    where,
+    select: {
+      id: true,
+      status: true,
+      updatedAt: true,
+      ward: { select: { name: true } },
+      // name, dob, nationalId, attendingDoctor deliberately omitted
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+  res.json(patients);
+});
+
+// GET /api/patients/summary  -> counts + percentages for the dashboard header
+router.get("/summary", requireAuth, async (req, res) => {
+  const counts = {};
+  for (const s of STATUSES) {
+    counts[s] = await prisma.patient.count({ where: { status: s } });
+  }
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+
+  const percentages = {};
+  for (const s of STATUSES) {
+    percentages[s] = total === 0 ? 0 : +((counts[s] / total) * 100).toFixed(1);
+  }
+
+  res.json({ counts, percentages, total });
+});
+
+// POST /api/patients — used by the department ENTRY portal to register a new case
+router.post("/", requireAuth, requireDepartment(["nurses", "records", "it"]), async (req, res) => {
+  const { name, nationalId, wardId, status } = req.body;
+  if (!name) return res.status(400).json({ error: "Name is required" });
+  if (status && !STATUSES.includes(status)) {
+    return res.status(400).json({ error: "Invalid status value" });
+  }
+
+  const patient = await prisma.patient.create({
+    data: {
+      name,
+      nationalId: nationalId || undefined,
+      wardId: wardId || undefined,
+      status: status || "admitted",
+    },
+  });
+
+  await prisma.statusLog.create({
+    data: {
+      patientId: patient.id,
+      oldStatus: "—",
+      newStatus: patient.status,
+      changedBy: req.user.username,
+    },
+  });
+
+  res.status(201).json(patient);
+});
+
+// PATCH /api/patients/:id/status  -> update status, log the change, notify listeners
+router.patch("/:id/status", requireAuth, requireDepartment(["nurses", "records", "it"]), async (req, res) => {
+  const id = Number(req.params.id);
+  const { newStatus } = req.body;
+
+  if (!STATUSES.includes(newStatus)) {
+    return res.status(400).json({ error: "Invalid status value" });
+  }
+
+  const existing = await prisma.patient.findUnique({ where: { id } });
+  if (!existing) return res.status(404).json({ error: "Patient not found" });
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const p = await tx.patient.update({
+      where: { id },
+      data: { status: newStatus },
+    });
+    await tx.statusLog.create({
+      data: {
+        patientId: id,
+        oldStatus: existing.status,
+        newStatus,
+        changedBy: req.user.username, // set by requireAuth
+      },
+    });
+    return p;
+  });
+
+  // Note: the Postgres trigger (sql/trigger.sql) also fires pg_notify here,
+  // which src/pgListener.js picks up and broadcasts over Socket.io —
+  // so this endpoint doesn't need to emit directly.
+
+  res.json(updated);
+});
+
+module.exports = router;
+
+
+════════════════════════════════════════════════════════
+📄 FILE: public/entry.html
+════════════════════════════════════════════════════════
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MushaMumwe — Department Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="entry-portal">
+  <div class="container">
+    <header>
+      <h1>MushaMumwe</h1>
+      <p>Hospital Operations Portal</p>
+    </header>
+
+    <!-- Login Section -->
+    <div id="login" class="login-section">
+      <h2>Department Login</h2>
+      <div id="loginError" class="error" style="display:none;"></div>
+      
+      <div class="form-group">
+        <label for="department">Select Department:</label>
+        <select id="department" required>
+          <option value="">-- Choose Department --</option>
+          <option value="Nurses">Nurses / Ward Staff</option>
+          <option value="IT">IT Management</option>
+          <option value="Procurement">Procurement</option>
+          <option value="Stores">Stores / Inventory</option>
+          <option value="HR">Human Resources</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="username">Username:</label>
+        <input type="text" id="username" placeholder="Enter username" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password:</label>
+        <input type="password" id="password" placeholder="Enter password" required>
+      </div>
+
+      <button onclick="login()">Login</button>
+    </div>
+
+    <!-- Nurses Portal -->
+    <div id="nursesPortal" class="portal">
+      <h2>Nurses Department — Patient Management</h2>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      
+      <div class="grid">
+        <div class="card">
+          <h3>Register New Patient</h3>
+          <div class="form-group">
+            <label for="patientName">Patient Name:</label>
+            <input type="text" id="patientName" placeholder="Full name">
+          </div>
+          <div class="form-group">
+            <label for="patientID">National ID (optional):</label>
+            <input type="text" id="patientID" placeholder="ID number">
+          </div>
+          <div class="form-group">
+            <label for="wardSelect">Ward:</label>
+            <select id="wardSelect"></select>
+          </div>
+          <div class="form-group">
+            <label for="statusSelect">Status:</label>
+            <select id="statusSelect">
+              <option value="admitted">Admitted</option>
+              <option value="in_treatment">In Treatment</option>
+              <option value="discharged">Discharged</option>
+              <option value="deceased">Deceased</option>
+            </select>
+          </div>
+          <button onclick="registerPatient()">Save Record</button>
+          <div id="patientMessage"></div>
+        </div>
+
+        <div class="card">
+          <h3>Update Patient Status</h3>
+          <div class="form-group">
+            <label for="patientSelect">Select Patient:</label>
+            <select id="patientSelect"></select>
+          </div>
+          <div class="form-group">
+            <label for="newStatus">New Status:</label>
+            <select id="newStatus">
+              <option value="admitted">Admitted</option>
+              <option value="in_treatment">In Treatment</option>
+              <option value="discharged">Discharged</option>
+              <option value="deceased">Deceased</option>
+            </select>
+          </div>
+          <button onclick="updatePatient()">Update Status</button>
+          <div id="updateMessage"></div>
+        </div>
+
+        <div class="card">
+          <h3>Account Settings</h3>
+          <div class="form-group">
+            <label for="newPassword">New Password:</label>
+            <input type="password" id="newPassword" placeholder="Enter new password">
+          </div>
+          <button onclick="changePassword()">Change Password</button>
+          <div id="passwordMessage"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IT Portal -->
+    <div id="itPortal" class="portal">
+      <h2>IT Department — User Management</h2>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      
+      <div class="grid">
+        <div class="card">
+          <h3>Create User Account</h3>
+          <div class="form-group">
+            <label for="newUsername">Username:</label>
+            <input type="text" id="newUsername" placeholder="e.g. nurse3">
+          </div>
+          <div class="form-group">
+            <label for="newUserFullName">Full Name:</label>
+            <input type="text" id="newUserFullName" placeholder="Full name">
+          </div>
+          <div class="form-group">
+            <label for="newUserDept">Department:</label>
+            <select id="newUserDept">
+              <option value="Nurses">Nurses</option>
+              <option value="Procurement">Procurement</option>
+              <option value="Stores">Stores</option>
+              <option value="HR">HR</option>
+            </select>
+          </div>
+          <button onclick="createUser()">Generate Temporary Password</button>
+          <div id="createUserMessage"></div>
+        </div>
+
+        <div class="card">
+          <h3>System Status</h3>
+          <p>Total Active Users: <strong id="totalUsers">-</strong></p>
+          <p>Database: <strong>Connected</strong></p>
+          <button onclick="loadSystemStatus()">Refresh Status</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Procurement Portal -->
+    <div id="procurementPortal" class="portal">
+      <h2>Procurement Department — Order Management</h2>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      
+      <div class="grid">
+        <!-- All Pending Orders -->
+        <div class="card" style="grid-column: span 2;">
+          <h3>Pending Order Requests</h3>
+          <div style="max-height: 400px; overflow-y: auto;">
+            <div id="pendingOrdersList">
+              <p>Loading pending orders...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Approved & Ordered -->
+        <div class="card">
+          <h3>Approved Orders</h3>
+          <div id="approvedOrdersList" style="font-size:13px; max-height:300px; overflow-y:auto;">
+            <p>Loading...</p>
+          </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="card">
+          <h3>Order Summary</h3>
+          <p>Pending: <strong id="procPending">-</strong></p>
+          <p>Approved: <strong id="procApproved">-</strong></p>
+          <p>Ordered: <strong id="procOrdered">-</strong></p>
+          <p>In Storage: <strong id="procInStorage">-</strong></p>
+          <button onclick="loadProcurementDashboard()" class="mt-20">Refresh</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stores Portal -->
+    <div id="storesPortal" class="portal">
+      <h2>Stores Department — Inventory Management</h2>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      
+      <div class="grid">
+        <!-- Receive Items -->
+        <div class="card">
+          <h3>Receive Items</h3>
+          <div class="form-group">
+            <label for="procOrderId">Procurement Order ID:</label>
+            <input type="number" id="procOrderId" placeholder="Order ID">
+          </div>
+          <div class="form-group">
+            <label for="receiveItemName">Item Name:</label>
+            <input type="text" id="receiveItemName" placeholder="Item name">
+          </div>
+          <div class="form-group">
+            <label for="receiveQty">Quantity Received:</label>
+            <input type="number" id="receiveQty" placeholder="Quantity">
+          </div>
+          <div class="form-group">
+            <label for="receiveNotes">Notes (optional):</label>
+            <textarea id="receiveNotes" placeholder="Condition, damage, etc."></textarea>
+          </div>
+          <button onclick="receiveItems()">Record Receipt</button>
+          <div id="receiveMessage"></div>
+        </div>
+
+        <!-- Current Inventory -->
+        <div class="card" style="grid-column: span 2;">
+          <h3>Current Inventory</h3>
+          <div style="max-height: 400px; overflow-y: auto;">
+            <div id="inventoryList">
+              <p>Loading inventory...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventory Summary -->
+        <div class="card">
+          <h3>Stock Levels</h3>
+          <div style="font-size:14px;">
+            <p>Critical (less than 10): <strong id="invCritical" style="color:#c2185b;">-</strong></p>
+            <p>Low (10-50): <strong id="invLow" style="color:#e65100;">-</strong></p>
+            <p>Adequate (50+): <strong id="invAdequate" style="color:#2e7d32;">-</strong></p>
+            <p style="border-top:1px solid #ddd; padding-top:10px; margin-top:10px;">Total Items: <strong id="invTotal">-</strong></p>
+          </div>
+          <button onclick="loadStoresInventory()" class="mt-20">Refresh</button>
+        </div>
+
+        <!-- Receive History -->
+        <div class="card" style="grid-column: span 2;">
+          <h3>Recent Receipts</h3>
+          <div id="receiveHistoryList" style="font-size:12px; max-height:300px; overflow-y:auto;">
+            <p>Loading...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HR Portal -->
+    <div id="hrPortal" class="portal">
+      <h2>HR Department — Staff Management</h2>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      
+      <div class="grid">
+        <!-- Add Employee -->
+        <div class="card">
+          <h3>Add New Employee (Hire)</h3>
+          <div class="form-group">
+            <label for="empName">Employee Name:</label>
+            <input type="text" id="empName" placeholder="Full name">
+          </div>
+          <div class="form-group">
+            <label for="empDept">Department:</label>
+            <select id="empDept">
+              <option value="Medical">Medical / Doctors</option>
+              <option value="Nurses">Nurses</option>
+              <option value="Pharmacy">Pharmacy</option>
+              <option value="Laboratory">Laboratory</option>
+              <option value="Admin">Admin</option>
+              <option value="Support">Support / Cleaning</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Security">Security</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="empWard">Assigned Ward (optional):</label>
+            <select id="empWard"></select>
+          </div>
+          <div class="form-group">
+            <label for="empHireDate">Hire Date:</label>
+            <input type="date" id="empHireDate">
+          </div>
+          <button onclick="addEmployee()">Hire Employee</button>
+          <div id="empAddMessage"></div>
+        </div>
+
+        <!-- Employee Roster -->
+        <div class="card" style="grid-column: span 2;">
+          <h3>Staff Roster</h3>
+          <div class="emp-search-box">
+            <input type="text" id="empSearchBox" placeholder="Search by name or department..." onkeyup="searchEmployees()">
+          </div>
+          <div id="empRosterTable" class="emp-roster-table">
+            <p>Loading staff roster...</p>
+          </div>
+        </div>
+
+        <!-- Staffing Summary -->
+        <div class="card">
+          <h3>Staffing Summary</h3>
+          <div class="emp-summary">
+            <p><strong>On Duty:</strong> <span id="empOnDuty">-</span></p>
+            <p><strong>On Leave:</strong> <span id="empOnLeave">-</span></p>
+            <p><strong>Sick:</strong> <span id="empSick">-</span></p>
+            <p><strong>Terminated:</strong> <span id="empTerminated">-</span></p>
+            <p class="total-row"><strong>Total Active:</strong> <span id="empTotal">-</span></p>
+          </div>
+          <button onclick="loadStaffingSummary()" class="mt-20">Refresh</button>
+        </div>
+      </div>
+
+      <!-- Employee Status Modal -->
+      <div id="empStatusModal" class="emp-status-modal">
+        <h3 id="modalEmpName"></h3>
+        <div class="form-group">
+          <label for="empStatusSelect">Change Status:</label>
+          <select id="empStatusSelect">
+            <option value="active">Active (On Duty)</option>
+            <option value="on_leave">On Leave</option>
+            <option value="sick">Sick</option>
+            <option value="terminated">Terminated</option>
+          </select>
+        </div>
+        <button onclick="updateEmployeeStatus()">Update</button>
+        <button onclick="closeEmpModal()" class="logout-btn">Cancel</button>
+        <div id="empStatusMessage"></div>
+      </div>
+
+      <!-- Modal backdrop -->
+      <div id="empModalBackdrop" onclick="closeEmpModal()" class="emp-modal-backdrop"></div>
+    </div>
+
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let currentUser = null;
+    let currentDept = null;
+
+    // ========== AUTH FUNCTIONS ==========
+    async function login() {
+      const dept = document.getElementById('department').value;
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      if (!dept || !username || !password) {
+        showLoginError('All fields required');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, department: dept })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Login failed');
+
+        currentUser = data.user;
+        currentDept = dept;
+        localStorage.setItem('token', data.token);
+        
+        showPortal(dept);
+        loadPortalData(dept);
+      } catch (e) {
+        showLoginError(e.message);
+      }
+    }
+
+    function showPortal(dept) {
+      document.getElementById('login').style.display = 'none';
+      document.querySelectorAll('.portal').forEach(p => p.classList.remove('active'));
+      
+      const portals = {
+        'Nurses': 'nursesPortal',
+        'IT': 'itPortal',
+        'Procurement': 'procurementPortal',
+        'Stores': 'storesPortal',
+        'HR': 'hrPortal'
+      };
+      
+      if (portals[dept]) {
+        document.getElementById(portals[dept]).classList.add('active');
+      }
+    }
+
+    function showLoginError(msg) {
+      const errorDiv = document.getElementById('loginError');
+      errorDiv.textContent = msg;
+      errorDiv.style.display = 'block';
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      currentUser = null;
+      currentDept = null;
+      document.getElementById('login').style.display = 'block';
+      document.querySelectorAll('.portal').forEach(p => p.classList.remove('active'));
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+      document.getElementById('department').value = '';
+    }
+
+    async function loadPortalData(dept) {
+      if (dept === 'Nurses') {
+        loadWards();
+        loadPatients();
+      } else if (dept === 'IT') {
+        loadSystemStatus();
+      } else if (dept === 'Procurement') {
+        loadProcurementDashboard();
+      } else if (dept === 'Stores') {
+        loadStoresInventory();
+      } else if (dept === 'HR') {
+        loadWards();
+        loadStaffRoster();
+        loadStaffingSummary();
+      }
+    }
+
+    // ========== NURSES FUNCTIONS ==========
+    async function loadWards() {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/wards', { headers: { 'Authorization': `Bearer ${token}` } });
+        const wards = await res.json();
+        
+        const wardSelect = document.getElementById('wardSelect');
+        if (wardSelect) {
+          wardSelect.innerHTML = wards.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+        }
+        
+        const empWardSelect = document.getElementById('empWard');
+        if (empWardSelect) {
+          empWardSelect.innerHTML = '<option value="">None</option>' + 
+            wards.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+        }
+      } catch (e) {
+        console.error('Failed to load wards:', e);
+      }
+    }
+
+    async function loadPatients() {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/patients', { headers: { 'Authorization': `Bearer ${token}` } });
+        const patients = await res.json();
+        
+        const patientSelect = document.getElementById('patientSelect');
+        patientSelect.innerHTML = patients.map(p => `<option value="${p.id}">${p.name} (${p.status})</option>`).join('');
+      } catch (e) {
+        console.error('Failed to load patients:', e);
+      }
+    }
+
+    async function registerPatient() {
+      const token = localStorage.getItem('token');
+      const name = document.getElementById('patientName').value;
+      const nationalId = document.getElementById('patientID').value;
+      const wardId = document.getElementById('wardSelect').value;
+      const status = document.getElementById('statusSelect').value;
+
+      if (!name || !wardId) {
+        document.getElementById('patientMessage').innerHTML = '<div class="error">Name and ward required</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/patients', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ name, nationalId, wardId: parseInt(wardId), status })
+        });
+
+        if (!res.ok) throw new Error('Registration failed');
+        
+        document.getElementById('patientMessage').innerHTML = '<div class="success">Patient registered successfully</div>';
+        document.getElementById('patientName').value = '';
+        document.getElementById('patientID').value = '';
+        loadPatients();
+      } catch (e) {
+        document.getElementById('patientMessage').innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    }
+
+    async function updatePatient() {
+      const token = localStorage.getItem('token');
+      const patientId = document.getElementById('patientSelect').value;
+      const status = document.getElementById('newStatus').value;
+
+      if (!patientId) {
+        document.getElementById('updateMessage').innerHTML = '<div class="error">Select a patient</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/patients/${patientId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ status })
+        });
+
+        if (!res.ok) throw new Error('Update failed');
+        
+        document.getElementById('updateMessage').innerHTML = '<div class="success">Status updated</div>';
+        loadPatients();
+      } catch (e) {
+        document.getElementById('updateMessage').innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    }
+
+    async function changePassword() {
+      const token = localStorage.getItem('token');
+      const newPassword = document.getElementById('newPassword').value;
+
+      if (!newPassword || newPassword.length < 6) {
+        document.getElementById('passwordMessage').innerHTML = '<div class="error">Password must be at least 6 characters</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ newPassword })
+        });
+
+        if (!res.ok) throw new Error('Password change failed');
+        
+        document.getElementById('passwordMessage').innerHTML = '<div class="success">Password changed</div>';
+        document.getElementById('newPassword').value = '';
+      } catch (e) {
+        document.getElementById('passwordMessage').innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    }
+
+    // ========== IT FUNCTIONS ==========
+    async function createUser() {
+      const token = localStorage.getItem('token');
+      const username = document.getElementById('newUsername').value;
+      const fullName = document.getElementById('newUserFullName').value;
+      const department = document.getElementById('newUserDept').value;
+
+      if (!username || !fullName) {
+        document.getElementById('createUserMessage').innerHTML = '<div class="error">All fields required</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/admin/create-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ username, fullName, department })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'User creation failed');
+        
+        document.getElementById('createUserMessage').innerHTML = `<div class="success">User created<br>Temp Password: <strong>${data.tempPassword}</strong></div>`;
+        document.getElementById('newUsername').value = '';
+        document.getElementById('newUserFullName').value = '';
+      } catch (e) {
+        document.getElementById('createUserMessage').innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    }
+
+    async function loadSystemStatus() {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/auth/system-status', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('totalUsers').textContent = data.totalUsers || '?';
+        }
+      } catch (e) {
+        console.error('Failed to load system status:', e);
+      }
+    }
+
+    // ========== PROCUREMENT FUNCTIONS ==========
+    async function loadProcurementDashboard() {
+      const token = localStorage.getItem('token');
+      
+      try {
+        const res = await fetch('/api/orders/requests', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const orders = await res.json();
+        
+        renderProcurementOrders(orders);
+        loadProcurementSummary();
+      } catch (e) {
+        console.error('Failed to load orders:', e);
+      }
+    }
+
+    function renderProcurementOrders(orders) {
+      const pending = orders.filter(o => o.status === 'pending');
+      const approved = orders.filter(o => o.status === 'approved' || o.status === 'ordered');
+      
+      // Pending orders
+      if (pending.length === 0) {
+        document.getElementById('pendingOrdersList').innerHTML = '<p>No pending orders</p>';
+      } else {
+        const html = pending.map(order => `
+          <div style="border:1px solid #ddd; padding:10px; margin-bottom:10px; border-radius:4px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+              <strong>${order.itemName} x${order.quantity}</strong>
+              <span style="font-size:11px; color:#999;">#${order.id}</span>
+            </div>
+            <div style="font-size:12px; margin-bottom:8px;">
+              <p>From: <strong>${order.requestingDepartment}</strong></p>
+              <p>By: ${order.requestingBy}</p>
+              <p>Reason: ${order.reason}</p>
+            </div>
+            <div style="display:flex; gap:5px;">
+              <button onclick="approveOrder(${order.id})" style="flex:1; padding:6px; background:#4caf50; color:white; border:none; border-radius:3px; cursor:pointer; font-size:12px;">Approve</button>
+              <button onclick="rejectOrder(${order.id})" style="flex:1; padding:6px; background:#f44336; color:white; border:none; border-radius:3px; cursor:pointer; font-size:12px;">Reject</button>
+            </div>
+          </div>
+        `).join('');
+        document.getElementById('pendingOrdersList').innerHTML = html;
+      }
+      
+      // Approved/Ordered
+      if (approved.length === 0) {
+        document.getElementById('approvedOrdersList').innerHTML = '<p>No approved orders</p>';
+      } else {
+        const html = approved.map(order => `
+          <div style="border-left:3px solid #2196F3; padding:8px; margin-bottom:8px;">
+            <p style="margin:0; font-weight:600;">${order.itemName} x${order.quantity}</p>
+            <p style="margin:0; font-size:11px; color:#666;">${order.requestingDepartment}</p>
+            <p style="margin:0; font-size:11px; color:#2196F3;">${order.status.toUpperCase()}</p>
+            ${order.status === 'approved' ? `<button onclick="sendOrder(${order.id})" style="margin-top:5px; padding:4px 8px; font-size:11px; background:#2196F3; color:white; border:none; border-radius:2px; cursor:pointer;">Send Order</button>` : ''}
+          </div>
+        `).join('');
+        document.getElementById('approvedOrdersList').innerHTML = html;
+      }
+    }
+
+    async function loadProcurementSummary() {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/orders/summary', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const summary = await res.json();
+        
+        document.getElementById('procPending').textContent = summary.pending;
+        document.getElementById('procApproved').textContent = summary.approved;
+        document.getElementById('procOrdered').textContent = summary.ordered;
+        document.getElementById('procInStorage').textContent = summary.inStorage;
+      } catch (e) {
+        console.error('Failed to load summary:', e);
+      }
+    }
+
+    async function approveOrder(orderId) {
+      const token = localStorage.getItem('token');
+      const supplierName = prompt('Enter supplier name:');
+      
+      if (!supplierName) return;
+      
+      try {
+        const res = await fetch(`/api/orders/requests/${orderId}/approve`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ supplierName })
+        });
+        
+        if (!res.ok) throw new Error('Failed to approve');
+        
+        loadProcurementDashboard();
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function rejectOrder(orderId) {
+      const token = localStorage.getItem('token');
+      const reason = prompt('Enter rejection reason:');
+      
+      if (!reason) return;
+      
+      try {
+        const res = await fetch(`/api/orders/requests/${orderId}/reject`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ reason })
+        });
+        
+        if (!res.ok) throw new Error('Failed to reject');
+        
+        loadProcurementDashboard();
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function sendOrder(orderId) {
+      const token = localStorage.getItem('token');
+      
+      try {
+        const res = await fetch(`/api/orders/requests/${orderId}/send`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({})
+        });
+        
+        if (!res.ok) throw new Error('Failed to send order');
+        
+        alert('Order sent to supplier!');
+        loadProcurementDashboard();
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    // ========== STORES FUNCTIONS ==========
+    async function loadStoresInventory() {
+      const token = localStorage.getItem('token');
+      
+      try {
+        const [invRes, summaryRes, historyRes] = await Promise.all([
+          fetch('/api/inventory', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/inventory/summary', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/inventory/receive-history', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+        
+        const items = await invRes.json();
+        const summary = await summaryRes.json();
+        const history = await historyRes.json();
+        
+        renderInventory(items);
+        renderInventorySummary(summary);
+        renderReceiveHistory(history);
+      } catch (e) {
+        console.error('Failed to load inventory:', e);
+      }
+    }
+
+    function renderInventory(items) {
+      if (items.length === 0) {
+        document.getElementById('inventoryList').innerHTML = '<p>No inventory items yet</p>';
+        return;
+      }
+
+      const html = `
+        <table style="width:100%; font-size:12px; border-collapse:collapse;">
+          <thead>
+            <tr style="background:#f0f0f0; position:sticky; top:0;">
+              <th style="padding:6px; text-align:left; border-bottom:1px solid #ddd;">Item</th>
+              <th style="padding:6px; text-align:center; border-bottom:1px solid #ddd;">Qty</th>
+              <th style="padding:6px; text-align:center; border-bottom:1px solid #ddd;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map(item => {
+              let status = 'Adequate';
+              let color = '#2e7d32';
+              if (item.quantity < 10) {
+                status = 'Critical';
+                color = '#c2185b';
+              } else if (item.quantity < 50) {
+                status = 'Low';
+                color = '#e65100';
+              }
+              return `
+                <tr style="border-bottom:1px solid #eee;">
+                  <td style="padding:6px;">${item.name}</td>
+                  <td style="padding:6px; text-align:center;"><strong>${item.quantity}</strong></td>
+                  <td style="padding:6px; text-align:center; color:${color}; font-weight:600; font-size:11px;">${status}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('inventoryList').innerHTML = html;
+    }
+
+    function renderInventorySummary(summary) {
+      document.getElementById('invCritical').textContent = summary.critical;
+      document.getElementById('invLow').textContent = summary.low;
+      document.getElementById('invAdequate').textContent = summary.adequate;
+      document.getElementById('invTotal').textContent = summary.totalItems;
+    }
+
+    function renderReceiveHistory(history) {
+      if (history.length === 0) {
+        document.getElementById('receiveHistoryList').innerHTML = '<p>No receive history</p>';
+        return;
+      }
+
+      const html = history.slice(0, 10).map(rec => `
+        <div style="border-left:3px solid #4caf50; padding:6px; margin-bottom:6px;">
+          <p style="margin:0; font-weight:600;">${rec.inventoryItem.name} x${rec.quantityReceived}</p>
+          <p style="margin:0; font-size:11px; color:#666;">By: ${rec.receivedBy}</p>
+          <p style="margin:0; font-size:10px; color:#999;">${new Date(rec.receivedAt).toLocaleDateString()}</p>
+        </div>
+      `).join('');
+      document.getElementById('receiveHistoryList').innerHTML = html;
+    }
+
+    async function receiveItems() {
+      const token = localStorage.getItem('token');
+      const procOrderId = document.getElementById('procOrderId').value;
+      const itemName = document.getElementById('receiveItemName').value;
+      const quantityReceived = document.getElementById('receiveQty').value;
+      const notes = document.getElementById('receiveNotes').value;
+      const msgDiv = document.getElementById('receiveMessage');
+
+      if (!procOrderId || !itemName || !quantityReceived) {
+        msgDiv.innerHTML = '<div class="error">All fields required</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/inventory/receive', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            procurementOrderId: parseInt(procOrderId),
+            itemName,
+            quantityReceived: parseInt(quantityReceived),
+            notes
+          })
+        });
+
+        if (!res.ok) throw new Error('Failed to receive items');
+
+        msgDiv.innerHTML = '<div class="success">Items received and inventory updated</div>';
+        document.getElementById('procOrderId').value = '';
+        document.getElementById('receiveItemName').value = '';
+        document.getElementById('receiveQty').value = '';
+        document.getElementById('receiveNotes').value = '';
+        
+        loadStoresInventory();
+      } catch (e) {
+        msgDiv.innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    }
+
+    // ========== HR FUNCTIONS ==========
+    async function addEmployee() {
+      const token = localStorage.getItem('token');
+      const name = document.getElementById('empName').value;
+      const department = document.getElementById('empDept').value;
+      const wardId = document.getElementById('empWard').value;
+      const hireDate = document.getElementById('empHireDate').value;
+
+      if (!name || !hireDate) {
+        document.getElementById('empAddMessage').innerHTML = '<div class="error">Name and hire date required</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/employees', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ 
+            name, 
+            department, 
+            wardId: wardId ? parseInt(wardId) : null,
+            hireDate 
+          })
+        });
+
+        if (!res.ok) throw new Error('Failed to add employee');
+        
+        document.getElementById('empAddMessage').innerHTML = '<div class="success">Employee hired successfully</div>';
+        document.getElementById('empName').value = '';
+        document.getElementById('empHireDate').value = '';
+        loadStaffRoster();
+        loadStaffingSummary();
+      } catch (e) {
+        document.getElementById('empAddMessage').innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    }
+
+    async function loadStaffRoster() {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/employees', { headers: { 'Authorization': `Bearer ${token}` } });
+        const employees = await res.json();
+        
+        const rosterDiv = document.getElementById('empRosterTable');
+        if (employees.length === 0) {
+          rosterDiv.innerHTML = '<p>No employees found</p>';
+          return;
+        }
+
+        let tableHTML = '<table style="width:100%; border-collapse: collapse;">';
+        tableHTML += '<tr style="border-bottom: 2px solid #ddd;">';
+        tableHTML += '<th style="padding: 8px; text-align: left;">Name</th>';
+        tableHTML += '<th style="padding: 8px; text-align: left;">Department</th>';
+        tableHTML += '<th style="padding: 8px; text-align: left;">Status</th>';
+        tableHTML += '<th style="padding: 8px; text-align: left;">Action</th>';
+        tableHTML += '</tr>';
+        
+        employees.forEach(emp => {
+          tableHTML += '<tr style="border-bottom: 1px solid #eee;">';
+          tableHTML += `<td style="padding: 8px;">${emp.name}</td>`;
+          tableHTML += `<td style="padding: 8px;">${emp.department}</td>`;
+          tableHTML += `<td style="padding: 8px;">${emp.status}</td>`;
+          tableHTML += `<td style="padding: 8px;"><button onclick="openEmpModal(${emp.id}, '${emp.name}', '${emp.status}')">Update</button></td>`;
+          tableHTML += '</tr>';
+        });
+        
+        tableHTML += '</table>';
+        rosterDiv.innerHTML = tableHTML;
+      } catch (e) {
+        document.getElementById('empRosterTable').innerHTML = '<p>Failed to load roster</p>';
+      }
+    }
+
+    async function loadStaffingSummary() {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/employees/summary', { headers: { 'Authorization': `Bearer ${token}` } });
+        const summary = await res.json();
+        
+        document.getElementById('empOnDuty').textContent = summary.active || 0;
+        document.getElementById('empOnLeave').textContent = summary.on_leave || 0;
+        document.getElementById('empSick').textContent = summary.sick || 0;
+        document.getElementById('empTerminated').textContent = summary.terminated || 0;
+        document.getElementById('empTotal').textContent = summary.total || 0;
+      } catch (e) {
+        console.error('Failed to load summary:', e);
+      }
+    }
+
+    let selectedEmployeeId = null;
+
+    function openEmpModal(id, name, status) {
+      selectedEmployeeId = id;
+      document.getElementById('modalEmpName').textContent = name;
+      document.getElementById('empStatusSelect').value = status;
+      document.getElementById('empStatusModal').classList.add('active');
+      document.getElementById('empModalBackdrop').classList.add('active');
+    }
+
+    function closeEmpModal() {
+      document.getElementById('empStatusModal').classList.remove('active');
+      document.getElementById('empModalBackdrop').classList.remove('active');
+      selectedEmployeeId = null;
+      document.getElementById('empStatusMessage').innerHTML = '';
+    }
+
+    async function updateEmployeeStatus() {
+      const token = localStorage.getItem('token');
+      const status = document.getElementById('empStatusSelect').value;
+
+      if (!selectedEmployeeId) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/employees/${selectedEmployeeId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ status })
+        });
+
+        if (!res.ok) throw new Error('Update failed');
+        
+        document.getElementById('empStatusMessage').innerHTML = '<div class="success">Status updated</div>';
+        setTimeout(() => {
+          closeEmpModal();
+          loadStaffRoster();
+          loadStaffingSummary();
+        }, 1000);
+      } catch (e) {
+        document.getElementById('empStatusMessage').innerHTML = `<div class="error">${e.message}</div>`;
+      }
+    }
+
+    function searchEmployees() {
+      const searchTerm = document.getElementById('empSearchBox').value.toLowerCase();
+      const rows = document.querySelectorAll('#empRosterTable table tr:not(:first-child)');
+      
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    }
+
+    // ========== SOCKET EVENT LISTENERS ==========
+    socket.on('connect', () => {
+      console.log('Connected to server');
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Disconnected from server');
+    });
+
+    socket.on('patientUpdate', () => {
+      if (currentDept === 'Nurses') {
+        loadPatients();
+      }
+    });
+
+    socket.on('order:updated', () => {
+      if (currentDept === 'Procurement') {
+        loadProcurementDashboard();
+      }
+    });
+
+    socket.on('inventory:updated', () => {
+      if (currentDept === 'Stores') {
+        loadStoresInventory();
+      }
+    });
+
+    socket.on('employeeUpdate', () => {
+      if (currentDept === 'HR') {
+        loadStaffRoster();
+        loadStaffingSummary();
+      }
+    });
+  </script>
+</body>
+</html>
+
+════════════════════════════════════════════════════════
+📄 FILE: public/index.html
+════════════════════════════════════════════════════════
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MushaMumwe — Live Board</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="live-board">
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="brand">
+      <h1>MUSHAMUMWE — LIVE BOARD</h1>
+      <div class="sub" id="apiTarget">connecting...</div>
+    </div>
+    <div class="pulse-wrap">
+      <span class="live-dot" id="liveDot"></span>
+      <span class="sync-text" id="syncText">CONNECTING</span>
+    </div>
+    <div class="clock" id="clock">--:--:--</div>
+    <a href="/entry.html" class="staff-login-link">Staff Login</a>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Patient Statistics -->
+  <div class="stats">
+    <div class="stat admitted">
+      <div>
+        <span class="n" id="countAdmitted">0</span>
+        <span class="pct" id="pctAdmitted">0%</span>
+      </div>
+      <div class="l">Admitted</div>
+    </div>
+    <div class="stat treatment">
+      <div>
+        <span class="n" id="countTreatment">0</span>
+        <span class="pct" id="pctTreatment">0%</span>
+      </div>
+      <div class="l">In Treatment</div>
+    </div>
+    <div class="stat discharged">
+      <div>
+        <span class="n" id="countDischarged">0</span>
+        <span class="pct" id="pctDischarged">0%</span>
+      </div>
+      <div class="l">Discharged</div>
+    </div>
+    <div class="stat deceased">
+      <div>
+        <span class="n" id="countDeceased">0</span>
+        <span class="pct" id="pctDeceased">0%</span>
+      </div>
+      <div class="l">Deceased</div>
+    </div>
+  </div>
+
+  <!-- Distribution Bar -->
+  <div class="distbar" id="distbar">
+    <div class="seg" id="segA" style="background:#3B82F6;"></div>
+    <div class="seg" id="segT" style="background:#F0A93A;"></div>
+    <div class="seg" id="segD" style="background:#2FBF71;"></div>
+    <div class="seg" id="segX" style="background:#7A8199;"></div>
+  </div>
+  <div class="distbar-labels">
+    <span>Case mix — % of total patients on record</span>
+    <span id="totalCount">0 total</span>
+  </div>
+
+  <!-- Patient Board -->
+  <div class="board">
+    <div class="col admitted">
+      <div class="col-head">
+        <div>
+          <span class="dot"></span>
+          <span class="col-title">Admitted</span>
+        </div>
+        <span class="col-count" id="cA">0</span>
+      </div>
+      <div id="colAdmitted"></div>
+    </div>
+    <div class="col treatment">
+      <div class="col-head">
+        <div>
+          <span class="dot"></span>
+          <span class="col-title">In Treatment</span>
+        </div>
+        <span class="col-count" id="cT">0</span>
+      </div>
+      <div id="colTreatment"></div>
+    </div>
+    <div class="col discharged">
+      <div class="col-head">
+        <div>
+          <span class="dot"></span>
+          <span class="col-title">Discharged</span>
+        </div>
+        <span class="col-count" id="cD">0</span>
+      </div>
+      <div id="colDischarged"></div>
+    </div>
+    <div class="col deceased">
+      <div class="col-head">
+        <div>
+          <span class="dot"></span>
+          <span class="col-title">Deceased</span>
+        </div>
+        <span class="col-count" id="cX">0</span>
+      </div>
+      <div id="colDeceased"></div>
+    </div>
+  </div>
+
+  <!-- Employee Dashboard Summary -->
+  <div class="employee-summary">
+    <div class="employee-summary-header">
+      <h2>Staff Status Overview</h2>
+      <button onclick="toggleEmployeeView()" class="toggle-btn">View Details</button>
+    </div>
+
+    <!-- Employee Stats Cards -->
+    <div class="employee-stats">
+      <div class="employee-stat-card on-duty">
+        <div class="employee-stat-number" id="staffOnDuty">-</div>
+        <div class="employee-stat-label">On Duty</div>
+      </div>
+      <div class="employee-stat-card on-leave">
+        <div class="employee-stat-number" id="staffOnLeave">-</div>
+        <div class="employee-stat-label">On Leave</div>
+      </div>
+      <div class="employee-stat-card sick-leave">
+        <div class="employee-stat-number" id="staffSick">-</div>
+        <div class="employee-stat-label">Sick Leave</div>
+      </div>
+      <div class="employee-stat-card total-staff">
+        <div class="employee-stat-number" id="staffTotal">-</div>
+        <div class="employee-stat-label">Total Staff</div>
+      </div>
+    </div>
+
+    <!-- Department Breakdown -->
+    <div id="deptBreakdown" class="dept-breakdown">
+      <h3>Staff by Department</h3>
+      <div id="deptList" class="dept-list">
+        <p>Loading...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer-note">
+    Live data from PostgreSQL via REST + Socket.io — real-time updates enabled
+  </div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ========== CONFIGURATION ==========
+const API_BASE = ""; // same-origin; change if frontend is hosted separately
+const AUTH_TOKEN = localStorage.getItem("token") || ""; // set this after login
+
+// Status to column mapping
+const targets = {
+  admitted: "colAdmitted", 
+  treatment: "colTreatment", 
+  discharged: "colDischarged", 
+  deceased: "colDeceased"
+};
+
+// ========== UTILITY FUNCTIONS ==========
+function fmtTime(iso) {
+  return new Date(iso).toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
+async function fetchJSON(url) {
+  const res = await fetch(API_BASE + url, {
+    headers: AUTH_TOKEN ? { Authorization: "Bearer " + AUTH_TOKEN } : {}
+  });
+  if (!res.ok) throw new Error("API error " + res.status);
+  return res.json();
+}
+
+// ========== PATIENT BOARD FUNCTIONS ==========
+function renderPatientCard(p) {
+  // No patient name here by design — case ID only, for shared-screen display
+  const el = document.createElement('div');
+  el.className = 'patient-card';
+  el.innerHTML = `
+    <div class="patient-card-top">
+      <span class="patient-name">Case #${p.id}</span>
+      <span class="patient-id">${p.nationalId || 'N/A'}</span>
+    </div>
+    <div class="patient-card-meta">
+      <span class="ward-tag">${p.ward ? p.ward.name : '—'}</span>
+      <span>${fmtTime(p.updatedAt)}</span>
+    </div>`;
+  return el;
+}
+
+async function loadPatientBoard() {
+  try {
+    const [patients, summary] = await Promise.all([
+      fetchJSON('/api/patients/board'),   // PII-stripped feed — no names on this screen
+      fetchJSON('/api/patients/summary')
+    ]);
+
+    // Clear existing cards
+    Object.values(targets).forEach(id => {
+      document.getElementById(id).innerHTML = "";
+    });
+
+    // Render patient cards
+    patients.forEach(p => {
+      const target = targets[p.status];
+      if (target) {
+        document.getElementById(target).appendChild(renderPatientCard(p));
+      }
+    });
+
+    // Update summary
+    applyPatientSummary(summary);
+    
+    // Update sync status
+    document.getElementById('syncText').textContent = 'SYNCED';
+    document.getElementById('apiTarget').textContent = 'Connected · ' + window.location.host;
+  } catch (err) {
+    document.getElementById('syncText').textContent = 'OFFLINE';
+    document.getElementById('apiTarget').textContent = 'Could not reach API — check server/token';
+    console.error('Failed to load patient board:', err);
+  }
+}
+
+function applyPatientSummary(summary) {
+  const c = summary.counts;
+  const p = summary.percentages;
+  
+  // Update stat cards
+  document.getElementById('countAdmitted').textContent = c.admitted;
+  document.getElementById('countTreatment').textContent = c.treatment;
+  document.getElementById('countDischarged').textContent = c.discharged;
+  document.getElementById('countDeceased').textContent = c.deceased;
+  
+  // Update column counts
+  document.getElementById('cA').textContent = c.admitted;
+  document.getElementById('cT').textContent = c.treatment;
+  document.getElementById('cD').textContent = c.discharged;
+  document.getElementById('cX').textContent = c.deceased;
+
+  // Update percentages
+  document.getElementById('pctAdmitted').textContent = p.admitted + '%';
+  document.getElementById('pctTreatment').textContent = p.treatment + '%';
+  document.getElementById('pctDischarged').textContent = p.discharged + '%';
+  document.getElementById('pctDeceased').textContent = p.deceased + '%';
+  
+  // Update total
+  document.getElementById('totalCount').textContent = summary.total + ' total';
+
+  // Update distribution bar
+  document.getElementById('segA').style.width = p.admitted + '%';
+  document.getElementById('segT').style.width = p.treatment + '%';
+  document.getElementById('segD').style.width = p.discharged + '%';
+  document.getElementById('segX').style.width = p.deceased + '%';
+}
+
+// ========== EMPLOYEE SUMMARY FUNCTIONS ==========
+async function loadEmployeeSummary() {
+  try {
+    const res = await fetch('/api/employees/summary', {
+      headers: AUTH_TOKEN ? { Authorization: "Bearer " + AUTH_TOKEN } : {}
+    });
+    
+    if (!res.ok) throw new Error('Failed to load employee summary');
+    
+    const summary = await res.json();
+    
+    // Update employee stat cards
+    document.getElementById('staffOnDuty').textContent = summary.active || 0;
+    document.getElementById('staffOnLeave').textContent = summary.on_leave || 0;
+    document.getElementById('staffSick').textContent = summary.sick || 0;
+    document.getElementById('staffTotal').textContent = (summary.total - summary.terminated) || 0;
+    
+    // Build department list
+    if (summary.byDepartment && summary.byDepartment.length > 0) {
+      const deptHtml = summary.byDepartment
+        .map(d => `<p>${d.department}: <strong>${d.count}</strong></p>`)
+        .join('');
+      document.getElementById('deptList').innerHTML = deptHtml;
+    } else {
+      document.getElementById('deptList').innerHTML = '<p>No department data available</p>';
+    }
+  } catch (e) {
+    console.error('Failed to load employee summary:', e);
+    document.getElementById('deptList').innerHTML = '<p>Failed to load data</p>';
+  }
+}
+
+function toggleEmployeeView() {
+  const deptDiv = document.getElementById('deptBreakdown');
+  deptDiv.classList.toggle('active');
+}
+
+// ========== TOAST NOTIFICATION ==========
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.innerHTML = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ========== CLOCK ==========
+function tickClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB');
+}
+
+// ========== INITIALIZATION ==========
+tickClock();
+setInterval(tickClock, 1000);
+
+// Initial load
+loadPatientBoard();
+loadEmployeeSummary();
+
+// ========== SOCKET EVENT LISTENERS ==========
+const socket = io();
+
+socket.on('connect', () => {
+  console.log('Socket connected');
+  document.getElementById('syncText').textContent = 'CONNECTED';
+});
+
+socket.on('disconnect', () => {
+  console.log('Socket disconnected');
+  document.getElementById('syncText').textContent = 'DISCONNECTED';
+});
+
+// Patient updates
+socket.on('patient:updated', (payload) => {
+  showToast(`Case #${payload.id} → ${String(payload.status).toUpperCase()}`);
+  loadPatientBoard(); // Re-fetch full list + summary
+});
+
+socket.on('patient:created', (payload) => {
+  showToast(`New patient registered: Case #${payload.id}`);
+  loadPatientBoard();
+});
+
+socket.on('patient:deleted', (payload) => {
+  showToast(`Patient record archived: Case #${payload.id}`);
+  loadPatientBoard();
+});
+
+// Employee updates
+socket.on('employee:updated', () => {
+  console.log('Employee data updated');
+  loadEmployeeSummary();
+});
+
+socket.on('employee:created', (payload) => {
+  showToast(`New employee added: ${payload.name}`);
+  loadEmployeeSummary();
+});
+
+// Inventory updates
+socket.on('inventory:updated', () => {
+  showToast('Inventory updated');
+  // Reload if needed
+});
+
+// Order updates
+socket.on('order:updated', () => {
+  showToast('Order status updated');
+  // Reload if needed
+});
+
+// ========== AUTO-REFRESH (Fallback if socket fails) ==========
+// Refresh every 5 minutes as fallback
+setInterval(() => {
+  if (document.getElementById('syncText').textContent === 'OFFLINE') {
+    loadPatientBoard();
+    loadEmployeeSummary();
+  }
+}, 300000); // 5 minutes
+
+// ========== KEYBOARD SHORTCUTS ==========
+document.addEventListener('keydown', (e) => {
+  // Press 'R' to refresh manually
+  if (e.key === 'r' || e.key === 'R') {
+    loadPatientBoard();
+    loadEmployeeSummary();
+    showToast('Manual refresh triggered');
+  }
+  
+  // Press 'T' to toggle employee details
+  if (e.key === 't' || e.key === 'T') {
+    toggleEmployeeView();
+  }
+  
+  // Press 'ESC' to close employee details
+  if (e.key === 'Escape') {
+    const deptDiv = document.getElementById('deptBreakdown');
+    deptDiv.classList.remove('active');
+  }
+});
+
+// ========== VISIBILITY API (Refresh when tab becomes visible) ==========
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    loadPatientBoard();
+    loadEmployeeSummary();
+  }
+});
+
+console.log('MushaMumwe Live Board initialized');
+console.log('Keyboard shortcuts: R=Refresh, T=Toggle Details, ESC=Close');
+</script>
+</body>
+</html>
+
+════════════════════════════════════════════════════════
+📄 FILE: public/style.css
+════════════════════════════════════════════════════════
+/* ==========================================================================
+   MushaMumwe - Hospital Operations Portal
+   Unified Stylesheet for Entry & Live Board
+   ========================================================================== */
+
+/* ==========================================================================
+   1. Google Fonts Import
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ==========================================================================
+   2. CSS Variables (Design Tokens)
+   ========================================================================== */
+:root {
+  /* Entry Portal Colors */
+  --primary: #1a365d;
+  --primary-hover: #0d1f38;
+  --bg: #f5f5f5;
+  --surface: #ffffff;
+  --error: #d32f2f;
+  --error-bg: #ffebee;
+  --success: #388e3c;
+  --success-bg: #e8f5e9;
+  
+  /* Live Board Colors */
+  --board-bg: #0B1220;
+  --board-surface: #141C2E;
+  --board-surface-2: #1B2540;
+  --board-line: #26314D;
+  --board-text: #E7ECF5;
+  --board-muted: #8D97AF;
+  
+  /* Status Colors */
+  --status-admitted: #3B82F6;
+  --status-treatment: #F0A93A;
+  --status-discharged: #2FBF71;
+  --status-deceased: #7A8199;
+  
+  /* Employee Status Colors */
+  --emp-active: #2e7d32;
+  --emp-active-bg: #e8f5e9;
+  --emp-leave: #e65100;
+  --emp-leave-bg: #fff3e0;
+  --emp-sick: #c2185b;
+  --emp-sick-bg: #fce4ec;
+  --emp-total: #6a1b9a;
+  --emp-total-bg: #f3e5f5;
+  
+  /* Typography */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* ==========================================================================
+   3. CSS Reset & Base Styles
+   ========================================================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  line-height: 1.6;
+  color: #333;
+}
+
+/* Entry Portal Body */
+body.entry-portal {
+  background: var(--bg);
+}
+
+/* Live Board Body */
+body.live-board {
+  background: var(--board-bg);
+  color: var(--board-text);
+  min-height: 100vh;
+  padding: 0 0 48px 0;
+}
+
+/* ==========================================================================
+   4. Layout Container (Entry Portal)
+   ========================================================================== */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* ==========================================================================
+   5. Header Styles (Entry Portal)
+   ========================================================================== */
+header {
+  background: var(--primary);
+  color: white;
+  padding: 20px;
+  margin-bottom: 30px;
+  border-radius: 8px;
+}
+
+header h1 {
+  font-size: 24px;
+  margin-bottom: 5px;
+}
+
+header p {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* ==========================================================================
+   6. Top Bar (Live Board)
+   ========================================================================== */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--board-line);
+  background: linear-gradient(180deg, #0D1526, #0B1220);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand h1 {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.brand .sub {
+  font-size: 12px;
+  color: var(--board-muted);
+  font-family: var(--font-mono);
+}
+
+.pulse-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--status-discharged);
+  animation: blink 1.6s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.sync-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--board-muted);
+}
+
+.clock {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  min-width: 150px;
+  text-align: right;
+}
+
+.staff-login-link {
+  color: var(--board-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-decoration: none;
+  border: 1px solid var(--board-line);
+  padding: 6px 12px;
+  border-radius: 6px;
+  margin-left: 14px;
+  transition: all 0.3s ease;
+}
+
+.staff-login-link:hover {
+  color: var(--board-text);
+  border-color: var(--board-muted);
+  background: var(--board-surface-2);
+}
+
+/* ==========================================================================
+   7. Login Section (Entry Portal)
+   ========================================================================== */
+.login-section {
+  background: var(--surface);
+  padding: 30px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.login-section h2 {
+  font-size: 20px;
+  margin-bottom: 20px;
+  color: var(--primary);
+}
+
+/* ==========================================================================
+   8. Form Elements
+   ========================================================================== */
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: var(--font-body);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(26, 54, 93, 0.1);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* ==========================================================================
+   9. Buttons
+   ========================================================================== */
+button {
+  background: var(--primary);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: var(--font-body);
+  transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+button:hover {
+  background: var(--primary-hover);
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+.logout-btn {
+  background: var(--error);
+  margin-top: 20px;
+}
+
+.logout-btn:hover {
+  background: #b71c1c;
+}
+
+/* ==========================================================================
+   10. Portal Sections (Entry Portal)
+   ========================================================================== */
+.portal {
+  display: none;
+}
+
+.portal.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+.portal h2 {
+  font-size: 18px;
+  margin-bottom: 20px;
+  color: var(--primary);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   11. Grid Layout
+   ========================================================================== */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* ==========================================================================
+   12. Card Styles
+   ========================================================================== */
+.card {
+  background: var(--surface);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card h3 {
+  margin-bottom: 15px;
+  color: var(--primary);
+  font-size: 16px;
+}
+
+/* ==========================================================================
+   13. Alert Messages
+   ========================================================================== */
+.error {
+  color: var(--error);
+  padding: 10px;
+  background: var(--error-bg);
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.success {
+  color: var(--success);
+  padding: 10px;
+  background: var(--success-bg);
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+/* ==========================================================================
+   14. Toast Notification (Live Board)
+   ========================================================================== */
+.toast {
+  position: fixed;
+  top: 74px;
+  right: 28px;
+  background: var(--board-surface-2);
+  border: 1px solid var(--board-line);
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--board-muted);
+  font-family: var(--font-mono);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: all .35s ease;
+  z-index: 20;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast b {
+  color: var(--status-discharged);
+}
+
+/* ==========================================================================
+   15. Statistics Cards (Live Board)
+   ========================================================================== */
+.stats {
+  display: flex;
+  gap: 14px;
+  padding: 20px 28px 4px 28px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  background: var(--board-surface);
+  border: 1px solid var(--board-line);
+  border-radius: 8px;
+  padding: 14px 18px;
+  min-width: 130px;
+  flex: 1;
+  position: relative;
+}
+
+.stat .n {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.stat .pct {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--board-muted);
+  margin-left: 6px;
+}
+
+.stat .l {
+  font-size: 11px;
+  color: var(--board-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-top: 2px;
+}
+
+.stat.admitted .n { color: var(--status-admitted); }
+.stat.treatment .n { color: var(--status-treatment); }
+.stat.discharged .n { color: var(--status-discharged); }
+.stat.deceased .n { color: var(--status-deceased); }
+
+/* ==========================================================================
+   16. Distribution Bar (Live Board)
+   ========================================================================== */
+.distbar {
+  display: flex;
+  padding: 4px 28px 0 28px;
+  gap: 2px;
+}
+
+.distbar .seg {
+  height: 6px;
+  border-radius: 2px;
+  transition: width .5s ease;
+}
+
+.distbar-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 28px 0 28px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--board-muted);
+}
+
+/* ==========================================================================
+   17. Board Layout (Live Board)
+   ========================================================================== */
+.board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 20px 28px;
+}
+
+.col {
+  background: var(--board-surface);
+  border: 1px solid var(--board-line);
+  border-radius: 10px;
+  padding: 14px;
+  min-height: 200px;
+}
+
+.col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--board-line);
+}
+
+.col-head .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.col-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.col-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--board-muted);
+}
+
+.col.admitted .dot { background: var(--status-admitted); }
+.col.treatment .dot { background: var(--status-treatment); }
+.col.discharged .dot { background: var(--status-discharged); }
+.col.deceased .dot { background: var(--status-deceased); }
+
+/* Patient Card in Live Board */
+.patient-card {
+  background: var(--board-surface-2);
+  border: 1px solid var(--board-line);
+  border-radius: 8px;
+  padding: 11px 12px;
+  margin-bottom: 10px;
+}
+
+.patient-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.patient-name {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.patient-id {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--board-muted);
+}
+
+.patient-card-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--board-muted);
+}
+
+.ward-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: #101728;
+  border: 1px solid var(--board-line);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* ==========================================================================
+   18. Employee Dashboard Summary (Both Pages)
+   ========================================================================== */
+.employee-summary {
+  margin-top: 40px;
+  padding: 20px;
+  background: var(--surface);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.live-board .employee-summary {
+  background: var(--board-surface);
+  border: 1px solid var(--board-line);
+  box-shadow: none;
+}
+
+.employee-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.employee-summary-header h2 {
+  color: var(--primary);
+  font-size: 18px;
+}
+
+.live-board .employee-summary-header h2 {
+  color: var(--board-text);
+}
+
+.toggle-btn {
+  padding: 8px 15px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.3s ease;
+}
+
+.toggle-btn:hover {
+  background: var(--primary-hover);
+}
+
+/* Employee Stats Cards */
+.employee-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.employee-stat-card {
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.employee-stat-card.on-duty {
+  background: var(--emp-active-bg);
+}
+
+.employee-stat-card.on-leave {
+  background: var(--emp-leave-bg);
+}
+
+.employee-stat-card.sick-leave {
+  background: var(--emp-sick-bg);
+}
+
+.employee-stat-card.total-staff {
+  background: var(--emp-total-bg);
+}
+
+.employee-stat-number {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.employee-stat-label {
+  font-size: 13px;
+}
+
+.employee-stat-card.on-duty .employee-stat-number {
+  color: var(--emp-active);
+}
+
+.employee-stat-card.on-duty .employee-stat-label {
+  color: #558b2f;
+}
+
+.employee-stat-card.on-leave .employee-stat-number {
+  color: var(--emp-leave);
+}
+
+.employee-stat-card.on-leave .employee-stat-label {
+  color: #f57f17;
+}
+
+.employee-stat-card.sick-leave .employee-stat-number {
+  color: var(--emp-sick);
+}
+
+.employee-stat-card.sick-leave .employee-stat-label {
+  color: #880e4f;
+}
+
+.employee-stat-card.total-staff .employee-stat-number {
+  color: var(--emp-total);
+}
+
+.employee-stat-card.total-staff .employee-stat-label {
+  color: #4a148c;
+}
+
+/* Department Breakdown */
+.dept-breakdown {
+  display: none;
+  margin-top: 20px;
+}
+
+.dept-breakdown.active {
+  display: block;
+}
+
+.dept-breakdown h3 {
+  color: var(--primary);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.live-board .dept-breakdown h3 {
+  color: var(--board-text);
+}
+
+.dept-list {
+  font-size: 13px;
+}
+
+/* ==========================================================================
+   19. Footer (Live Board)
+   ========================================================================== */
+.footer-note {
+  padding: 16px 28px;
+  font-size: 11px;
+  color: var(--board-muted);
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+/* ==========================================================================
+   20. Utility Classes
+   ========================================================================== */
+.text-center {
+  text-align: center;
+}
+
+.mt-20 {
+  margin-top: 20px;
+}
+
+.mb-20 {
+  margin-bottom: 20px;
+}
+
+.hidden {
+  display: none;
+}
+
+/* ==========================================================================
+   21. Responsive Design
+   ========================================================================== */
+@media (max-width: 1000px) {
+  .board {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+  
+  header {
+    padding: 15px;
+  }
+  
+  header h1 {
+    font-size: 20px;
+  }
+  
+  .login-section,
+  .card {
+    padding: 15px;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  button {
+    width: 100%;
+    padding: 12px;
+  }
+  
+  .logout-btn {
+    width: auto;
+    margin-top: 15px;
+  }
+  
+  .employee-summary {
+    padding: 15px;
+  }
+  
+  .employee-summary-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .employee-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .topbar {
+    padding: 14px 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .clock {
+    min-width: auto;
+    font-size: 11px;
+  }
+  
+  .stats {
+    padding: 16px 16px 4px 16px;
+  }
+  
+  .board {
+    padding: 16px;
+  }
+  
+  .distbar,
+  .distbar-labels {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+@media (max-width: 620px) {
+  .board {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  header h1 {
+    font-size: 18px;
+  }
+  
+  header p {
+    font-size: 12px;
+  }
+  
+  .portal h2 {
+    font-size: 16px;
+  }
+  
+  .card h3 {
+    font-size: 14px;
+  }
+  
+  input,
+  select,
+  textarea {
+    font-size: 13px;
+    padding: 8px;
+  }
+  
+  .employee-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   22. Print Styles
+   ========================================================================== */
+@media print {
+  .logout-btn,
+  button,
+  .toggle-btn {
+    display: none;
+  }
+  
+  .card,
+  .employee-summary {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+  
+  body {
+    background: white;
+  }
+  
+  .live-board {
+    background: white;
+    color: #333;
+  }
+  
+  .topbar {
+    position: static;
+    background: #f0f0f0;
+    border-bottom: 1px solid #ccc;
+  }
+  
+  .toast,
+  .live-dot,
+  .pulse-wrap {
+    display: none;
+  }
+  
+  .board {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .col {
+    border: 1px solid #ccc;
+    background: white;
+  }
+  
+  .patient-card {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+  }
+}
