@@ -1,14 +1,14 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-const { requireAuth } = require('../auth');
+const prisma = require('../prismaClient');
+const { requireAuth, canonicalDept } = require('../auth');
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
-// CREATE order request (any department can request)
+// ============================================================
+// CREATE request
+// ============================================================
 router.post('/request', requireAuth, async (req, res) => {
   const { itemName, quantity, reason } = req.body;
-
   if (!itemName || !quantity || !reason) {
     return res.status(400).json({ error: 'itemName, quantity, and reason are required' });
   }
@@ -16,17 +16,15 @@ router.post('/request', requireAuth, async (req, res) => {
   try {
     const orderRequest = await prisma.orderRequest.create({
       data: {
-        requestingDepartment: req.user.department,
+        requestingDepartment: canonicalDept(req.user.department),
         requestingBy: req.user.fullName,
         itemName,
         quantity: parseInt(quantity),
         reason,
         status: 'pending',
       },
-      include: { statusLogs: true },
     });
 
-    // Create initial status log
     await prisma.orderRequestStatusLog.create({
       data: {
         orderRequestId: orderRequest.id,
@@ -37,19 +35,25 @@ router.post('/request', requireAuth, async (req, res) => {
       },
     });
 
-    res.json(orderRequest);
+    req.app.locals.emit('order:created', {
+      id: orderRequest.id,
+      department: orderRequest.requestingDepartment,
+      itemName: orderRequest.itemName,
+    });
+
+    res.status(201).json(orderRequest);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// GET all order requests (Procurement sees all, others see only theirs)
+// ============================================================
+// LIST
+// ============================================================
 router.get('/requests', requireAuth, async (req, res) => {
   try {
-    let where = {};
-    
-    // Only Procurement and IT Admin see all requests
-    if (req.user.department !== 'Procurement' && req.user.role !== 'admin') {
+    const where = {};
+    if (req.user.department !== 'Procurement' && req.user.department !== 'IT') {
       where.requestingDepartment = req.user.department;
     }
 
@@ -57,7 +61,7 @@ router.get('/requests', requireAuth, async (req, res) => {
       where,
       include: {
         statusLogs: { orderBy: { timestamp: 'desc' } },
-        procurementOrder: true,
+        procurementOrder: { include: { itemReceives: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -68,36 +72,211 @@ router.get('/requests', requireAuth, async (req, res) => {
   }
 });
 
-// GET single order request
-router.get('/requests/:id', requireAuth, async (req, res) => {
+// ============================================================
+// MY tenders
+// ============================================================
+router.get('/my', requireAuth, async (req, res) => {
   try {
-    const request = await prisma.orderRequest.findUnique({
-      where: { id: parseInt(req.params.id) },
+    const myDept = String(req.user.department || '').trim().toLowerCase();
+
+    const all = await prisma.orderRequest.findMany({
       include: {
         statusLogs: { orderBy: { timestamp: 'desc' } },
         procurementOrder: { include: { itemReceives: true } },
       },
+      orderBy: { createdAt: 'desc' },
     });
 
-    if (!request) return res.status(404).json({ error: 'Order request not found' });
+    const mine = all.filter(
+      r => String(r.requestingDepartment || '').trim().toLowerCase() === myDept
+    );
 
-    // Check authorization
-    if (req.user.department !== 'Procurement' && req.user.role !== 'admin') {
-      if (request.requestingDepartment !== req.user.department) {
-        return res.status(403).json({ error: 'Unauthorized' });
-      }
-    }
-
-    res.json(request);
+    res.json(mine);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// APPROVE order request (Procurement only)
+// ============================================================
+// MY tenders CSV export
+// ============================================================
+router.get('/my/export', requireAuth, async (req, res) => {
+  try {
+    const myDept = String(req.user.department || '').trim().toLowerCase();
+
+    const all = await prisma.orderRequest.findMany({
+      include: { procurementOrder: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const mine = all.filter(
+      r => String(r.requestingDepartment || '').trim().toLowerCase() === myDept
+    );
+
+    const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const header = ['ID', 'Item', 'Quantity', 'Reason', 'Status', 'Requested By', 'Supplier', 'Created'].join(',');
+    const rows = mine.map(t => [
+      t.id,
+      escape(t.itemName),
+      t.quantity,
+      escape(t.reason),
+      escape(t.status),
+      escape(t.requestingBy),
+      escape(t.procurementOrder?.supplierName || ''),
+      escape(t.createdAt.toISOString()),
+    ].join(','));
+
+    const csv = [header, ...rows].join('\n');
+    const filename = `tenders-${myDept}-${new Date().toISOString().split('T')[0]}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csv);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ============================================================
+// HISTORY — Procurement + IT only
+// ============================================================
+router.get('/history', requireAuth, async (req, res) => {
+  if (req.user.department !== 'Procurement' && req.user.department !== 'IT') {
+    return res.status(403).json({ error: 'Only Procurement can view tender history' });
+  }
+
+  try {
+    const { search, status, department, from, to } = req.query;
+
+    const all = await prisma.orderRequest.findMany({
+      include: {
+        statusLogs: { orderBy: { timestamp: 'desc' } },
+        procurementOrder: { include: { itemReceives: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    let filtered = all;
+
+    if (status && status !== 'all') filtered = filtered.filter(r => r.status === status);
+
+    if (department && department !== 'all') {
+      const d = department.toLowerCase();
+      filtered = filtered.filter(r => String(r.requestingDepartment || '').toLowerCase() === d);
+    }
+
+    if (search) {
+      const q = search.toLowerCase();
+      filtered = filtered.filter(r =>
+        String(r.itemName || '').toLowerCase().includes(q) ||
+        String(r.requestingBy || '').toLowerCase().includes(q) ||
+        String(r.requestingDepartment || '').toLowerCase().includes(q) ||
+        String(r.reason || '').toLowerCase().includes(q) ||
+        String(r.id) === q ||
+        (r.procurementOrder && String(r.procurementOrder.supplierName || '').toLowerCase().includes(q))
+      );
+    }
+
+    if (from) {
+      const fromDate = new Date(from);
+      filtered = filtered.filter(r => new Date(r.createdAt) >= fromDate);
+    }
+    if (to) {
+      const toDate = new Date(to);
+      toDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(r => new Date(r.createdAt) <= toDate);
+    }
+
+    res.json(filtered);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ============================================================
+// HISTORY SUMMARY
+// ============================================================
+router.get('/history/summary', requireAuth, async (req, res) => {
+  if (req.user.department !== 'Procurement' && req.user.department !== 'IT') {
+    return res.status(403).json({ error: 'Only Procurement can view tender history' });
+  }
+
+  try {
+    const all = await prisma.orderRequest.findMany({
+      select: { status: true, requestingDepartment: true, createdAt: true },
+    });
+
+    const statuses = ['pending', 'approved', 'rejected', 'ordered', 'received', 'in_storage'];
+    const byStatus = {};
+    statuses.forEach(s => byStatus[s] = 0);
+    all.forEach(r => { byStatus[r.status] = (byStatus[r.status] || 0) + 1; });
+
+    const byDept = {};
+    all.forEach(r => {
+      const d = r.requestingDepartment || 'Unknown';
+      byDept[d] = (byDept[d] || 0) + 1;
+    });
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recent = all.filter(r => new Date(r.createdAt) >= thirtyDaysAgo).length;
+
+    res.json({
+      total: all.length,
+      byStatus,
+      byDepartment: byDept,
+      last30Days: recent,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ============================================================
+// HISTORY CSV export
+// ============================================================
+router.get('/history/export', requireAuth, async (req, res) => {
+  if (req.user.department !== 'Procurement' && req.user.department !== 'IT') {
+    return res.status(403).json({ error: 'Only Procurement can export tender history' });
+  }
+
+  try {
+    const all = await prisma.orderRequest.findMany({
+      include: { procurementOrder: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const header = ['ID', 'Department', 'Requested By', 'Item', 'Quantity', 'Reason', 'Status', 'Supplier', 'Created'].join(',');
+    const rows = all.map(t => [
+      t.id,
+      escape(t.requestingDepartment),
+      escape(t.requestingBy),
+      escape(t.itemName),
+      t.quantity,
+      escape(t.reason),
+      escape(t.status),
+      escape(t.procurementOrder?.supplierName || ''),
+      escape(t.createdAt.toISOString()),
+    ].join(','));
+
+    const csv = [header, ...rows].join('\n');
+    const filename = `tender-history-${new Date().toISOString().split('T')[0]}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csv);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ============================================================
+// APPROVE
+// ============================================================
 router.patch('/requests/:id/approve', requireAuth, async (req, res) => {
-  if (req.user.department !== 'Procurement' && req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Only Procurement can approve orders' });
+  if (req.user.department !== 'Procurement' && req.user.department !== 'IT') {
+    return res.status(403).json({ error: 'Only Procurement can approve' });
   }
 
   const { supplierName } = req.body;
@@ -106,37 +285,48 @@ router.patch('/requests/:id/approve', requireAuth, async (req, res) => {
     const request = await prisma.orderRequest.findUnique({
       where: { id: parseInt(req.params.id) },
     });
-
-    if (!request) return res.status(404).json({ error: 'Order request not found' });
+    if (!request) return res.status(404).json({ error: 'Request not found' });
     if (request.status !== 'pending') {
-      return res.status(400).json({ error: 'Can only approve pending requests' });
+      return res.status(400).json({ error: `Cannot approve request in status "${request.status}"` });
     }
 
-    // Update request status
     const updated = await prisma.orderRequest.update({
-      where: { id: parseInt(req.params.id) },
-      data: { status: 'approved', updatedAt: new Date() },
-      include: { statusLogs: true },
+      where: { id: request.id },
+      data: { status: 'approved' },
     });
 
-    // Log status change
     await prisma.orderRequestStatusLog.create({
       data: {
-        orderRequestId: parseInt(req.params.id),
+        orderRequestId: request.id,
         oldStatus: 'pending',
         newStatus: 'approved',
         changedBy: req.user.fullName,
-        notes: `Approved by ${req.user.fullName}`,
+        notes: `Approved. Supplier: ${supplierName || 'TBD'}`,
       },
     });
 
-    // Create procurement order
-    await prisma.procurementOrder.create({
-      data: {
-        orderRequestId: parseInt(req.params.id),
-        supplierName: supplierName || 'TBD',
-        status: 'approved',
-      },
+    const existingPO = await prisma.procurementOrder.findUnique({
+      where: { orderRequestId: request.id },
+    });
+    if (!existingPO) {
+      await prisma.procurementOrder.create({
+        data: {
+          orderRequestId: request.id,
+          supplierName: supplierName || 'TBD',
+          status: 'approved',
+        },
+      });
+    } else {
+      await prisma.procurementOrder.update({
+        where: { id: existingPO.id },
+        data: { supplierName: supplierName || existingPO.supplierName },
+      });
+    }
+
+    req.app.locals.emit('order:updated', {
+      id: updated.id,
+      status: 'approved',
+      department: updated.requestingDepartment,
     });
 
     res.json(updated);
@@ -145,10 +335,12 @@ router.patch('/requests/:id/approve', requireAuth, async (req, res) => {
   }
 });
 
-// REJECT order request (Procurement only)
+// ============================================================
+// REJECT
+// ============================================================
 router.patch('/requests/:id/reject', requireAuth, async (req, res) => {
-  if (req.user.department !== 'Procurement' && req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Only Procurement can reject orders' });
+  if (req.user.department !== 'Procurement' && req.user.department !== 'IT') {
+    return res.status(403).json({ error: 'Only Procurement can reject' });
   }
 
   const { reason } = req.body;
@@ -157,23 +349,27 @@ router.patch('/requests/:id/reject', requireAuth, async (req, res) => {
     const request = await prisma.orderRequest.findUnique({
       where: { id: parseInt(req.params.id) },
     });
-
-    if (!request) return res.status(404).json({ error: 'Order request not found' });
+    if (!request) return res.status(404).json({ error: 'Request not found' });
 
     const updated = await prisma.orderRequest.update({
-      where: { id: parseInt(req.params.id) },
-      data: { status: 'rejected', updatedAt: new Date() },
-      include: { statusLogs: true },
+      where: { id: request.id },
+      data: { status: 'rejected' },
     });
 
     await prisma.orderRequestStatusLog.create({
       data: {
-        orderRequestId: parseInt(req.params.id),
+        orderRequestId: request.id,
         oldStatus: request.status,
         newStatus: 'rejected',
         changedBy: req.user.fullName,
-        notes: reason || 'Rejected by Procurement',
+        notes: reason || 'Rejected',
       },
+    });
+
+    req.app.locals.emit('order:updated', {
+      id: updated.id,
+      status: 'rejected',
+      department: updated.requestingDepartment,
     });
 
     res.json(updated);
@@ -182,9 +378,11 @@ router.patch('/requests/:id/reject', requireAuth, async (req, res) => {
   }
 });
 
-// SEND order to supplier (Procurement only)
+// ============================================================
+// SEND
+// ============================================================
 router.patch('/requests/:id/send', requireAuth, async (req, res) => {
-  if (req.user.department !== 'Procurement' && req.user.role !== 'admin') {
+  if (req.user.department !== 'Procurement' && req.user.department !== 'IT') {
     return res.status(403).json({ error: 'Only Procurement can send orders' });
   }
 
@@ -193,19 +391,16 @@ router.patch('/requests/:id/send', requireAuth, async (req, res) => {
       where: { id: parseInt(req.params.id) },
       include: { procurementOrder: true },
     });
-
-    if (!request) return res.status(404).json({ error: 'Order request not found' });
+    if (!request) return res.status(404).json({ error: 'Request not found' });
     if (request.status !== 'approved') {
-      return res.status(400).json({ error: 'Can only send approved orders' });
+      return res.status(400).json({ error: 'Only approved requests can be sent' });
     }
 
-    // Update request status
     const updated = await prisma.orderRequest.update({
-      where: { id: parseInt(req.params.id) },
-      data: { status: 'ordered', updatedAt: new Date() },
+      where: { id: request.id },
+      data: { status: 'ordered' },
     });
 
-    // Update procurement order status
     if (request.procurementOrder) {
       await prisma.procurementOrder.update({
         where: { id: request.procurementOrder.id },
@@ -213,15 +408,20 @@ router.patch('/requests/:id/send', requireAuth, async (req, res) => {
       });
     }
 
-    // Log status change
     await prisma.orderRequestStatusLog.create({
       data: {
-        orderRequestId: parseInt(req.params.id),
+        orderRequestId: request.id,
         oldStatus: 'approved',
         newStatus: 'ordered',
         changedBy: req.user.fullName,
         notes: 'Order sent to supplier',
       },
+    });
+
+    req.app.locals.emit('order:updated', {
+      id: updated.id,
+      status: 'ordered',
+      department: updated.requestingDepartment,
     });
 
     res.json(updated);
@@ -230,22 +430,23 @@ router.patch('/requests/:id/send', requireAuth, async (req, res) => {
   }
 });
 
-// GET order summary (for dashboard)
-router.get('/summary', async (req, res) => {
+// ============================================================
+// SUMMARY
+// ============================================================
+router.get('/summary', requireAuth, async (req, res) => {
   try {
-    const pending = await prisma.orderRequest.count({ where: { status: 'pending' } });
-    const approved = await prisma.orderRequest.count({ where: { status: 'approved' } });
-    const ordered = await prisma.orderRequest.count({ where: { status: 'ordered' } });
-    const rejected = await prisma.orderRequest.count({ where: { status: 'rejected' } });
-    const inStorage = await prisma.orderRequest.count({ where: { status: 'in_storage' } });
-
+    const statuses = ['pending', 'approved', 'rejected', 'ordered', 'in_storage', 'received'];
+    const counts = {};
+    for (const s of statuses) {
+      counts[s] = await prisma.orderRequest.count({ where: { status: s } });
+    }
     res.json({
-      pending,
-      approved,
-      ordered,
-      rejected,
-      inStorage,
-      total: pending + approved + ordered + rejected + inStorage,
+      pending: counts.pending,
+      approved: counts.approved,
+      rejected: counts.rejected,
+      ordered: counts.ordered,
+      inStorage: counts.in_storage + counts.received,
+      total: Object.values(counts).reduce((a, b) => a + b, 0),
     });
   } catch (e) {
     res.status(500).json({ error: e.message });

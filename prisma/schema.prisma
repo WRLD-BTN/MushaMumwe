@@ -79,14 +79,14 @@ model OrderRequest {
 }
 
 model OrderRequestStatusLog {
-  id           Int          @id @default(autoincrement())
+  id             Int          @id @default(autoincrement())
   orderRequestId Int
-  orderRequest OrderRequest @relation(fields: [orderRequestId], references: [id])
-  oldStatus    String
-  newStatus    String
-  changedBy    String
-  notes        String?
-  timestamp    DateTime     @default(now())
+  orderRequest   OrderRequest @relation(fields: [orderRequestId], references: [id])
+  oldStatus      String
+  newStatus      String
+  changedBy      String
+  notes          String?
+  timestamp      DateTime     @default(now())
 }
 
 model ProcurementOrder {
