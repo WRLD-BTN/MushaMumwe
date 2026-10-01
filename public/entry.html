@@ -3,31 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MushaMumwe — Department Portal</title>
+  <title>Sally Mugabe Central Hospital - Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="entry-portal">
   <div class="container">
     <header class="app-header">
       <div>
-        <h1>MushaMumwe</h1>
-        <p>Hospital Operations Portal</p>
+        <h1 id="appTitle">Sally Mugabe Central Hospital</h1>
+        <p id="appSubtitle">Department Dashboard</p>
       </div>
       <div id="headerUser" class="header-user" style="display:none;">
         <span id="headerUserLabel"></span>
-        <button class="ghost-btn small" onclick="openOwnPasswordModal()">🔑 Change Password</button>
+        <button id="btnOwnPwd" class="ghost-btn small" onclick="openOwnPasswordModal()">Change Password</button>
+        <button id="btnBackHome" class="ghost-btn small" style="display:none;" onclick="backToSuperAdminHome()">Back to Home</button>
         <button class="logout-btn small" onclick="logout()">Logout</button>
       </div>
     </header>
 
-    <!-- ==================== LOGIN ==================== -->
     <div id="login" class="login-section">
-      <h2>Department Login</h2>
+      <h2>Login</h2>
       <div id="loginError" class="error" style="display:none;"></div>
 
       <div class="form-group">
         <label for="department">Select Department:</label>
-        <select id="department" required>
+        <select id="department">
           <option value="">-- Choose Department --</option>
           <option value="Nurses">Nurses / Ward Staff</option>
           <option value="IT">IT Management</option>
@@ -36,565 +36,23 @@
           <option value="HR">Human Resources</option>
         </select>
       </div>
-
       <div class="form-group">
         <label for="username">Username:</label>
-        <input type="text" id="username" placeholder="Enter username" required>
+        <input type="text" id="username" placeholder="Enter username">
       </div>
-
       <div class="form-group">
         <label for="password">Password:</label>
-        <input type="password" id="password" placeholder="Enter password" required>
+        <input type="password" id="password" placeholder="Enter password">
       </div>
-
       <button onclick="login()" class="primary-btn block">Login</button>
+      <p class="muted" style="text-align:center; margin-top:14px; font-size:11px;">
+        Super Admin: enter username and password. Department selection is ignored.
+      </p>
     </div>
 
-    <!-- ==================== NURSES PORTAL ==================== -->
-    <div id="nursesPortal" class="portal">
-      <div class="portal-header">
-        <h2>Nurses Department — Patient Management</h2>
-      </div>
-
-      <div class="grid">
-        <div class="card">
-          <h3>Register New Patient</h3>
-          <div class="form-group">
-            <label for="nurses-patientName">Patient Name:</label>
-            <input type="text" id="nurses-patientName" placeholder="Full name">
-          </div>
-          <div class="form-group">
-            <label for="nurses-patientID">National ID (optional):</label>
-            <input type="text" id="nurses-patientID" placeholder="ID number">
-          </div>
-          <div class="form-group">
-            <label for="nurses-wardSelect">Ward:</label>
-            <select id="nurses-wardSelect"></select>
-          </div>
-          <div class="form-group">
-            <label for="nurses-statusSelect">Status:</label>
-            <select id="nurses-statusSelect">
-              <option value="admitted">Admitted</option>
-              <option value="treatment">In Treatment</option>
-              <option value="discharged">Discharged</option>
-              <option value="deceased">Deceased</option>
-            </select>
-          </div>
-          <button onclick="registerPatient()" class="primary-btn block">Save Record</button>
-          <div id="nurses-patientMessage"></div>
-        </div>
-
-        <div class="card">
-          <h3>Find & Update Patient</h3>
-          <div class="form-group">
-            <label for="nurses-patientSearch">Search (name or ID):</label>
-            <input type="text" id="nurses-patientSearch" placeholder="Type to search..." oninput="filterPatientList()">
-          </div>
-          <div class="form-group">
-            <label for="nurses-patientSelect">Select Patient:</label>
-            <select id="nurses-patientSelect" size="6" style="height:auto;"></select>
-          </div>
-          <div class="form-group">
-            <label for="nurses-newStatus">New Status:</label>
-            <select id="nurses-newStatus">
-              <option value="admitted">Admitted</option>
-              <option value="treatment">In Treatment</option>
-              <option value="discharged">Discharged</option>
-              <option value="deceased">Deceased</option>
-            </select>
-          </div>
-          <button onclick="updatePatient()" class="primary-btn block">Update Status</button>
-          <div id="nurses-updateMessage"></div>
-        </div>
-
-        <div class="card">
-          <h3>Submit Tender Request</h3>
-          <div class="form-group">
-            <label for="nurses-reqItemName">Item Name:</label>
-            <input type="text" id="nurses-reqItemName" placeholder="e.g. Medical Gloves">
-          </div>
-          <div class="form-group">
-            <label for="nurses-reqQuantity">Quantity:</label>
-            <input type="number" id="nurses-reqQuantity" placeholder="e.g. 50" min="1">
-          </div>
-          <div class="form-group">
-            <label for="nurses-reqReason">Reason:</label>
-            <textarea id="nurses-reqReason" placeholder="Why is this needed?"></textarea>
-          </div>
-          <button onclick="submitTenderRequest('nurses')" class="primary-btn block">Submit Request</button>
-          <div id="nurses-requestMessage"></div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:20px;">
-        <div class="card-head">
-          <h3>My Tender Tracker <span class="lock-badge">🔒 Locked to your department</span></h3>
-          <div class="card-head-actions">
-            <input type="text" class="search-input" id="nurses-tenderSearch" placeholder="🔎 Search tenders..." oninput="filterTenders('nurses')">
-            <button class="pill-btn" onclick="exportMyTenders()">⬇ Export CSV</button>
-          </div>
-        </div>
-        <div class="tender-filters" id="nurses-tenderFilters">
-          <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this,'nurses')">All</button>
-          <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this,'nurses')">Pending</button>
-          <button class="filter-btn" data-filter="approved" onclick="setTenderFilter(this,'nurses')">Approved</button>
-          <button class="filter-btn" data-filter="rejected" onclick="setTenderFilter(this,'nurses')">Rejected</button>
-          <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this,'nurses')">Ordered</button>
-          <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this,'nurses')">Received</button>
-        </div>
-        <div id="nurses-tenderTrackerList" class="tender-tracker"></div>
-      </div>
-    </div>
-
-    <!-- ==================== IT PORTAL ==================== -->
-    <div id="itPortal" class="portal">
-      <div class="portal-header">
-        <h2>IT Department — User Management</h2>
-      </div>
-
-      <div class="grid">
-        <div class="card">
-          <h3>Create User Account</h3>
-          <div class="form-group">
-            <label for="it-newUsername">Username:</label>
-            <input type="text" id="it-newUsername" placeholder="e.g. nurse3">
-          </div>
-          <div class="form-group">
-            <label for="it-newUserFullName">Full Name:</label>
-            <input type="text" id="it-newUserFullName" placeholder="Full name">
-          </div>
-          <div class="form-group">
-            <label for="it-newUserDept">Department:</label>
-            <select id="it-newUserDept">
-              <option value="Nurses">Nurses</option>
-              <option value="Procurement">Procurement</option>
-              <option value="Stores">Stores</option>
-              <option value="HR">HR</option>
-              <option value="IT">IT</option>
-            </select>
-          </div>
-          <button onclick="createUser()" class="primary-btn block">Generate Temporary Password</button>
-          <div id="it-createUserMessage"></div>
-        </div>
-
-        <div class="card">
-          <h3>System Status</h3>
-          <p>Total Users: <strong id="it-totalUsers">-</strong></p>
-          <p>Database: <strong>Connected</strong></p>
-          <button onclick="loadSystemStatus()" class="ghost-btn block">Refresh</button>
-        </div>
-
-        <div class="card">
-          <h3>Submit Tender Request</h3>
-          <div class="form-group">
-            <label for="it-reqItemName">Item Name:</label>
-            <input type="text" id="it-reqItemName" placeholder="e.g. Laptops">
-          </div>
-          <div class="form-group">
-            <label for="it-reqQuantity">Quantity:</label>
-            <input type="number" id="it-reqQuantity" min="1">
-          </div>
-          <div class="form-group">
-            <label for="it-reqReason">Reason:</label>
-            <textarea id="it-reqReason"></textarea>
-          </div>
-          <button onclick="submitTenderRequest('it')" class="primary-btn block">Submit Request</button>
-          <div id="it-requestMessage"></div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:20px;">
-        <div class="card-head">
-          <h3>All Users</h3>
-          <div class="card-head-actions">
-            <input type="text" class="search-input" id="it-userSearch" placeholder="🔎 Search users..." oninput="filterUserList()">
-          </div>
-        </div>
-        <div id="it-userList" class="table-wrap"></div>
-      </div>
-
-      <div class="card" style="margin-top:20px;">
-        <div class="card-head">
-          <h3>My Tender Tracker <span class="lock-badge">🔒 Locked to your department</span></h3>
-          <div class="card-head-actions">
-            <input type="text" class="search-input" id="it-tenderSearch" placeholder="🔎 Search tenders..." oninput="filterTenders('it')">
-            <button class="pill-btn" onclick="exportMyTenders()">⬇ Export CSV</button>
-          </div>
-        </div>
-        <div class="tender-filters" id="it-tenderFilters">
-          <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this,'it')">All</button>
-          <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this,'it')">Pending</button>
-          <button class="filter-btn" data-filter="approved" onclick="setTenderFilter(this,'it')">Approved</button>
-          <button class="filter-btn" data-filter="rejected" onclick="setTenderFilter(this,'it')">Rejected</button>
-          <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this,'it')">Ordered</button>
-          <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this,'it')">Received</button>
-        </div>
-        <div id="it-tenderTrackerList" class="tender-tracker"></div>
-      </div>
-    </div>
-
-    <!-- ==================== PROCUREMENT PORTAL ==================== -->
-    <div id="procurementPortal" class="portal">
-      <div class="portal-header">
-        <h2>Procurement — Order Management</h2>
-      </div>
-
-      <div class="dept-tabs">
-        <button class="dept-tab active" data-tab="active" onclick="switchProcTab(this)">Active Board</button>
-        <button class="dept-tab" data-tab="history" onclick="switchProcTab(this)">Tender History</button>
-      </div>
-
-      <!-- ACTIVE TAB -->
-      <div id="procTabActive" class="proc-tab-panel active">
-        <div class="grid">
-          <div class="card" style="grid-column: span 2;">
-            <div class="card-head">
-              <h3>Pending Order Requests</h3>
-              <div class="card-head-actions">
-                <input type="text" class="search-input" id="proc-pendingSearch" placeholder="🔎 Search pending..." oninput="filterProcurementOrders()">
-              </div>
-            </div>
-            <div class="scroll-area">
-              <div id="proc-pendingOrdersList"></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h3>Approved / Ordered</h3>
-            <div id="proc-approvedOrdersList" class="scroll-area"></div>
-          </div>
-
-          <div class="card">
-            <h3>Order Summary</h3>
-            <p>Pending: <strong id="proc-procPending">-</strong></p>
-            <p>Approved: <strong id="proc-procApproved">-</strong></p>
-            <p>Ordered: <strong id="proc-procOrdered">-</strong></p>
-            <p>Received: <strong id="proc-procInStorage">-</strong></p>
-            <button onclick="loadProcurementDashboard()" class="ghost-btn block">Refresh</button>
-          </div>
-
-          <div class="card">
-            <h3>Submit Tender Request</h3>
-            <div class="form-group">
-              <label for="proc-reqItemName">Item Name:</label>
-              <input type="text" id="proc-reqItemName" placeholder="e.g. Office Supplies">
-            </div>
-            <div class="form-group">
-              <label for="proc-reqQuantity">Quantity:</label>
-              <input type="number" id="proc-reqQuantity" min="1">
-            </div>
-            <div class="form-group">
-              <label for="proc-reqReason">Reason:</label>
-              <textarea id="proc-reqReason"></textarea>
-            </div>
-            <button onclick="submitTenderRequest('proc')" class="primary-btn block">Submit Request</button>
-            <div id="proc-requestMessage"></div>
-          </div>
-
-          <div class="card" style="grid-column: span 2;">
-            <div class="card-head">
-              <h3>My Department's Tenders <span class="lock-badge">🔒 Locked to your department</span></h3>
-              <div class="card-head-actions">
-                <input type="text" class="search-input" id="proc-tenderSearch" placeholder="🔎 Search tenders..." oninput="filterTenders('proc')">
-                <button class="pill-btn" onclick="exportMyTenders()">⬇ Export CSV</button>
-              </div>
-            </div>
-            <div class="tender-filters" id="proc-tenderFilters">
-              <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this,'proc')">All</button>
-              <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this,'proc')">Pending</button>
-              <button class="filter-btn" data-filter="approved" onclick="setTenderFilter(this,'proc')">Approved</button>
-              <button class="filter-btn" data-filter="rejected" onclick="setTenderFilter(this,'proc')">Rejected</button>
-              <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this,'proc')">Ordered</button>
-              <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this,'proc')">Received</button>
-            </div>
-            <div id="proc-tenderTrackerList" class="tender-tracker"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- HISTORY TAB -->
-      <div id="procTabHistory" class="proc-tab-panel">
-        <div class="history-stats" id="historyStats">
-          <div class="hstat"><span class="hn" id="hTotal">-</span><span class="hl">Total</span></div>
-          <div class="hstat"><span class="hn" id="hPending">-</span><span class="hl">Pending</span></div>
-          <div class="hstat"><span class="hn" id="hApproved">-</span><span class="hl">Approved</span></div>
-          <div class="hstat"><span class="hn" id="hRejected">-</span><span class="hl">Rejected</span></div>
-          <div class="hstat"><span class="hn" id="hReceived">-</span><span class="hl">Received</span></div>
-          <div class="hstat"><span class="hn" id="hRecent">-</span><span class="hl">Last 30 days</span></div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <h3>Search & Filter All Tenders</h3>
-            <div class="card-head-actions">
-              <button class="pill-btn" onclick="exportTenderHistory()">⬇ Export CSV</button>
-            </div>
-          </div>
-          <div class="history-filters">
-            <div class="form-group">
-              <label>Search</label>
-              <input type="text" id="histSearch" placeholder="Item / requester / supplier / ID..." oninput="debouncedHistorySearch()">
-            </div>
-            <div class="form-group">
-              <label>Status</label>
-              <select id="histStatus" onchange="loadTenderHistory()">
-                <option value="all">All statuses</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="ordered">Ordered</option>
-                <option value="received">Received</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Department</label>
-              <select id="histDept" onchange="loadTenderHistory()">
-                <option value="all">All departments</option>
-                <option value="Nurses">Nurses</option>
-                <option value="Procurement">Procurement</option>
-                <option value="Stores">Stores</option>
-                <option value="HR">HR</option>
-                <option value="IT">IT</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>From</label>
-              <input type="date" id="histFrom" onchange="loadTenderHistory()">
-            </div>
-            <div class="form-group">
-              <label>To</label>
-              <input type="date" id="histTo" onchange="loadTenderHistory()">
-            </div>
-            <div class="form-group">
-              <label>&nbsp;</label>
-              <button onclick="clearHistoryFilters()" class="ghost-btn block">Clear</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:20px;">
-          <div class="card-head">
-            <h3>Results <span class="muted" id="histCount"></span></h3>
-          </div>
-          <div id="proc-tenderHistoryList" class="tender-tracker"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ==================== STORES PORTAL ==================== -->
-    <div id="storesPortal" class="portal">
-      <div class="portal-header">
-        <h2>Stores — Inventory Management</h2>
-      </div>
-
-      <div class="grid">
-        <div class="card" style="grid-column: span 2;">
-          <div class="card-head">
-            <h3>Approved Tenders — Ready to Receive</h3>
-            <div class="card-head-actions">
-              <input type="text" class="search-input" id="stores-approvedSearch" placeholder="🔎 Search approved..." oninput="filterApprovedForStores()">
-            </div>
-          </div>
-          <div class="scroll-area">
-            <div id="stores-approvedOrders"></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3>Record Receipt</h3>
-          <div class="form-group">
-            <label for="stores-receiveOrderId">Order Request ID:</label>
-            <input type="number" id="stores-receiveOrderId" placeholder="Auto-filled when clicking Receive">
-          </div>
-          <div class="form-group">
-            <label for="stores-receiveItemName">Item Name:</label>
-            <input type="text" id="stores-receiveItemName">
-          </div>
-          <div class="form-group">
-            <label for="stores-receiveQty">Qty Received:</label>
-            <input type="number" id="stores-receiveQty" min="1">
-          </div>
-          <div class="form-group">
-            <label for="stores-receiveNotes">Notes:</label>
-            <textarea id="stores-receiveNotes"></textarea>
-          </div>
-          <button onclick="receiveItems()" class="primary-btn block">Record Receipt</button>
-          <div id="stores-receiveMessage"></div>
-        </div>
-
-        <div class="card">
-          <h3>Stock Levels</h3>
-          <p>Critical (&lt;10): <strong id="stores-invCritical">-</strong></p>
-          <p>Low (10–49): <strong id="stores-invLow">-</strong></p>
-          <p>Adequate (50+): <strong id="stores-invAdequate">-</strong></p>
-          <p>Total Items: <strong id="stores-invTotal">-</strong></p>
-          <button onclick="loadStoresInventory()" class="ghost-btn block">Refresh</button>
-        </div>
-
-        <div class="card" style="grid-column: span 2;">
-          <div class="card-head">
-            <h3>Current Inventory</h3>
-            <div class="card-head-actions">
-              <input type="text" class="search-input" id="stores-invSearch" placeholder="🔎 Search inventory..." oninput="filterInventory()">
-              <button class="pill-btn" onclick="exportInventory()">⬇ Export CSV</button>
-            </div>
-          </div>
-          <div id="stores-inventoryList" class="table-wrap"></div>
-        </div>
-
-        <div class="card" style="grid-column: span 2;">
-          <h3>Recent Receipts</h3>
-          <div id="stores-receiveHistory" class="scroll-area"></div>
-        </div>
-
-        <div class="card">
-          <h3>Submit Tender Request</h3>
-          <div class="form-group">
-            <label for="stores-reqItemName">Item Name:</label>
-            <input type="text" id="stores-reqItemName">
-          </div>
-          <div class="form-group">
-            <label for="stores-reqQuantity">Quantity:</label>
-            <input type="number" id="stores-reqQuantity" min="1">
-          </div>
-          <div class="form-group">
-            <label for="stores-reqReason">Reason:</label>
-            <textarea id="stores-reqReason"></textarea>
-          </div>
-          <button onclick="submitTenderRequest('stores')" class="primary-btn block">Submit Request</button>
-          <div id="stores-requestMessage"></div>
-        </div>
-
-        <div class="card" style="grid-column: span 2;">
-          <div class="card-head">
-            <h3>My Tender Tracker <span class="lock-badge">🔒 Locked to your department</span></h3>
-            <div class="card-head-actions">
-              <input type="text" class="search-input" id="stores-tenderSearch" placeholder="🔎 Search tenders..." oninput="filterTenders('stores')">
-              <button class="pill-btn" onclick="exportMyTenders()">⬇ Export CSV</button>
-            </div>
-          </div>
-          <div class="tender-filters" id="stores-tenderFilters">
-            <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this,'stores')">All</button>
-            <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this,'stores')">Pending</button>
-            <button class="filter-btn" data-filter="approved" onclick="setTenderFilter(this,'stores')">Approved</button>
-            <button class="filter-btn" data-filter="rejected" onclick="setTenderFilter(this,'stores')">Rejected</button>
-            <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this,'stores')">Ordered</button>
-            <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this,'stores')">Received</button>
-          </div>
-          <div id="stores-tenderTrackerList" class="tender-tracker"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ==================== HR PORTAL ==================== -->
-    <div id="hrPortal" class="portal">
-      <div class="portal-header">
-        <h2>HR — Staff Management</h2>
-      </div>
-
-      <div class="grid">
-        <div class="card">
-          <h3>Add New Employee</h3>
-          <div class="form-group">
-            <label for="hr-empName">Employee Name:</label>
-            <input type="text" id="hr-empName">
-          </div>
-          <div class="form-group">
-            <label for="hr-empDept">Department:</label>
-            <select id="hr-empDept">
-              <option value="Medical">Medical / Doctors</option>
-              <option value="Nurses">Nurses</option>
-              <option value="Pharmacy">Pharmacy</option>
-              <option value="Laboratory">Laboratory</option>
-              <option value="Admin">Admin</option>
-              <option value="Support">Support / Cleaning</option>
-              <option value="Maintenance">Maintenance</option>
-              <option value="Security">Security</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="hr-empWard">Assigned Ward:</label>
-            <select id="hr-empWard"></select>
-          </div>
-          <div class="form-group">
-            <label for="hr-empHireDate">Hire Date:</label>
-            <input type="date" id="hr-empHireDate">
-          </div>
-          <button onclick="addEmployee()" class="primary-btn block">Hire Employee</button>
-          <div id="hr-empAddMessage"></div>
-        </div>
-
-        <div class="card">
-          <h3>Export Staff Data</h3>
-          <p class="muted">Download all employee records as CSV.</p>
-          <button onclick="exportStaffCSV()" class="pill-btn block">⬇ Export Staff CSV</button>
-          <div id="hr-exportMessage"></div>
-        </div>
-
-        <div class="card" style="grid-column: span 2;">
-          <div class="card-head">
-            <h3>Staff Roster</h3>
-            <div class="card-head-actions">
-              <input type="text" class="search-input" id="hr-empSearchBox" placeholder="🔎 Search staff..." oninput="searchEmployees()">
-            </div>
-          </div>
-          <div id="hr-empRosterTable" class="table-wrap"></div>
-        </div>
-
-        <div class="card">
-          <h3>Staffing Summary</h3>
-          <p>On Duty: <strong id="hr-empOnDuty">-</strong></p>
-          <p>On Leave: <strong id="hr-empOnLeave">-</strong></p>
-          <p>Sick: <strong id="hr-empSick">-</strong></p>
-          <p>Terminated: <strong id="hr-empTerminated">-</strong></p>
-          <p>Total Active: <strong id="hr-empTotal">-</strong></p>
-          <button onclick="loadStaffingSummary()" class="ghost-btn block">Refresh</button>
-        </div>
-
-        <div class="card">
-          <h3>Submit Tender Request</h3>
-          <div class="form-group">
-            <label for="hr-reqItemName">Item Name:</label>
-            <input type="text" id="hr-reqItemName">
-          </div>
-          <div class="form-group">
-            <label for="hr-reqQuantity">Quantity:</label>
-            <input type="number" id="hr-reqQuantity" min="1">
-          </div>
-          <div class="form-group">
-            <label for="hr-reqReason">Reason:</label>
-            <textarea id="hr-reqReason"></textarea>
-          </div>
-          <button onclick="submitTenderRequest('hr')" class="primary-btn block">Submit Request</button>
-          <div id="hr-requestMessage"></div>
-        </div>
-
-        <div class="card" style="grid-column: span 2;">
-          <div class="card-head">
-            <h3>My Tender Tracker <span class="lock-badge">🔒 Locked to your department</span></h3>
-            <div class="card-head-actions">
-              <input type="text" class="search-input" id="hr-tenderSearch" placeholder="🔎 Search tenders..." oninput="filterTenders('hr')">
-              <button class="pill-btn" onclick="exportMyTenders()">⬇ Export CSV</button>
-            </div>
-          </div>
-          <div class="tender-filters" id="hr-tenderFilters">
-            <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this,'hr')">All</button>
-            <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this,'hr')">Pending</button>
-            <button class="filter-btn" data-filter="approved" onclick="setTenderFilter(this,'hr')">Approved</button>
-            <button class="filter-btn" data-filter="rejected" onclick="setTenderFilter(this,'hr')">Rejected</button>
-            <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this,'hr')">Ordered</button>
-            <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this,'hr')">Received</button>
-          </div>
-          <div id="hr-tenderTrackerList" class="tender-tracker"></div>
-        </div>
-      </div>
-    </div>
-
+    <div id="portalContainer"></div>
   </div>
 
-  <!-- ==================== SHARED MODALS (OUTSIDE ANY PORTAL) ==================== -->
-
-  <!-- Own Password Modal -->
   <div id="ownPwdModal" class="modal">
     <div class="modal-content">
       <h3>Change My Password</h3>
@@ -603,7 +61,7 @@
         <input type="password" id="ownCurrentPwd">
       </div>
       <div class="form-group">
-        <label>New Password (min 6 chars):</label>
+        <label>New Password (min 6):</label>
         <input type="password" id="ownNewPwd">
       </div>
       <div class="modal-actions">
@@ -614,7 +72,6 @@
     </div>
   </div>
 
-  <!-- Employee Status Modal -->
   <div id="empStatusModal" class="modal">
     <div class="modal-content">
       <h3 id="modalEmpName"></h3>
@@ -635,979 +92,122 @@
     </div>
   </div>
 
+  <div id="dischargeModal" class="modal">
+    <div class="modal-content modal-wide">
+      <h3>Discharge Patient: <span id="dischargePatientName"></span></h3>
+      <div id="dischargePatientMeta" class="muted" style="margin-bottom:16px;"></div>
+
+      <div class="form-group">
+        <label>Final Diagnosis: <span class="req">*</span></label>
+        <input type="text" id="dischargeFinalDiagnosis">
+      </div>
+      <div class="form-group">
+        <label>Treatment Summary:</label>
+        <textarea id="dischargeTreatment"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Outcome:</label>
+        <select id="dischargeOutcome">
+          <option value="Recovered">Recovered</option>
+          <option value="Improved">Improved</option>
+          <option value="Referred">Referred</option>
+          <option value="Absconded">Absconded</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Discharge Notes:</label>
+        <textarea id="dischargeNotes"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Patient Instructions:</label>
+        <textarea id="dischargeInstructions"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Next Review Date:</label>
+          <input type="date" id="dischargeReviewDate">
+        </div>
+        <div class="form-group">
+          <label>Review Department:</label>
+          <select id="dischargeReviewDept">
+            <option value="Outpatient">Outpatient</option>
+            <option value="Nurses">Nurses</option>
+            <option value="Medical">Medical</option>
+            <option value="Pharmacy">Pharmacy</option>
+            <option value="Laboratory">Laboratory</option>
+          </select>
+        </div>
+      </div>
+      <div id="dischargeMessage"></div>
+
+      <div class="modal-actions">
+        <button onclick="confirmDischarge()" class="primary-btn">Confirm Discharge</button>
+        <button onclick="closeDischargeModal()" class="ghost-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="printOptionsModal" class="modal">
+    <div class="modal-content">
+      <h3>Print Discharge Summary</h3>
+      <p id="printPatientLabel" class="muted"></p>
+      <div class="form-group">
+        <label>Paper Size:</label>
+        <div class="radio-row">
+          <label><input type="radio" name="paperSize" value="A4" checked> A4</label>
+          <label><input type="radio" name="paperSize" value="A5"> A5</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Copies:</label>
+        <div class="radio-row">
+          <label><input type="radio" name="copies" value="1"> 1 copy</label>
+          <label><input type="radio" name="copies" value="2" checked> 2 copies (patient + hospital)</label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button onclick="doPrintDischarge()" class="primary-btn">Print</button>
+        <button onclick="closePrintOptions()" class="ghost-btn">Skip</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settingsModal" class="modal">
+    <div class="modal-content modal-wide">
+      <h3>System Settings</h3>
+      <p class="muted" style="margin-bottom:16px;">Super Admin only. Changes apply to every page immediately.</p>
+
+      <div class="form-group">
+        <label>Hospital Name:</label>
+        <input type="text" id="settingsHospitalName" placeholder="e.g. Sally Mugabe Central Hospital">
+      </div>
+      <div class="form-group">
+        <label>Subtitle:</label>
+        <input type="text" id="settingsSubtitle" placeholder="e.g. Department Dashboard">
+      </div>
+      <div class="form-group">
+        <label>Contact Phone:</label>
+        <input type="text" id="settingsPhone" placeholder="Optional">
+      </div>
+      <div class="form-group">
+        <label>Contact Address:</label>
+        <textarea id="settingsAddress" placeholder="Optional"></textarea>
+      </div>
+
+      <div id="settingsMessage"></div>
+
+      <div class="modal-actions">
+        <button onclick="saveSystemSettings()" class="primary-btn">Save Changes</button>
+        <button onclick="closeSettingsModal()" class="ghost-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div id="modalBackdrop" class="modal-backdrop" onclick="closeAllModals()"></div>
 
+  <div id="printArea" class="print-area"></div>
+
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    // ============================================================
-    // STATE
-    // ============================================================
-    const socket = io();
-    let currentUser = null;
-    let currentDeptKey = null;      // 'nurses' | 'it' | 'proc' | 'stores' | 'hr'
-    let currentDeptName = null;     // 'Nurses' | 'IT' | ...
-    let allPatients = [];
-    let allTenders = {};
-    let tenderFilter = {};
-    let allInventory = [];
-    let allEmployees = [];
-    let allUsers = [];
-    let allProcurementOrders = [];
-    let allApprovedForStores = [];
-
-    function token() { return localStorage.getItem('token'); }
-
-    const DEPT_MAP = {
-      Nurses:      { key: 'nurses',  portal: 'nursesPortal' },
-      IT:          { key: 'it',      portal: 'itPortal' },
-      Procurement: { key: 'proc',    portal: 'procurementPortal' },
-      Stores:      { key: 'stores',  portal: 'storesPortal' },
-      HR:          { key: 'hr',      portal: 'hrPortal' },
-    };
-
-    // ============================================================
-    // LOGIN / LOGOUT
-    // ============================================================
-    async function login() {
-      const dept = document.getElementById('department').value;
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value;
-
-      if (!dept || !username || !password) return showLoginError('All fields required');
-
-      try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password, department: dept }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Login failed');
-
-        localStorage.setItem('token', data.token);
-        currentUser = data.user;
-        currentDeptName = data.user.department;
-        currentDeptKey = DEPT_MAP[currentDeptName]?.key;
-
-        document.getElementById('headerUser').style.display = 'flex';
-        document.getElementById('headerUserLabel').textContent = `${data.user.fullName} (${currentDeptName})`;
-
-        showPortal(currentDeptName);
-        loadPortalData(currentDeptKey);
-      } catch (e) {
-        showLoginError(e.message);
-      }
-    }
-
-    function showLoginError(msg) {
-      const el = document.getElementById('loginError');
-      el.textContent = msg;
-      el.style.display = 'block';
-    }
-
-    function showPortal(deptName) {
-      document.getElementById('login').style.display = 'none';
-      document.querySelectorAll('.portal').forEach(p => p.classList.remove('active'));
-      const map = DEPT_MAP[deptName];
-      if (map) document.getElementById(map.portal)?.classList.add('active');
-    }
-
-    function logout() {
-      localStorage.removeItem('token');
-      location.reload();
-    }
-
-    async function loadPortalData(deptKey) {
-      try {
-        if (deptKey === 'nurses') {
-          await loadWards();
-          await loadPatients();
-        } else if (deptKey === 'it') {
-          await loadSystemStatus();
-          await loadUserList();
-        } else if (deptKey === 'proc') {
-          await loadProcurementDashboard();
-        } else if (deptKey === 'stores') {
-          await loadStoresInventory();
-          await loadApprovedOrdersForStores();
-        } else if (deptKey === 'hr') {
-          await loadWards();
-          await loadStaffRoster();
-          await loadStaffingSummary();
-        }
-        await loadMyTenders(deptKey);
-      } catch (e) {
-        console.error('loadPortalData error:', e);
-      }
-    }
-
-    // ============================================================
-    // WARDS
-    // ============================================================
-    async function loadWards() {
-      const res = await fetch('/api/wards', { headers: { Authorization: `Bearer ${token()}` } });
-      if (!res.ok) return;
-      const wards = await res.json();
-
-      const wardSelect = document.getElementById('nurses-wardSelect');
-      if (wardSelect) wardSelect.innerHTML = wards.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
-
-      const empWard = document.getElementById('hr-empWard');
-      if (empWard) {
-        empWard.innerHTML = '<option value="">None</option>' +
-          wards.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
-      }
-    }
-
-    // ============================================================
-    // PATIENTS
-    // ============================================================
-    async function loadPatients() {
-      const res = await fetch('/api/patients', { headers: { Authorization: `Bearer ${token()}` } });
-      if (!res.ok) return;
-      allPatients = await res.json();
-      renderPatientSelect(allPatients);
-    }
-
-    function renderPatientSelect(list) {
-      const sel = document.getElementById('nurses-patientSelect');
-      if (!sel) return;
-      if (list.length === 0) { sel.innerHTML = '<option value="">No patients match</option>'; return; }
-      sel.innerHTML = list.map(p =>
-        `<option value="${p.id}">${p.name} — ${p.status} — ${p.ward ? p.ward.name : '—'}</option>`
-      ).join('');
-    }
-
-    function filterPatientList() {
-      const q = document.getElementById('nurses-patientSearch').value.trim().toLowerCase();
-      if (!q) return renderPatientSelect(allPatients);
-      renderPatientSelect(allPatients.filter(p =>
-        p.name.toLowerCase().includes(q) ||
-        (p.nationalId || '').toLowerCase().includes(q)
-      ));
-    }
-
-    async function registerPatient() {
-      const name = document.getElementById('nurses-patientName').value.trim();
-      const nationalId = document.getElementById('nurses-patientID').value.trim();
-      const wardId = document.getElementById('nurses-wardSelect').value;
-      const status = document.getElementById('nurses-statusSelect').value;
-      const msg = document.getElementById('nurses-patientMessage');
-
-      if (!name || !wardId) { msg.innerHTML = '<div class="error">Name and ward required</div>'; return; }
-
-      try {
-        const res = await fetch('/api/patients', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
-          body: JSON.stringify({ name, nationalId, wardId: parseInt(wardId), status }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Registration failed');
-
-        msg.innerHTML = '<div class="success">Patient registered</div>';
-        document.getElementById('nurses-patientName').value = '';
-        document.getElementById('nurses-patientID').value = '';
-        await loadPatients();
-      } catch (e) { msg.innerHTML = `<div class="error">${e.message}</div>`; }
-    }
-
-    async function updatePatient() {
-      const patientId = document.getElementById('nurses-patientSelect').value;
-      const status = document.getElementById('nurses-newStatus').value;
-      const msg = document.getElementById('nurses-updateMessage');
-
-      if (!patientId) { msg.innerHTML = '<div class="error">Select a patient</div>'; return; }
-
-      try {
-        const res = await fetch(`/api/patients/${patientId}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
-          body: JSON.stringify({ status }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Update failed');
-
-        msg.innerHTML = '<div class="success">Status updated</div>';
-        await loadPatients();
-      } catch (e) { msg.innerHTML = `<div class="error">${e.message}</div>`; }
-    }
-
-    // ============================================================
-    // TENDER REQUEST + TRACKER — scoped per department
-    // ============================================================
-    async function submitTenderRequest(deptKey) {
-      const itemName = document.getElementById(`${deptKey}-reqItemName`).value.trim();
-      const quantity = document.getElementById(`${deptKey}-reqQuantity`).value;
-      const reason = document.getElementById(`${deptKey}-reqReason`).value.trim();
-      const msg = document.getElementById(`${deptKey}-requestMessage`);
-
-      if (!itemName || !quantity || !reason) {
-        msg.innerHTML = '<div class="error">All fields required</div>';
-        return;
-      }
-
-      try {
-        const res = await fetch('/api/orders/request', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
-          body: JSON.stringify({ itemName, quantity: parseInt(quantity), reason }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Request failed');
-
-        msg.innerHTML = '<div class="success">Request submitted</div>';
-        document.getElementById(`${deptKey}-reqItemName`).value = '';
-        document.getElementById(`${deptKey}-reqQuantity`).value = '';
-        document.getElementById(`${deptKey}-reqReason`).value = '';
-        await loadMyTenders(deptKey);
-      } catch (e) { msg.innerHTML = `<div class="error">${e.message}</div>`; }
-    }
-
-    async function loadMyTenders(deptKey) {
-      try {
-        const res = await fetch('/api/orders/my', {
-          headers: { Authorization: `Bearer ${token()}` },
-        });
-        if (!res.ok) return;
-        const tenders = await res.json();
-        allTenders[deptKey] = tenders;
-        tenderFilter[deptKey] = tenderFilter[deptKey] || 'all';
-        renderTenderTracker(deptKey);
-      } catch (e) { console.error('loadMyTenders:', e); }
-    }
-
-    function setTenderFilter(btn, deptKey) {
-      const parent = document.getElementById(`${deptKey}-tenderFilters`);
-      if (parent) parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      tenderFilter[deptKey] = btn.dataset.filter;
-      renderTenderTracker(deptKey);
-    }
-
-    function statusBadge(status) {
-      const map = {
-        pending: 'badge-pending', approved: 'badge-approved',
-        rejected: 'badge-rejected', ordered: 'badge-ordered',
-        received: 'badge-received', in_storage: 'badge-received',
-      };
-      return `<span class="badge ${map[status] || 'badge-pending'}">${status.toUpperCase()}</span>`;
-    }
-
-    function renderTenderTracker(deptKey) {
-      const el = document.getElementById(`${deptKey}-tenderTrackerList`);
-      if (!el) return;
-
-      const searchQ = (document.getElementById(`${deptKey}-tenderSearch`)?.value || '').toLowerCase();
-      let list = allTenders[deptKey] || [];
-      const filter = tenderFilter[deptKey] || 'all';
-
-      if (filter !== 'all') list = list.filter(t => t.status === filter);
-      if (searchQ) {
-        list = list.filter(t =>
-          String(t.itemName || '').toLowerCase().includes(searchQ) ||
-          String(t.id).includes(searchQ) ||
-          String(t.requestingBy || '').toLowerCase().includes(searchQ)
-        );
-      }
-
-      if (list.length === 0) {
-        el.innerHTML = '<div class="empty-state">📭 No Tenders</div>';
-        return;
-      }
-
-      el.innerHTML = list.map(t => `
-        <div class="tender-card">
-          <div class="tender-head">
-            <div>
-              <strong>#${t.id} — ${t.itemName} ×${t.quantity}</strong>
-              <div class="muted">${t.requestingDepartment} · ${t.requestingBy}</div>
-            </div>
-            <div>${statusBadge(t.status)}</div>
-          </div>
-          <div class="tender-body">
-            <p><em>Reason:</em> ${t.reason}</p>
-            ${t.procurementOrder ? `<p><em>Supplier:</em> ${t.procurementOrder.supplierName}</p>` : ''}
-          </div>
-          <details>
-            <summary class="muted">Timeline (${(t.statusLogs || []).length} events)</summary>
-            <div class="tender-timeline">
-              ${(t.statusLogs || []).reverse().map(log => `
-                <div class="tl-item">
-                  <span class="tl-dot"></span>
-                  <span><strong>${log.newStatus.toUpperCase()}</strong> — ${log.changedBy} · ${new Date(log.timestamp).toLocaleString('en-GB')}</span>
-                  ${log.notes ? `<div class="muted">${log.notes}</div>` : ''}
-                </div>
-              `).join('')}
-            </div>
-          </details>
-        </div>
-      `).join('');
-    }
-
-    async function exportMyTenders() {
-      try {
-        const res = await fetch('/api/orders/my/export', {
-          headers: { Authorization: `Bearer ${token()}` },
-        });
-        if (!res.ok) throw new Error('Export failed');
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `tenders-${currentDeptKey}-${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a); a.click(); a.remove();
-        URL.revokeObjectURL(url);
-      } catch (e) { alert('Export error: ' + e.message); }
-    }
-
-    async function exportTenderHistory() {
-      try {
-        const res = await fetch('/api/orders/history/export', {
-          headers: { Authorization: `Bearer ${token()}` },
-        });
-        if (!res.ok) throw new Error('Export failed');
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `tender-history-${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a); a.click(); a.remove();
-        URL.revokeObjectURL(url);
-      } catch (e) { alert('Export error: ' + e.message); }
-    }
-
-    // ============================================================
-    // IT
-    // ============================================================
-    async function createUser() {
-      const username = document.getElementById('it-newUsername').value.trim();
-      const fullName = document.getElementById('it-newUserFullName').value.trim();
-      const department = document.getElementById('it-newUserDept').value;
-      const msg = document.getElementById('it-createUserMessage');
-
-      if (!username || !fullName) { msg.innerHTML = '<div class="error">All fields required</div>'; return; }
-
-      try {
-        const res = await fetch('/api/auth/admin/create-user', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
-          body: JSON.stringify({ username, fullName, department }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'User creation failed');
-
-        msg.innerHTML = `<div class="success">User <strong>${data.user.username}</strong> created<br>
-          Temp Password: <code>${data.tempPassword}</code></div>`;
-        document.getElementById('it-newUsername').value = '';
-        document.getElementById('it-newUserFullName').value = '';
-        await loadUserList();
-      } catch (e) { msg.innerHTML = `<div class="error">${e.message}</div>`; }
-    }
-
-    async function loadUserList() {
-      const el = document.getElementById('it-userList');
-      try {
-        const res = await fetch('/api/auth/admin/users', { headers: { Authorization: `Bearer ${token()}` } });
-        if (!res.ok) throw new Error('Failed');
-        allUsers = await res.json();
-        renderUserList();
-      } catch (e) { el.innerHTML = `<p class="error">${e.message}</p>`; }
-    }
-
-    function renderUserList() {
-      const el = document.getElementById('it-userList');
-      const q = (document.getElementById('it-userSearch')?.value || '').toLowerCase();
-      const filtered = q
-        ? allUsers.filter(u =>
-            u.username.toLowerCase().includes(q) ||
-            u.fullName.toLowerCase().includes(q) ||
-            u.department.toLowerCase().includes(q))
-        : allUsers;
-
-      if (filtered.length === 0) { el.innerHTML = '<p class="muted">No users.</p>'; return; }
-
-      el.innerHTML = `
-        <table class="data-table">
-          <thead><tr><th>Username</th><th>Full Name</th><th>Department</th><th>Role</th><th>Action</th></tr></thead>
-          <tbody>
-            ${filtered.map(u => `
-              <tr>
-                <td>${u.username}</td>
-                <td>${u.fullName}</td>
-                <td><span class="dept-pill">${u.department}</span></td>
-                <td>${u.role}</td>
-                <td><button class="pill-btn" onclick="resetUserPassword(${u.id}, '${u.username}')">Reset Password</button></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>`;
-    }
-
-    function filterUserList() { renderUserList(); }
-
-    async function resetUserPassword(userId, username) {
-      if (!confirm(`Reset password for "${username}"?`)) return;
-      try {
-        const res = await fetch('/api/auth/admin/reset-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
-          body: JSON.stringify({ userId }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Reset failed');
-        alert(`Password reset for ${username}\n\nNew temp password:\n${data.tempPassword}`);
-      } catch (e) { alert('Error: ' + e.message); }
-    }
-
-    async function loadSystemStatus() {
-      try {
-        const res = await fetch('/api/auth/system-status', { headers: { Authorization: `Bearer ${token()}` } });
-        if (!res.ok) return;
-        const data = await res.json();
-        document.getElementById('it-totalUsers').textContent = data.totalUsers;
-      } catch (e) {}
-    }
-
-    // ============================================================
-    // PROCUREMENT
-    // ============================================================
-    async function loadProcurementDashboard() {
-      try {
-        const [reqRes, sumRes] = await Promise.all([
-          fetch('/api/orders/requests', { headers: { Authorization: `Bearer ${token()}` } }),
-          fetch('/api/orders/summary', { headers: { Authorization: `Bearer ${token()}` } }),
-        ]);
-        allProcurementOrders = await reqRes.json();
-        const summary = await sumRes.json();
-        renderProcurementOrders();
-        document.getElementById('proc-procPending').textContent = summary.pending;
-        document.getElementById('proc-procApproved').textContent = summary.approved;
-        document.getElementById('proc-procOrdered').textContent = summary.ordered;
-        document.getElementById('proc-procInStorage').textContent = summary.inStorage;
-      } catch (e) { console.error(e); }
-    }
-
-    function renderProcurementOrders() {
-      const q = (document.getElementById('proc-pendingSearch')?.value || '').toLowerCase();
-      let pending = allProcurementOrders.filter(o => o.status === 'pending');
-      if (q) pending = pending.filter(o =>
-        o.itemName.toLowerCase().includes(q) ||
-        o.requestingDepartment.toLowerCase().includes(q) ||
-        String(o.id).includes(q));
-
-      const approved = allProcurementOrders.filter(o => o.status === 'approved' || o.status === 'ordered');
-
-      const pendingEl = document.getElementById('proc-pendingOrdersList');
-      if (pending.length === 0) pendingEl.innerHTML = '<div class="empty-state">📭 No Pending Tenders</div>';
-      else pendingEl.innerHTML = pending.map(o => `
-        <div class="order-card">
-          <div class="order-head"><strong>#${o.id} — ${o.itemName} ×${o.quantity}</strong></div>
-          <div class="muted">From: <strong>${o.requestingDepartment}</strong> · ${o.requestingBy}</div>
-          <div class="muted">Reason: ${o.reason}</div>
-          <div class="order-actions">
-            <button class="success-btn" onclick="approveOrder(${o.id})">✓ Approve</button>
-            <button class="danger-btn" onclick="rejectOrder(${o.id})">✗ Reject</button>
-          </div>
-        </div>
-      `).join('');
-
-      const approvedEl = document.getElementById('proc-approvedOrdersList');
-      if (approved.length === 0) approvedEl.innerHTML = '<div class="empty-state">📭 No Approved Orders</div>';
-      else approvedEl.innerHTML = approved.map(o => `
-        <div class="order-card-mini">
-          <div><strong>#${o.id}</strong> ${o.itemName} ×${o.quantity}</div>
-          <div class="muted">${o.requestingDepartment} · ${statusBadge(o.status)}</div>
-          ${o.status === 'approved' ? `<button class="pill-btn" onclick="sendOrder(${o.id})">📤 Send to Supplier</button>` : ''}
-        </div>
-      `).join('');
-    }
-
-    function filterProcurementOrders() { renderProcurementOrders(); }
-
-    async function approveOrder(orderId) {
-      const supplierName = prompt('Enter supplier name:');
-      if (!supplierName) return;
-      try {
-        const res = await fetch(`/api/orders/requests/${orderId}/approve`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
-          body: JSON.stringify({ supplierName }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed');
-        await loadProcurementDashboard();
-      } catch (e) { alert('Error: ' + e.message); }
-    }
-
-    async function rejectOrder(orderId) {
-      const reason = prompt('Enter rejection reason:');
-      if (!reason) return;
-      try {
-        const res = await fetch(`/api/orders/requests/${orderId}/reject`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
-          body: JSON.stringify({ reason }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed');
-        await loadProcurementDashboard();
-      } catch (e) { alert('Error: ' + e.message); }
-    }
-
-    async function sendOrder(orderId) {
-      if (!confirm('Send this order to the supplier?')) return;
-      try {
-        const res = await fetch(`/api/orders/requests/${orderId}/send`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
-          body: JSON.stringify({}),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed');
-        await loadProcurementDashboard();
-      } catch (e) { alert('Error: ' + e.message); }
-    }
-
-    function switchProcTab(btn) {
-      document.querySelectorAll('.dept-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const tab = btn.dataset.tab;
-      document.querySelectorAll('.proc-tab-panel').forEach(p => p.classList.remove('active'));
-      document.getElementById(tab === 'history' ? 'procTabHistory' : 'procTabActive').classList.add('active');
-      if (tab === 'history') { loadHistorySummary(); loadTenderHistory(); }
-    }
-
-    // ============================================================
-    // HISTORY
-    // ============================================================
-    let historySearchTimer = null;
-    function debouncedHistorySearch() {
-      clearTimeout(historySearchTimer);
-      historySearchTimer = setTimeout(loadTenderHistory, 300);
-    }
-
-    async function loadHistorySummary() {
-      try {
-        const res = await fetch('/api/orders/history/summary', { headers: { Authorization: `Bearer ${token()}` } });
-        if (!res.ok) return;
-        const s = await res.json();
-        document.getElementById('hTotal').textContent = s.total;
-        document.getElementById('hPending').textContent = s.byStatus.pending || 0;
-        document.getElementById('hApproved').textContent = s.byStatus.approved || 0;
-        document.getElementById('hRejected').textContent = s.byStatus.rejected || 0;
-        document.getElementById('hReceived').textContent = (s.byStatus.received || 0) + (s.byStatus.in_storage || 0);
-        document.getElementById('hRecent').textContent = s.last30Days;
-      } catch (e) {}
-    }
-
-    async function loadTenderHistory() {
-      const el = document.getElementById('proc-tenderHistoryList');
-      const search = document.getElementById('histSearch').value.trim();
-      const status = document.getElementById('histStatus').value;
-      const department = document.getElementById('histDept').value;
-      const from = document.getElementById('histFrom').value;
-      const to = document.getElementById('histTo').value;
-
-      const params = new URLSearchParams();
-      if (search) params.set('search', search);
-      if (status !== 'all') params.set('status', status);
-      if (department !== 'all') params.set('department', department);
-      if (from) params.set('from', from);
-      if (to) params.set('to', to);
-
-      el.innerHTML = '<p class="muted">Loading...</p>';
-
-      try {
-        const res = await fetch(`/api/orders/history?${params}`, { headers: { Authorization: `Bearer ${token()}` } });
-        if (!res.ok) throw new Error('Failed');
-        const tenders = await res.json();
-        document.getElementById('histCount').textContent = `(${tenders.length})`;
-
-        if (tenders.length === 0) { el.innerHTML = '<div class="empty-state">📭 No Matching Tenders</div>'; return; }
-
-        el.innerHTML = tenders.map(t => `
-          <div class="tender-card">
-            <div class="tender-head">
-              <div>
-                <strong>#${t.id} — ${t.itemName} ×${t.quantity}</strong>
-                <div class="muted"><span class="dept-pill">${t.requestingDepartment}</span> by ${t.requestingBy} · ${new Date(t.createdAt).toLocaleDateString('en-GB')}</div>
-              </div>
-              <div>${statusBadge(t.status)}</div>
-            </div>
-            <div class="tender-body">
-              <p><em>Reason:</em> ${t.reason}</p>
-              ${t.procurementOrder ? `<p><em>Supplier:</em> ${t.procurementOrder.supplierName}</p>` : ''}
-            </div>
-            <details>
-              <summary class="muted">Timeline (${(t.statusLogs || []).length} events)</summary>
-              <div class="tender-timeline">
-                ${(t.statusLogs || []).reverse().map(log => `
-                  <div class="tl-item">
-                    <span class="tl-dot"></span>
-                    <span><strong>${log.newStatus.toUpperCase()}</strong> — ${log.changedBy} · ${new Date(log.timestamp).toLocaleString('en-GB')}</span>
-                    ${log.notes ? `<div class="muted">${log.notes}</div>` : ''}
-                  </div>
-                `).join('')}
-              </div>
-            </details>
-          </div>
-        `).join('');
-      } catch (e) { el.innerHTML = `<p class="error">${e.message}</p>`; }
-    }
-
-    function clearHistoryFilters() {
-      document.getElementById('histSearch').value = '';
-      document.getElementById('histStatus').value = 'all';
-      document.getElementById('histDept').value = 'all';
-      document.getElementById('histFrom').value = '';
-      document.getElementById('histTo').value = '';
-      loadTenderHistory();
-    }
-
-    // ============================================================
-    // STORES
-    // ============================================================
-    async function loadStoresInventory() {
-      try {
-        const [invRes, sumRes, histRes] = await Promise.all([
-          fetch('/api/inventory', { headers: { Authorization: `Bearer ${token()}` } }),
-          fetch('/api/inventory/summary', { headers: { Authorization: `Bearer ${token()}` } }),
-          fetch('/api/inventory/receive-history', { headers: { Authorization: `Bearer ${token()}` } }),
-        ]);
-        allInventory = await invRes.json();
-        const summary = await sumRes.json();
-        const history = await histRes.json();
-
-        renderInventory();
-        document.getElementById('stores-invCritical').textContent = summary.critical;
-        document.getElementById('stores-invLow').textContent = summary.low;
-        document.getElementById('stores-invAdequate').textContent = summary.adequate;
-        document.getElementById('stores-invTotal').textContent = summary.totalItems;
-        renderReceiveHistory(history);
-      } catch (e) { console.error(e); }
-    }
-
-    function renderInventory() {
-      const el = document.getElementById('stores-inventoryList');
-      const q = (document.getElementById('stores-invSearch')?.value || '').toLowerCase();
-      const list = q ? allInventory.filter(i => i.name.toLowerCase().includes(q)) : allInventory;
-
-      if (list.length === 0) { el.innerHTML = '<div class="empty-state">📭 No Inventory</div>'; return; }
-
-      el.innerHTML = `
-        <table class="data-table">
-          <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Status</th></tr></thead>
-          <tbody>
-            ${list.map(i => {
-              let label = 'Adequate', cls = 'status-ok';
-              if (i.quantity < 10) { label = 'Critical'; cls = 'status-critical'; }
-              else if (i.quantity < 50) { label = 'Low'; cls = 'status-low'; }
-              return `<tr>
-                <td>${i.name}</td>
-                <td><strong>${i.quantity}</strong></td>
-                <td>${i.unit}</td>
-                <td><span class="status-pill ${cls}">${label}</span></td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>`;
-    }
-
-    function filterInventory() { renderInventory(); }
-
-    function renderReceiveHistory(history) {
-      const el = document.getElementById('stores-receiveHistory');
-      if (history.length === 0) { el.innerHTML = '<div class="empty-state">📭 No receipts yet</div>'; return; }
-      el.innerHTML = history.slice(0, 15).map(r => `
-        <div class="mini-item">
-          <strong>${r.inventoryItem.name} ×${r.quantityReceived}</strong>
-          <span class="muted"> — ${r.receivedBy} · ${new Date(r.receivedAt).toLocaleString('en-GB')}</span>
-        </div>
-      `).join('');
-    }
-
-    async function loadApprovedOrdersForStores() {
-      try {
-        const res = await fetch('/api/inventory/approved-orders', { headers: { Authorization: `Bearer ${token()}` } });
-        if (!res.ok) return;
-        allApprovedForStores = await res.json();
-        renderApprovedForStores();
-      } catch (e) { console.error(e); }
-    }
-
-    function renderApprovedForStores() {
-      const el = document.getElementById('stores-approvedOrders');
-      const q = (document.getElementById('stores-approvedSearch')?.value || '').toLowerCase();
-      const list = q ? allApprovedForStores.filter(o =>
-        o.itemName.toLowerCase().includes(q) ||
-        o.requestingDepartment.toLowerCase().includes(q) ||
-        String(o.id).includes(q)) : allApprovedForStores;
-
-      if (list.length === 0) { el.innerHTML = '<div class="empty-state">📭 No Approved Tenders Waiting</div>'; return; }
-
-      el.innerHTML = list.map(o => `
-        <div class="order-card-mini">
-          <div><strong>#${o.id}</strong> ${o.itemName} ×${o.quantity}</div>
-          <div class="muted">${o.requestingDepartment} · ${statusBadge(o.status)}</div>
-          <button class="pill-btn" onclick="prefillReceive(${o.id}, '${o.itemName.replace(/'/g, "\\'")}', ${o.quantity})">📥 Receive This</button>
-        </div>
-      `).join('');
-    }
-
-    function filterApprovedForStores() { renderApprovedForStores(); }
-
-    function prefillReceive(orderId, itemName, qty) {
-      document.getElementById('stores-receiveOrderId').value = orderId;
-      document.getElementById('stores-receiveItemName').value = itemName;
-      document.getElementById('stores-receiveQty').value = qty;
-      document.getElementById('stores-receiveQty').focus();
-    }
-
-    async function receiveItems() {
-      const orderRequestId = document.getElementById('stores-receiveOrderId').value;
-      const itemName = document.getElementById('stores-receiveItemName').value.trim();
-      const quantityReceived = document.getElementById('stores-receiveQty').value;
-      const notes = document.getElementById('stores-receiveNotes').value;
-      const msg = document.getElementById('stores-receiveMessage');
-
-      if (!orderRequestId || !itemName || !quantityReceived) {
-        msg.innerHTML = '<div class="error">Order ID, item name, and quantity required</div>';
-        return;
-      }
-
-      try {
-        const res = await fetch('/api/inventory/receive', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
-          body: JSON.stringify({
-            orderRequestId: parseInt(orderRequestId),
-            itemName,
-            quantityReceived: parseInt(quantityReceived),
-            notes,
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed');
-
-        msg.innerHTML = '<div class="success">Items received & inventory updated</div>';
-        document.getElementById('stores-receiveOrderId').value = '';
-        document.getElementById('stores-receiveItemName').value = '';
-        document.getElementById('stores-receiveQty').value = '';
-        document.getElementById('stores-receiveNotes').value = '';
-
-        await loadStoresInventory();
-        await loadApprovedOrdersForStores();
-        await loadMyTenders('stores');
-      } catch (e) { msg.innerHTML = `<div class="error">${e.message}</div>`; }
-    }
-
-    async function exportInventory() {
-      try {
-        const res = await fetch('/api/inventory/export', { headers: { Authorization: `Bearer ${token()}` } });
-        if (!res.ok) throw new Error('Export failed');
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `inventory-${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a); a.click(); a.remove();
-        URL.revokeObjectURL(url);
-      } catch (e) { alert('Export error: ' + e.message); }
-    }
-
-    // ============================================================
-    // HR
-    // ============================================================
-    async function addEmployee() {
-      const name = document.getElementById('hr-empName').value.trim();
-      const department = document.getElementById('hr-empDept').value;
-      const wardId = document.getElementById('hr-empWard').value;
-      const hireDate = document.getElementById('hr-empHireDate').value;
-      const msg = document.getElementById('hr-empAddMessage');
-
-      if (!name || !hireDate) { msg.innerHTML = '<div class="error">Name and hire date required</div>'; return; }
-
-      try {
-        const res = await fetch('/api/employees', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
-          body: JSON.stringify({ name, department, wardId: wardId ? parseInt(wardId) : null, hireDate }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed');
-
-        msg.innerHTML = '<div class="success">Employee hired</div>';
-        document.getElementById('hr-empName').value = '';
-        document.getElementById('hr-empHireDate').value = '';
-        await loadStaffRoster();
-        await loadStaffingSummary();
-      } catch (e) { msg.innerHTML = `<div class="error">${e.message}</div>`; }
-    }
-
-    async function loadStaffRoster() {
-      try {
-        const res = await fetch('/api/employees', { headers: { Authorization: `Bearer ${token()}` } });
-        if (!res.ok) throw new Error('Failed');
-        allEmployees = await res.json();
-        renderStaffRoster();
-      } catch (e) {
-        document.getElementById('hr-empRosterTable').innerHTML = `<p class="error">${e.message}</p>`;
-      }
-    }
-
-    function renderStaffRoster() {
-      const el = document.getElementById('hr-empRosterTable');
-      const q = (document.getElementById('hr-empSearchBox')?.value || '').toLowerCase();
-      const list = q ? allEmployees.filter(e =>
-        e.name.toLowerCase().includes(q) || e.department.toLowerCase().includes(q)) : allEmployees;
-
-      if (list.length === 0) { el.innerHTML = '<div class="empty-state">📭 No Staff Found</div>'; return; }
-
-      el.innerHTML = `
-        <table class="data-table">
-          <thead><tr><th>Name</th><th>Department</th><th>Ward</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody>
-            ${list.map(e => `
-              <tr>
-                <td>${e.name}</td>
-                <td>${e.department}</td>
-                <td>${e.ward ? e.ward.name : '—'}</td>
-                <td>${statusBadgeForEmployee(e.status)}</td>
-                <td><button class="pill-btn" onclick="openEmpModal(${e.id}, '${e.name.replace(/'/g, "\\'")}', '${e.status}')">Update</button></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>`;
-    }
-
-    function statusBadgeForEmployee(status) {
-      const cls = {
-        active: 'status-ok', on_leave: 'status-low',
-        sick: 'status-critical', terminated: 'status-terminated',
-      }[status] || 'status-ok';
-      return `<span class="status-pill ${cls}">${status}</span>`;
-    }
-
-    function searchEmployees() { renderStaffRoster(); }
-
-    async function loadStaffingSummary() {
-      try {
-        const res = await fetch('/api/employees/summary', { headers: { Authorization: `Bearer ${token()}` } });
-        if (!res.ok) return;
-        const s = await res.json();
-        document.getElementById('hr-empOnDuty').textContent = s.active || 0;
-        document.getElementById('hr-empOnLeave').textContent = s.on_leave || 0;
-        document.getElementById('hr-empSick').textContent = s.sick || 0;
-        document.getElementById('hr-empTerminated').textContent = s.terminated || 0;
-        document.getElementById('hr-empTotal').textContent = s.total || 0;
-      } catch (e) {}
-    }
-
-    let selectedEmployeeId = null;
-    function openEmpModal(id, name, status) {
-      selectedEmployeeId = id;
-      document.getElementById('modalEmpName').textContent = name;
-      document.getElementById('empStatusSelect').value = status;
-      document.getElementById('empStatusModal').classList.add('active');
-      document.getElementById('modalBackdrop').classList.add('active');
-    }
-    function closeEmpModal() {
-      document.getElementById('empStatusModal').classList.remove('active');
-      document.getElementById('modalBackdrop').classList.remove('active');
-      selectedEmployeeId = null;
-    }
-    async function updateEmployeeStatus() {
-      const status = document.getElementById('empStatusSelect').value;
-      if (!selectedEmployeeId) return;
-      try {
-        const res = await fetch(`/api/employees/${selectedEmployeeId}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
-          body: JSON.stringify({ status }),
-        });
-        if (!res.ok) throw new Error('Update failed');
-        closeEmpModal();
-        await loadStaffRoster();
-        await loadStaffingSummary();
-      } catch (e) { alert(e.message); }
-    }
-
-    async function exportStaffCSV() {
-      const msg = document.getElementById('hr-exportMessage');
-      try {
-        const res = await fetch('/api/employees/export', { headers: { Authorization: `Bearer ${token()}` } });
-        if (!res.ok) throw new Error('Export failed');
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `mushamumwe-staff-${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a); a.click(); a.remove();
-        URL.revokeObjectURL(url);
-        msg.innerHTML = '<div class="success">CSV downloaded</div>';
-      } catch (e) { msg.innerHTML = `<div class="error">${e.message}</div>`; }
-    }
-
-    // ============================================================
-    // OWN PASSWORD MODAL
-    // ============================================================
-    function openOwnPasswordModal() {
-      document.getElementById('ownPwdModal').classList.add('active');
-      document.getElementById('modalBackdrop').classList.add('active');
-      document.getElementById('ownCurrentPwd').value = '';
-      document.getElementById('ownNewPwd').value = '';
-      document.getElementById('ownPwdMessage').innerHTML = '';
-    }
-    function closeOwnPasswordModal() {
-      document.getElementById('ownPwdModal').classList.remove('active');
-      document.getElementById('modalBackdrop').classList.remove('active');
-    }
-    function closeAllModals() {
-      document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
-      document.getElementById('modalBackdrop').classList.remove('active');
-    }
-
-    async function changeOwnPassword() {
-      const currentPassword = document.getElementById('ownCurrentPwd').value;
-      const newPassword = document.getElementById('ownNewPwd').value;
-      const msg = document.getElementById('ownPwdMessage');
-
-      if (!currentPassword || !newPassword) { msg.innerHTML = '<div class="error">Both fields required</div>'; return; }
-      if (newPassword.length < 6) { msg.innerHTML = '<div class="error">Min 6 characters</div>'; return; }
-
-      try {
-        const res = await fetch('/api/auth/change-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
-          body: JSON.stringify({ currentPassword, newPassword }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed');
-
-        msg.innerHTML = '<div class="success">Password updated</div>';
-        setTimeout(closeOwnPasswordModal, 1200);
-      } catch (e) { msg.innerHTML = `<div class="error">${e.message}</div>`; }
-    }
-
-    // ============================================================
-    // SOCKET
-    // ============================================================
-    socket.on('patient:updated', () => { if (currentDeptKey === 'nurses') loadPatients(); });
-    socket.on('patient:created', () => { if (currentDeptKey === 'nurses') loadPatients(); });
-    socket.on('order:updated', (payload) => {
-      const myDept = String(currentDeptName || '').toLowerCase();
-      const eventDept = String(payload?.department || '').toLowerCase();
-      if (currentDeptKey === 'proc') {
-        loadProcurementDashboard();
-        if (document.getElementById('procTabHistory')?.classList.contains('active')) {
-          loadHistorySummary(); loadTenderHistory();
-        }
-      }
-      if (currentDeptKey === 'stores') loadApprovedOrdersForStores();
-      if (eventDept === myDept) loadMyTenders(currentDeptKey);
-    });
-    socket.on('order:created', () => { if (currentDeptKey === 'proc') loadProcurementDashboard(); });
-    socket.on('inventory:updated', () => { if (currentDeptKey === 'stores') loadStoresInventory(); });
-    socket.on('employee:updated', () => { if (currentDeptKey === 'hr') { loadStaffRoster(); loadStaffingSummary(); } });
-  </script>
+  <script src="js/core.js"></script>
 </body>
 </html>
