@@ -3,15 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MushaMumwe — Live Board</title>
+<title>MushaMumwe - Live Board</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="live-board">
 
-  <!-- Top Bar -->
   <div class="topbar">
     <div class="brand">
-      <h1>MUSHAMUMWE — LIVE BOARD</h1>
+      <h1>MUSHAMUMWE - LIVE BOARD</h1>
       <div class="sub" id="apiTarget">connecting...</div>
     </div>
     <div class="pulse-wrap">
@@ -22,33 +21,31 @@
     <a href="/entry.html" class="staff-login-link">Staff Login</a>
   </div>
 
-  <!-- Toast Notification -->
   <div class="toast" id="toast"></div>
 
-  <!-- Patient Statistics -->
   <div class="stats">
-    <div class="stat admitted">
+    <div class="stat admitted" onclick="toggleBoardColumn('admitted')" style="cursor:pointer;">
       <div>
         <span class="n" id="countAdmitted">0</span>
         <span class="pct" id="pctAdmitted">0%</span>
       </div>
       <div class="l">Admitted</div>
     </div>
-    <div class="stat treatment">
+    <div class="stat treatment" onclick="toggleBoardColumn('treatment')" style="cursor:pointer;">
       <div>
         <span class="n" id="countTreatment">0</span>
         <span class="pct" id="pctTreatment">0%</span>
       </div>
       <div class="l">In Treatment</div>
     </div>
-    <div class="stat discharged">
+    <div class="stat discharged" onclick="toggleBoardColumn('discharged')" style="cursor:pointer;">
       <div>
         <span class="n" id="countDischarged">0</span>
         <span class="pct" id="pctDischarged">0%</span>
       </div>
       <div class="l">Discharged</div>
     </div>
-    <div class="stat deceased">
+    <div class="stat deceased" onclick="toggleBoardColumn('deceased')" style="cursor:pointer;">
       <div>
         <span class="n" id="countDeceased">0</span>
         <span class="pct" id="pctDeceased">0%</span>
@@ -57,7 +54,6 @@
     </div>
   </div>
 
-  <!-- Distribution Bar -->
   <div class="distbar" id="distbar">
     <div class="seg" id="segA" style="background:#3B82F6;"></div>
     <div class="seg" id="segT" style="background:#F0A93A;"></div>
@@ -65,13 +61,16 @@
     <div class="seg" id="segX" style="background:#7A8199;"></div>
   </div>
   <div class="distbar-labels">
-    <span>Case mix — % of total patients on record</span>
+    <span>Case mix - percent of total patients on record</span>
     <span id="totalCount">0 total</span>
   </div>
 
-  <!-- Patient Board -->
-  <div class="board">
-    <div class="col admitted">
+  <div class="board-hint" id="boardHint">
+    Click any column below to expand the patient list. Click again to collapse.
+  </div>
+
+  <div class="board board-collapsed" id="boardColumns">
+    <div class="col admitted" id="colA" onclick="toggleBoardColumn('admitted')">
       <div class="col-head">
         <div>
           <span class="dot"></span>
@@ -79,9 +78,9 @@
         </div>
         <span class="col-count" id="cA">0</span>
       </div>
-      <div id="colAdmitted"></div>
+      <div id="colAdmitted" class="col-body"></div>
     </div>
-    <div class="col treatment">
+    <div class="col treatment" id="colT" onclick="toggleBoardColumn('treatment')">
       <div class="col-head">
         <div>
           <span class="dot"></span>
@@ -89,9 +88,9 @@
         </div>
         <span class="col-count" id="cT">0</span>
       </div>
-      <div id="colTreatment"></div>
+      <div id="colTreatment" class="col-body"></div>
     </div>
-    <div class="col discharged">
+    <div class="col discharged" id="colD" onclick="toggleBoardColumn('discharged')">
       <div class="col-head">
         <div>
           <span class="dot"></span>
@@ -99,9 +98,9 @@
         </div>
         <span class="col-count" id="cD">0</span>
       </div>
-      <div id="colDischarged"></div>
+      <div id="colDischarged" class="col-body"></div>
     </div>
-    <div class="col deceased">
+    <div class="col deceased" id="colX" onclick="toggleBoardColumn('deceased')">
       <div class="col-head">
         <div>
           <span class="dot"></span>
@@ -109,18 +108,16 @@
         </div>
         <span class="col-count" id="cX">0</span>
       </div>
-      <div id="colDeceased"></div>
+      <div id="colDeceased" class="col-body"></div>
     </div>
   </div>
 
-  <!-- Employee Dashboard Summary -->
   <div class="employee-summary">
     <div class="employee-summary-header">
       <h2>Staff Status Overview</h2>
       <button onclick="toggleEmployeeView()" class="toggle-btn">View Details</button>
     </div>
 
-    <!-- Employee Stats Cards -->
     <div class="employee-stats">
       <div class="employee-stat-card on-duty">
         <div class="employee-stat-number" id="staffOnDuty">-</div>
@@ -140,7 +137,6 @@
       </div>
     </div>
 
-    <!-- Department Breakdown -->
     <div id="deptBreakdown" class="dept-breakdown">
       <h3>Staff by Department</h3>
       <div id="deptList" class="dept-list">
@@ -149,281 +145,271 @@
     </div>
   </div>
 
-  <!-- Footer -->
   <div class="footer-note">
-    Live data from PostgreSQL via REST + Socket.io — real-time updates enabled
+    Live data from database via REST and Socket.io - real-time updates enabled
   </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-// ========== CONFIGURATION ==========
-const API_BASE = ""; // same-origin; change if frontend is hosted separately
-const AUTH_TOKEN = localStorage.getItem("token") || ""; // set this after login
+const API_BASE = "";
+const AUTH_TOKEN = localStorage.getItem("token") || "";
 
-// Status to column mapping
 const targets = {
-  admitted: "colAdmitted", 
-  treatment: "colTreatment", 
-  discharged: "colDischarged", 
-  deceased: "colDeceased"
+  admitted: "colAdmitted",
+  treatment: "colTreatment",
+  discharged: "colDischarged",
+  deceased: "colDeceased",
 };
 
-// ========== UTILITY FUNCTIONS ==========
+const columnKeys = {
+  admitted: { col: "colA", id: "colAdmitted" },
+  treatment: { col: "colT", id: "colTreatment" },
+  discharged: { col: "colD", id: "colDischarged" },
+  deceased: { col: "colX", id: "colDeceased" },
+};
+
+let activeColumn = null;
+let patientsCache = [];
+
 function fmtTime(iso) {
-  return new Date(iso).toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
 function fmtDate(iso) {
-  return new Date(iso).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
+  return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 async function fetchJSON(url) {
   const res = await fetch(API_BASE + url, {
-    headers: AUTH_TOKEN ? { Authorization: "Bearer " + AUTH_TOKEN } : {}
+    headers: AUTH_TOKEN ? { Authorization: "Bearer " + AUTH_TOKEN } : {},
   });
   if (!res.ok) throw new Error("API error " + res.status);
   return res.json();
 }
 
-// ========== PATIENT BOARD FUNCTIONS ==========
 function renderPatientCard(p) {
-  // No patient name here by design — case ID only, for shared-screen display
-  const el = document.createElement('div');
-  el.className = 'patient-card';
-  el.innerHTML = `
-    <div class="patient-card-top">
-      <span class="patient-name">Case #${p.id}</span>
-      <span class="patient-id">${p.nationalId || 'N/A'}</span>
-    </div>
-    <div class="patient-card-meta">
-      <span class="ward-tag">${p.ward ? p.ward.name : '—'}</span>
-      <span>${fmtTime(p.updatedAt)}</span>
-    </div>`;
+  const el = document.createElement("div");
+  el.className = "patient-card";
+  el.innerHTML =
+    '<div class="patient-card-top">' +
+    '<span class="patient-name">Case #' + p.id + '</span>' +
+    '<span class="patient-id">' + (p.nationalId || "N/A") + '</span>' +
+    '</div>' +
+    '<div class="patient-card-meta">' +
+    '<span class="ward-tag">' + (p.ward ? p.ward.name : "-") + '</span>' +
+    '<span>' + fmtTime(p.updatedAt) + '</span>' +
+    '</div>';
   return el;
 }
 
 async function loadPatientBoard() {
   try {
     const [patients, summary] = await Promise.all([
-      fetchJSON('/api/patients/board'),   // PII-stripped feed — no names on this screen
-      fetchJSON('/api/patients/summary')
+      fetchJSON("/api/patients/board"),
+      fetchJSON("/api/patients/summary"),
     ]);
 
-    // Clear existing cards
-    Object.values(targets).forEach(id => {
-      document.getElementById(id).innerHTML = "";
+    patientsCache = patients;
+
+    Object.values(targets).forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = "";
     });
 
-    // Render patient cards
-    patients.forEach(p => {
+    patients.forEach((p) => {
       const target = targets[p.status];
       if (target) {
-        document.getElementById(target).appendChild(renderPatientCard(p));
+        const el = document.getElementById(target);
+        if (el) el.appendChild(renderPatientCard(p));
       }
     });
 
-    // Update summary
     applyPatientSummary(summary);
-    
-    // Update sync status
-    document.getElementById('syncText').textContent = 'SYNCED';
-    document.getElementById('apiTarget').textContent = 'Connected · ' + window.location.host;
+
+    document.getElementById("syncText").textContent = "SYNCED";
+    document.getElementById("apiTarget").textContent = "Connected - " + window.location.host;
   } catch (err) {
-    document.getElementById('syncText').textContent = 'OFFLINE';
-    document.getElementById('apiTarget').textContent = 'Could not reach API — check server/token';
-    console.error('Failed to load patient board:', err);
+    document.getElementById("syncText").textContent = "OFFLINE";
+    document.getElementById("apiTarget").textContent = "Could not reach API - check server";
+    console.error("Failed to load patient board:", err);
   }
 }
 
 function applyPatientSummary(summary) {
   const c = summary.counts;
   const p = summary.percentages;
-  
-  // Update stat cards
-  document.getElementById('countAdmitted').textContent = c.admitted;
-  document.getElementById('countTreatment').textContent = c.treatment;
-  document.getElementById('countDischarged').textContent = c.discharged;
-  document.getElementById('countDeceased').textContent = c.deceased;
-  
-  // Update column counts
-  document.getElementById('cA').textContent = c.admitted;
-  document.getElementById('cT').textContent = c.treatment;
-  document.getElementById('cD').textContent = c.discharged;
-  document.getElementById('cX').textContent = c.deceased;
 
-  // Update percentages
-  document.getElementById('pctAdmitted').textContent = p.admitted + '%';
-  document.getElementById('pctTreatment').textContent = p.treatment + '%';
-  document.getElementById('pctDischarged').textContent = p.discharged + '%';
-  document.getElementById('pctDeceased').textContent = p.deceased + '%';
-  
-  // Update total
-  document.getElementById('totalCount').textContent = summary.total + ' total';
+  document.getElementById("countAdmitted").textContent = c.admitted;
+  document.getElementById("countTreatment").textContent = c.treatment;
+  document.getElementById("countDischarged").textContent = c.discharged;
+  document.getElementById("countDeceased").textContent = c.deceased;
 
-  // Update distribution bar
-  document.getElementById('segA').style.width = p.admitted + '%';
-  document.getElementById('segT').style.width = p.treatment + '%';
-  document.getElementById('segD').style.width = p.discharged + '%';
-  document.getElementById('segX').style.width = p.deceased + '%';
+  document.getElementById("cA").textContent = c.admitted;
+  document.getElementById("cT").textContent = c.treatment;
+  document.getElementById("cD").textContent = c.discharged;
+  document.getElementById("cX").textContent = c.deceased;
+
+  document.getElementById("pctAdmitted").textContent = p.admitted + "%";
+  document.getElementById("pctTreatment").textContent = p.treatment + "%";
+  document.getElementById("pctDischarged").textContent = p.discharged + "%";
+  document.getElementById("pctDeceased").textContent = p.deceased + "%";
+
+  document.getElementById("totalCount").textContent = summary.total + " total";
+
+  document.getElementById("segA").style.width = p.admitted + "%";
+  document.getElementById("segT").style.width = p.treatment + "%";
+  document.getElementById("segD").style.width = p.discharged + "%";
+  document.getElementById("segX").style.width = p.deceased + "%";
 }
 
-// ========== EMPLOYEE SUMMARY FUNCTIONS ==========
+function toggleBoardColumn(key) {
+  const board = document.getElementById("boardColumns");
+  const hint = document.getElementById("boardHint");
+
+  if (activeColumn === key) {
+    board.classList.add("board-collapsed");
+    Object.values(columnKeys).forEach((c) => {
+      const el = document.getElementById(c.col);
+      if (el) el.classList.remove("expanded");
+    });
+    activeColumn = null;
+    if (hint) hint.style.display = "block";
+    return;
+  }
+
+  board.classList.remove("board-collapsed");
+  Object.values(columnKeys).forEach((c) => {
+    const el = document.getElementById(c.col);
+    if (el) el.classList.remove("expanded");
+  });
+
+  const chosen = columnKeys[key];
+  if (chosen) {
+    const el = document.getElementById(chosen.col);
+    if (el) el.classList.add("expanded");
+  }
+
+  activeColumn = key;
+  if (hint) hint.style.display = "none";
+}
+
 async function loadEmployeeSummary() {
   try {
-    const res = await fetch('/api/employees/summary', {
-      headers: AUTH_TOKEN ? { Authorization: "Bearer " + AUTH_TOKEN } : {}
+    const res = await fetch("/api/employees/summary", {
+      headers: AUTH_TOKEN ? { Authorization: "Bearer " + AUTH_TOKEN } : {},
     });
-    
-    if (!res.ok) throw new Error('Failed to load employee summary');
-    
+    if (!res.ok) throw new Error("Failed to load employee summary");
     const summary = await res.json();
-    
-    // Update employee stat cards
-    document.getElementById('staffOnDuty').textContent = summary.active || 0;
-    document.getElementById('staffOnLeave').textContent = summary.on_leave || 0;
-    document.getElementById('staffSick').textContent = summary.sick || 0;
-    document.getElementById('staffTotal').textContent = (summary.total - summary.terminated) || 0;
-    
-    // Build department list
+
+    document.getElementById("staffOnDuty").textContent = summary.active || 0;
+    document.getElementById("staffOnLeave").textContent = summary.on_leave || 0;
+    document.getElementById("staffSick").textContent = summary.sick || 0;
+    document.getElementById("staffTotal").textContent = (summary.total - summary.terminated) || 0;
+
     if (summary.byDepartment && summary.byDepartment.length > 0) {
-      const deptHtml = summary.byDepartment
-        .map(d => `<p>${d.department}: <strong>${d.count}</strong></p>`)
-        .join('');
-      document.getElementById('deptList').innerHTML = deptHtml;
+      document.getElementById("deptList").innerHTML = summary.byDepartment
+        .map((d) => "<p>" + d.department + ": <strong>" + d.count + "</strong></p>")
+        .join("");
     } else {
-      document.getElementById('deptList').innerHTML = '<p>No department data available</p>';
+      document.getElementById("deptList").innerHTML = "<p>No department data available</p>";
     }
   } catch (e) {
-    console.error('Failed to load employee summary:', e);
-    document.getElementById('deptList').innerHTML = '<p>Failed to load data</p>';
+    console.error("Failed to load employee summary:", e);
+    document.getElementById("deptList").innerHTML = "<p>Failed to load data</p>";
   }
 }
 
 function toggleEmployeeView() {
-  const deptDiv = document.getElementById('deptBreakdown');
-  deptDiv.classList.toggle('active');
+  document.getElementById("deptBreakdown").classList.toggle("active");
 }
 
-// ========== TOAST NOTIFICATION ==========
 function showToast(msg) {
-  const t = document.getElementById('toast');
+  const t = document.getElementById("toast");
   t.innerHTML = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
 }
 
-// ========== CLOCK ==========
 function tickClock() {
-  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB');
+  document.getElementById("clock").textContent = new Date().toLocaleTimeString("en-GB");
 }
 
-// ========== INITIALIZATION ==========
 tickClock();
 setInterval(tickClock, 1000);
 
-// Initial load
 loadPatientBoard();
 loadEmployeeSummary();
 
-// ========== SOCKET EVENT LISTENERS ==========
 const socket = io();
 
-socket.on('connect', () => {
-  console.log('Socket connected');
-  document.getElementById('syncText').textContent = 'CONNECTED';
+socket.on("connect", () => {
+  console.log("Socket connected");
+  document.getElementById("syncText").textContent = "CONNECTED";
 });
 
-socket.on('disconnect', () => {
-  console.log('Socket disconnected');
-  document.getElementById('syncText').textContent = 'DISCONNECTED';
+socket.on("disconnect", () => {
+  console.log("Socket disconnected");
+  document.getElementById("syncText").textContent = "DISCONNECTED";
 });
 
-// Patient updates
-socket.on('patient:updated', (payload) => {
-  showToast(`Case #${payload.id} → ${String(payload.status).toUpperCase()}`);
-  loadPatientBoard(); // Re-fetch full list + summary
-});
-
-socket.on('patient:created', (payload) => {
-  showToast(`New patient registered: Case #${payload.id}`);
+socket.on("patient:updated", (payload) => {
+  showToast("Case #" + payload.id + " - " + String(payload.status).toUpperCase());
   loadPatientBoard();
 });
 
-socket.on('patient:deleted', (payload) => {
-  showToast(`Patient record archived: Case #${payload.id}`);
+socket.on("patient:created", (payload) => {
+  showToast("New patient registered: Case #" + payload.id);
   loadPatientBoard();
 });
 
-// Employee updates
-socket.on('employee:updated', () => {
-  console.log('Employee data updated');
+socket.on("employee:updated", () => {
   loadEmployeeSummary();
 });
 
-socket.on('employee:created', (payload) => {
-  showToast(`New employee added: ${payload.name}`);
+socket.on("employee:created", (payload) => {
+  showToast("New employee added: " + payload.name);
   loadEmployeeSummary();
 });
 
-// Inventory updates
-socket.on('inventory:updated', () => {
-  showToast('Inventory updated');
-  // Reload if needed
+socket.on("inventory:updated", () => {
+  showToast("Inventory updated");
 });
 
-// Order updates
-socket.on('order:updated', () => {
-  showToast('Order status updated');
-  // Reload if needed
+socket.on("order:updated", () => {
+  showToast("Order status updated");
 });
 
-// ========== AUTO-REFRESH (Fallback if socket fails) ==========
-// Refresh every 5 minutes as fallback
 setInterval(() => {
-  if (document.getElementById('syncText').textContent === 'OFFLINE') {
+  if (document.getElementById("syncText").textContent === "OFFLINE") {
     loadPatientBoard();
     loadEmployeeSummary();
   }
-}, 300000); // 5 minutes
+}, 300000);
 
-// ========== KEYBOARD SHORTCUTS ==========
-document.addEventListener('keydown', (e) => {
-  // Press 'R' to refresh manually
-  if (e.key === 'r' || e.key === 'R') {
+document.addEventListener("keydown", (e) => {
+  if (e.key === "r" || e.key === "R") {
     loadPatientBoard();
     loadEmployeeSummary();
-    showToast('Manual refresh triggered');
+    showToast("Manual refresh triggered");
   }
-  
-  // Press 'T' to toggle employee details
-  if (e.key === 't' || e.key === 'T') {
+  if (e.key === "t" || e.key === "T") {
     toggleEmployeeView();
   }
-  
-  // Press 'ESC' to close employee details
-  if (e.key === 'Escape') {
-    const deptDiv = document.getElementById('deptBreakdown');
-    deptDiv.classList.remove('active');
+  if (e.key === "Escape") {
+    document.getElementById("deptBreakdown").classList.remove("active");
+    toggleBoardColumn(activeColumn);
   }
 });
 
-// ========== VISIBILITY API (Refresh when tab becomes visible) ==========
-document.addEventListener('visibilitychange', () => {
+document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
     loadPatientBoard();
     loadEmployeeSummary();
   }
 });
 
-console.log('MushaMumwe Live Board initialized');
-console.log('Keyboard shortcuts: R=Refresh, T=Toggle Details, ESC=Close');
+console.log("MushaMumwe Live Board initialized");
+console.log("Keyboard: R=Refresh, T=Toggle Details, ESC=Close");
 </script>
 </body>
 </html>

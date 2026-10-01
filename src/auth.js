@@ -1,12 +1,10 @@
 const jwt = require('jsonwebtoken');
 
-// Case-insensitive department normalization
 function normDept(d) {
   if (!d) return '';
   return String(d).trim().toLowerCase();
 }
 
-// Canonical department name (matches DB values)
 function canonicalDept(d) {
   const s = normDept(d);
   const map = {
@@ -15,6 +13,7 @@ function canonicalDept(d) {
     procurement: 'Procurement',
     stores: 'Stores',
     hr: 'HR',
+    superadmin: 'SuperAdmin',
   };
   return map[s] || d;
 }
@@ -22,7 +21,6 @@ function canonicalDept(d) {
 function requireAuth(req, res, next) {
   const header = req.headers.authorization;
   if (!header) return res.status(401).json({ error: 'Missing token' });
-
   const token = header.replace('Bearer ', '');
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
@@ -44,13 +42,40 @@ function requireRole(allowedRoles) {
 function requireDepartment(allowedDepartments) {
   const allowed = allowedDepartments.map(normDept);
   return (req, res, next) => {
-    if (!req.user || !allowed.includes(normDept(req.user.department))) {
+    if (!req.user) {
+      return res.status(403).json({ error: 'Not authenticated' });
+    }
+    // Super Admin bypasses all department checks
+    if (normDept(req.user.department) === 'superadmin') {
+      return next();
+    }
+    if (!allowed.includes(normDept(req.user.department))) {
       return res.status(403).json({
-        error: `Not authorized. Requires one of: ${allowedDepartments.join(', ')}`,
+        error: 'Not authorized. Requires one of: ' + allowedDepartments.join(', '),
       });
     }
     next();
   };
 }
 
-module.exports = { requireAuth, requireRole, requireDepartment, normDept, canonicalDept };
+// Convenience: is the current user a Super Admin?
+function isSuperAdmin(req) {
+  return req.user && normDept(req.user.department) === 'superadmin';
+}
+
+// Convenience: is the current user IT or Super Admin?
+function isITOrSuperAdmin(req) {
+  if (!req.user) return false;
+  const d = normDept(req.user.department);
+  return d === 'it' || d === 'superadmin';
+}
+
+module.exports = {
+  requireAuth,
+  requireRole,
+  requireDepartment,
+  normDept,
+  canonicalDept,
+  isSuperAdmin,
+  isITOrSuperAdmin,
+};

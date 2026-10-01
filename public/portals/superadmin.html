@@ -1,0 +1,62 @@
+<div class="portal active">
+  <div class="portal-header">
+    <h2>Super Admin - System Control</h2>
+  </div>
+
+  <p class="muted" style="margin-bottom:20px;">
+    Full system access. Use the launcher below to open any department portal, view the Live Board, or manage system settings.
+  </p>
+
+  <div class="card" style="margin-bottom:20px;">
+    <h3>Department Portals</h3>
+    <div class="launcher-grid">
+      <button class="launcher-btn" onclick="openPortalAsSuperAdmin('Nurses')">
+        <div class="launcher-title">Nurses</div>
+        <div class="launcher-desc">Patients, discharges, tender requests</div>
+      </button>
+      <button class="launcher-btn" onclick="openPortalAsSuperAdmin('IT')">
+        <div class="launcher-title">IT</div>
+        <div class="launcher-desc">User management, passwords</div>
+      </button>
+      <button class="launcher-btn" onclick="openPortalAsSuperAdmin('Procurement')">
+        <div class="launcher-title">Procurement</div>
+        <div class="launcher-desc">Tender approvals, suppliers</div>
+      </button>
+      <button class="launcher-btn" onclick="openPortalAsSuperAdmin('Stores')">
+        <div class="launcher-title">Stores</div>
+        <div class="launcher-desc">Inventory, receiving</div>
+      </button>
+      <button class="launcher-btn" onclick="openPortalAsSuperAdmin('HR')">
+        <div class="launcher-title">HR</div>
+        <div class="launcher-desc">Staff, establishment, recruitment</div>
+      </button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px;">
+    <h3>System Views</h3>
+    <div class="launcher-grid">
+      <button class="launcher-btn" onclick="window.open('/index.html', '_blank')">
+        <div class="launcher-title">Live Board</div>
+        <div class="launcher-desc">Public dashboard view</div>
+      </button>
+      <button class="launcher-btn" onclick="openPortalAsSuperAdmin('IT')">
+        <div class="launcher-title">User Management</div>
+        <div class="launcher-desc">Create, edit, reset passwords</div>
+      </button>
+      <button class="launcher-btn" onclick="openSettingsModal()">
+        <div class="launcher-title">System Settings</div>
+        <div class="launcher-desc">Rename hospital, contact info</div>
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Current System Identity</h3>
+    <p>Hospital Name: <strong id="saHospitalName">-</strong></p>
+    <p>Subtitle: <strong id="saSubtitle">-</strong></p>
+    <p>Contact Phone: <strong id="saPhone">-</strong></p>
+    <p>Contact Address: <strong id="saAddress">-</strong></p>
+    <button onclick="refreshSuperAdminSettings()" class="ghost-btn" style="margin-top:12px;">Refresh</button>
+  </div>
+</div>

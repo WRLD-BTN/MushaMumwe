@@ -1,0 +1,103 @@
+<div class="portal active">
+  <div class="portal-header">
+    <h2>Stores - Inventory Management</h2>
+  </div>
+
+  <div class="grid">
+    <div class="card" style="grid-column: span 2;">
+      <div class="card-head">
+        <h3>Approved Tenders - Ready to Receive</h3>
+        <div class="card-head-actions">
+          <input type="text" class="search-input" id="stores-approvedSearch" placeholder="Search approved..." oninput="filterApprovedForStores()">
+        </div>
+      </div>
+      <div class="scroll-area">
+        <div id="stores-approvedOrders"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Record Receipt</h3>
+      <div class="form-group">
+        <label for="stores-receiveOrderId">Order Request ID:</label>
+        <input type="number" id="stores-receiveOrderId" placeholder="Auto-filled when clicking Receive">
+      </div>
+      <div class="form-group">
+        <label for="stores-receiveItemName">Item Name:</label>
+        <input type="text" id="stores-receiveItemName">
+      </div>
+      <div class="form-group">
+        <label for="stores-receiveQty">Qty Received:</label>
+        <input type="number" id="stores-receiveQty" min="1">
+      </div>
+      <div class="form-group">
+        <label for="stores-receiveNotes">Notes:</label>
+        <textarea id="stores-receiveNotes"></textarea>
+      </div>
+      <button onclick="receiveItems()" class="primary-btn block">Record Receipt</button>
+      <div id="stores-receiveMessage"></div>
+    </div>
+
+    <div class="card">
+      <h3>Stock Levels</h3>
+      <p>Critical (less than 10): <strong id="stores-invCritical">-</strong></p>
+      <p>Low (10 to 49): <strong id="stores-invLow">-</strong></p>
+      <p>Adequate (50 plus): <strong id="stores-invAdequate">-</strong></p>
+      <p>Total Items: <strong id="stores-invTotal">-</strong></p>
+      <button onclick="loadStoresInventory()" class="ghost-btn block">Refresh</button>
+    </div>
+
+    <div class="card" style="grid-column: span 2;">
+      <div class="card-head">
+        <h3>Current Inventory</h3>
+        <div class="card-head-actions">
+          <input type="text" class="search-input" id="stores-invSearch" placeholder="Search inventory..." oninput="filterInventory()">
+          <button class="pill-btn" onclick="exportInventory()">Export CSV</button>
+        </div>
+      </div>
+      <div id="stores-inventoryList" class="table-wrap"></div>
+    </div>
+
+    <div class="card" style="grid-column: span 2;">
+      <h3>Recent Receipts</h3>
+      <div id="stores-receiveHistory" class="scroll-area"></div>
+    </div>
+
+    <div class="card">
+      <h3>Submit Tender Request</h3>
+      <div class="form-group">
+        <label for="stores-reqItemName">Item Name:</label>
+        <input type="text" id="stores-reqItemName">
+      </div>
+      <div class="form-group">
+        <label for="stores-reqQuantity">Quantity:</label>
+        <input type="number" id="stores-reqQuantity" min="1">
+      </div>
+      <div class="form-group">
+        <label for="stores-reqReason">Reason:</label>
+        <textarea id="stores-reqReason"></textarea>
+      </div>
+      <button onclick="submitTenderRequest('stores')" class="primary-btn block">Submit Request</button>
+      <div id="stores-requestMessage"></div>
+    </div>
+
+    <div class="card" style="grid-column: span 2;">
+      <div class="card-head">
+        <h3>My Tender Tracker <span class="lock-badge">LOCKED TO YOUR DEPARTMENT</span></h3>
+        <div class="card-head-actions">
+          <input type="text" class="search-input" id="stores-tenderSearch" placeholder="Search tenders..." oninput="filterTenders('stores')">
+          <button class="pill-btn" onclick="exportMyTenders()">Export CSV</button>
+        </div>
+      </div>
+      <div class="tender-filters" id="stores-tenderFilters">
+        <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this,'stores')">All</button>
+        <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this,'stores')">Pending</button>
+        <button class="filter-btn" data-filter="approved" onclick="setTenderFilter(this,'stores')">Approved</button>
+        <button class="filter-btn" data-filter="rejected" onclick="setTenderFilter(this,'stores')">Rejected</button>
+        <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this,'stores')">Ordered</button>
+        <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this,'stores')">Received</button>
+      </div>
+      <div id="stores-tenderTrackerList" class="tender-tracker"></div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,84 @@
+<div class="portal active">
+  <div class="portal-header">
+    <h2>IT Department - User Management</h2>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Create User Account</h3>
+      <div class="form-group">
+        <label for="it-newUsername">Username:</label>
+        <input type="text" id="it-newUsername">
+      </div>
+      <div class="form-group">
+        <label for="it-newUserFullName">Full Name:</label>
+        <input type="text" id="it-newUserFullName">
+      </div>
+      <div class="form-group">
+        <label for="it-newUserDept">Department:</label>
+        <select id="it-newUserDept">
+          <option value="Nurses">Nurses</option>
+          <option value="Procurement">Procurement</option>
+          <option value="Stores">Stores</option>
+          <option value="HR">HR</option>
+          <option value="IT">IT</option>
+        </select>
+      </div>
+      <button onclick="createUser()" class="primary-btn block">Generate Temporary Password</button>
+      <div id="it-createUserMessage"></div>
+    </div>
+
+    <div class="card">
+      <h3>System Status</h3>
+      <p>Total Users: <strong id="it-totalUsers">-</strong></p>
+      <button onclick="loadSystemStatus()" class="ghost-btn block">Refresh</button>
+    </div>
+
+    <div class="card">
+      <h3>Submit Tender Request</h3>
+      <div class="form-group">
+        <label for="it-reqItemName">Item Name:</label>
+        <input type="text" id="it-reqItemName">
+      </div>
+      <div class="form-group">
+        <label for="it-reqQuantity">Quantity:</label>
+        <input type="number" id="it-reqQuantity" min="1">
+      </div>
+      <div class="form-group">
+        <label for="it-reqReason">Reason:</label>
+        <textarea id="it-reqReason"></textarea>
+      </div>
+      <button onclick="submitTenderRequest('it')" class="primary-btn block">Submit Request</button>
+      <div id="it-requestMessage"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <div class="card-head">
+      <h3>All Users</h3>
+      <div class="card-head-actions">
+        <input type="text" class="search-input" id="it-userSearch" placeholder="Search users..." oninput="filterUserList()">
+      </div>
+    </div>
+    <div id="it-userList" class="table-wrap"></div>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <div class="card-head">
+      <h3>My Tender Tracker <span class="lock-badge">LOCKED TO YOUR DEPARTMENT</span></h3>
+      <div class="card-head-actions">
+        <input type="text" class="search-input" id="it-tenderSearch" placeholder="Search tenders..." oninput="filterTenders('it')">
+        <button class="pill-btn" onclick="exportMyTenders()">Export CSV</button>
+      </div>
+    </div>
+    <div class="tender-filters" id="it-tenderFilters">
+      <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this,'it')">All</button>
+      <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this,'it')">Pending</button>
+      <button class="filter-btn" data-filter="approved" onclick="setTenderFilter(this,'it')">Approved</button>
+      <button class="filter-btn" data-filter="rejected" onclick="setTenderFilter(this,'it')">Rejected</button>
+      <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this,'it')">Ordered</button>
+      <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this,'it')">Received</button>
+    </div>
+    <div id="it-tenderTrackerList" class="tender-tracker"></div>
+  </div>
+</div>

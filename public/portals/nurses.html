@@ -1,0 +1,187 @@
+<div class="portal active">
+  <div class="portal-header">
+    <h2>Nurses Department - Patient Management</h2>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Register New Patient</h3>
+      <div class="form-group">
+        <label for="nurses-patientName">Patient Name:</label>
+        <input type="text" id="nurses-patientName">
+      </div>
+      <div class="form-group">
+        <label for="nurses-patientID">National ID:</label>
+        <input type="text" id="nurses-patientID">
+      </div>
+      <div class="form-group">
+        <label for="nurses-patientPhone">Phone:</label>
+        <input type="text" id="nurses-patientPhone">
+      </div>
+      <div class="form-group">
+        <label for="nurses-patientBlood">Blood Group:</label>
+        <select id="nurses-patientBlood">
+          <option value="">Unknown</option>
+          <option>A+</option><option>A-</option>
+          <option>B+</option><option>B-</option>
+          <option>AB+</option><option>AB-</option>
+          <option>O+</option><option>O-</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="nurses-patientDiagnosis">Diagnosis:</label>
+        <input type="text" id="nurses-patientDiagnosis">
+      </div>
+      <div class="form-group">
+        <label for="nurses-patientSymptoms">Symptoms:</label>
+        <textarea id="nurses-patientSymptoms"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="nurses-wardSelect">Ward:</label>
+        <select id="nurses-wardSelect"></select>
+      </div>
+      <button onclick="registerPatient()" class="primary-btn block">Save Record</button>
+      <div id="nurses-patientMessage"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3>Find and Update Patient</h3>
+        <div class="card-head-actions">
+          <button class="pill-btn" onclick="toggleAdvancedPatientFilters()">Filters</button>
+          <button class="pill-btn" onclick="exportPatients()">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <input type="text" id="nurses-patientSearch" placeholder="Search (name / ID / diagnosis / symptoms)..." oninput="debouncedPatientSearch()">
+      </div>
+
+      <div id="nurses-advancedFilters" class="advanced-filters" style="display:none;">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Status</label>
+            <select id="nurses-filterStatus">
+              <option value="all">All</option>
+              <option value="admitted">Admitted</option>
+              <option value="treatment">In Treatment</option>
+              <option value="discharged">Discharged</option>
+              <option value="deceased">Deceased</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Ward</label>
+            <select id="nurses-filterWard">
+              <option value="all">All</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Admitted From</label>
+            <input type="date" id="nurses-filterFrom">
+          </div>
+          <div class="form-group">
+            <label>Admitted To</label>
+            <input type="date" id="nurses-filterTo">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Diagnosis</label>
+          <input type="text" id="nurses-filterDiagnosis" placeholder="e.g. malaria">
+        </div>
+        <button onclick="runPatientSearch()" class="primary-btn block">Search</button>
+        <button onclick="clearPatientFilters()" class="ghost-btn block" style="margin-top:8px;">Clear Filters</button>
+      </div>
+
+      <div class="form-group" style="margin-top:12px;">
+        <label>Select Patient: <span class="muted" id="nurses-resultCount"></span></label>
+        <select id="nurses-patientSelect" size="6" style="height:auto;"></select>
+      </div>
+
+      <div class="form-row">
+        <button onclick="openDischargeModal()" class="primary-btn">Discharge Patient</button>
+        <button onclick="changePatientStatus()" class="ghost-btn">Update Status</button>
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>New Status:</label>
+        <select id="nurses-newStatus">
+          <option value="admitted">Admitted</option>
+          <option value="treatment">In Treatment</option>
+          <option value="deceased">Deceased</option>
+        </select>
+      </div>
+      <div id="nurses-updateMessage"></div>
+    </div>
+
+    <div class="card">
+      <h3>Submit Tender Request</h3>
+      <div class="form-group">
+        <label for="nurses-reqItemName">Item Name:</label>
+        <input type="text" id="nurses-reqItemName">
+      </div>
+      <div class="form-group">
+        <label for="nurses-reqQuantity">Quantity:</label>
+        <input type="number" id="nurses-reqQuantity" min="1">
+      </div>
+      <div class="form-group">
+        <label for="nurses-reqReason">Reason:</label>
+        <textarea id="nurses-reqReason"></textarea>
+      </div>
+      <button onclick="submitTenderRequest('nurses')" class="primary-btn block">Submit Request</button>
+      <div id="nurses-requestMessage"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <div class="card-head">
+      <h3>My Tender Tracker <span class="lock-badge">LOCKED TO YOUR DEPARTMENT</span></h3>
+      <div class="card-head-actions">
+        <input type="text" class="search-input" id="nurses-tenderSearch" placeholder="Search tenders..." oninput="filterTenders('nurses')">
+        <button class="pill-btn" onclick="exportMyTenders()">Export CSV</button>
+      </div>
+    </div>
+    <div class="tender-filters" id="nurses-tenderFilters">
+      <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this,'nurses')">All</button>
+      <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this,'nurses')">Pending</button>
+      <button class="filter-btn" data-filter="approved" onclick="setTenderFilter(this,'nurses')">Approved</button>
+      <button class="filter-btn" data-filter="rejected" onclick="setTenderFilter(this,'nurses')">Rejected</button>
+      <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this,'nurses')">Ordered</button>
+      <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this,'nurses')">Received</button>
+    </div>
+    <div id="nurses-tenderTrackerList" class="tender-tracker"></div>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <div class="card-head">
+      <h3>Discharge Records</h3>
+      <div class="card-head-actions">
+        <input type="text" class="search-input" id="nurses-dischargeSearch" placeholder="Search discharges..." oninput="debouncedDischargeSearch()">
+        <button class="pill-btn" onclick="exportDischarges()">Export CSV</button>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Outcome</label>
+        <select id="nurses-dischargeOutcome" onchange="loadDischargeRecords()">
+          <option value="all">All</option>
+          <option value="Recovered">Recovered</option>
+          <option value="Improved">Improved</option>
+          <option value="Referred">Referred</option>
+          <option value="Absconded">Absconded</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>From</label>
+        <input type="date" id="nurses-dischargeFrom" onchange="loadDischargeRecords()">
+      </div>
+      <div class="form-group">
+        <label>To</label>
+        <input type="date" id="nurses-dischargeTo" onchange="loadDischargeRecords()">
+      </div>
+    </div>
+
+    <div id="nurses-dischargeList" class="table-wrap"></div>
+  </div>
+</div>
