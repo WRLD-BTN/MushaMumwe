@@ -1,0 +1,149 @@
+<div class="portal active">
+  <div class="portal-header">
+    <h2>Procurement - Order Management</h2>
+  </div>
+
+  <div class="dept-tabs">
+    <button class="dept-tab active" data-tab="active" onclick="switchProcTab(this)">Active Board</button>
+    <button class="dept-tab" data-tab="history" onclick="switchProcTab(this)">Tender History</button>
+  </div>
+
+  <div id="procTabActive" class="proc-tab-panel active">
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-head">
+        <h3>All Tenders - Every Department</h3>
+        <div class="card-head-actions">
+          <input type="text" class="search-input" id="proc-pendingSearch" placeholder="Search all tenders..." oninput="filterProcurementOrders()">
+          <button class="pill-btn" onclick="exportTenderHistory()">Export CSV</button>
+        </div>
+      </div>
+      <div class="tender-filters" id="proc-activeFilters">
+        <button class="filter-btn active" data-filter="pending" onclick="setProcActiveFilter(this)">Pending</button>
+        <button class="filter-btn" data-filter="approved" onclick="setProcActiveFilter(this)">Approved</button>
+        <button class="filter-btn" data-filter="ordered" onclick="setProcActiveFilter(this)">Ordered</button>
+        <button class="filter-btn" data-filter="received" onclick="setProcActiveFilter(this)">Received</button>
+        <button class="filter-btn" data-filter="rejected" onclick="setProcActiveFilter(this)">Rejected</button>
+        <button class="filter-btn" data-filter="all" onclick="setProcActiveFilter(this)">All</button>
+      </div>
+      <div class="scroll-area">
+        <div id="proc-pendingOrdersList" class="tender-tracker"></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Order Summary</h3>
+        <p>Pending: <strong id="proc-procPending">-</strong></p>
+        <p>Approved: <strong id="proc-procApproved">-</strong></p>
+        <p>Ordered: <strong id="proc-procOrdered">-</strong></p>
+        <p>Received: <strong id="proc-procInStorage">-</strong></p>
+        <p>Rejected: <strong id="proc-procRejected">-</strong></p>
+        <button onclick="loadProcurementDashboard()" class="ghost-btn block">Refresh</button>
+      </div>
+
+      <div class="card">
+        <h3>Submit Tender Request</h3>
+        <div class="form-group">
+          <label for="proc-reqItemName">Item Name:</label>
+          <input type="text" id="proc-reqItemName">
+        </div>
+        <div class="form-group">
+          <label for="proc-reqQuantity">Quantity:</label>
+          <input type="number" id="proc-reqQuantity" min="1">
+        </div>
+        <div class="form-group">
+          <label for="proc-reqReason">Reason:</label>
+          <textarea id="proc-reqReason"></textarea>
+        </div>
+        <button onclick="submitTenderRequest('proc')" class="primary-btn block">Submit Request</button>
+        <div id="proc-requestMessage"></div>
+      </div>
+
+      <div class="card" style="grid-column: span 2;">
+        <div class="card-head">
+          <h3>My Department's Tenders <span class="lock-badge">LOCKED TO YOUR DEPARTMENT</span></h3>
+          <div class="card-head-actions">
+            <input type="text" class="search-input" id="proc-tenderSearch" placeholder="Search my tenders..." oninput="filterTenders('proc')">
+            <button class="pill-btn" onclick="exportMyTenders()">Export My CSV</button>
+          </div>
+        </div>
+        <div class="tender-filters" id="proc-tenderFilters">
+          <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this,'proc')">All</button>
+          <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this,'proc')">Pending</button>
+          <button class="filter-btn" data-filter="approved" onclick="setTenderFilter(this,'proc')">Approved</button>
+          <button class="filter-btn" data-filter="rejected" onclick="setTenderFilter(this,'proc')">Rejected</button>
+          <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this,'proc')">Ordered</button>
+          <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this,'proc')">Received</button>
+        </div>
+        <div id="proc-tenderTrackerList" class="tender-tracker"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="procTabHistory" class="proc-tab-panel">
+    <div class="history-stats" id="historyStats">
+      <div class="hstat"><span class="hn" id="hTotal">-</span><span class="hl">Total</span></div>
+      <div class="hstat"><span class="hn" id="hPending">-</span><span class="hl">Pending</span></div>
+      <div class="hstat"><span class="hn" id="hApproved">-</span><span class="hl">Approved</span></div>
+      <div class="hstat"><span class="hn" id="hRejected">-</span><span class="hl">Rejected</span></div>
+      <div class="hstat"><span class="hn" id="hReceived">-</span><span class="hl">Received</span></div>
+      <div class="hstat"><span class="hn" id="hRecent">-</span><span class="hl">Last 30 days</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3>Search and Filter All Tenders</h3>
+        <div class="card-head-actions">
+          <button class="pill-btn" onclick="exportTenderHistory()">Export CSV</button>
+        </div>
+      </div>
+      <div class="history-filters">
+        <div class="form-group">
+          <label>Search</label>
+          <input type="text" id="histSearch" placeholder="Item / requester / supplier / ID..." oninput="debouncedHistorySearch()">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="histStatus" onchange="loadTenderHistory()">
+            <option value="all">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="ordered">Ordered</option>
+            <option value="received">Received</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <select id="histDept" onchange="loadTenderHistory()">
+            <option value="all">All departments</option>
+            <option value="Nurses">Nurses</option>
+            <option value="Procurement">Procurement</option>
+            <option value="Stores">Stores</option>
+            <option value="HR">HR</option>
+            <option value="IT">IT</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>From</label>
+          <input type="date" id="histFrom" onchange="loadTenderHistory()">
+        </div>
+        <div class="form-group">
+          <label>To</label>
+          <input type="date" id="histTo" onchange="loadTenderHistory()">
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <button onclick="clearHistoryFilters()" class="ghost-btn block">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div class="card-head">
+        <h3>Results <span class="muted" id="histCount"></span></h3>
+      </div>
+      <div id="proc-tenderHistoryList" class="tender-tracker"></div>
+    </div>
+  </div>
+</div>

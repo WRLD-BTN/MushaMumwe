@@ -16,18 +16,36 @@ model Ward {
 }
 
 model Patient {
-  id              Int          @id @default(autoincrement())
-  name            String
-  dob             DateTime?
-  gender          String?
-  nationalId      String?      @unique
-  admissionDate   DateTime     @default(now())
-  wardId          Int?
-  ward            Ward?        @relation(fields: [wardId], references: [id])
-  status          String       @default("admitted")
-  attendingDoctor String?
-  updatedAt       DateTime     @updatedAt
-  statusLogs      StatusLog[]
+  id                  Int          @id @default(autoincrement())
+  name                String
+  dob                 DateTime?
+  gender              String?
+  nationalId          String?      @unique
+  admissionDate       DateTime     @default(now())
+  wardId              Int?
+  ward                Ward?        @relation(fields: [wardId], references: [id])
+  status              String       @default("admitted")
+  attendingDoctor     String?
+  updatedAt           DateTime     @updatedAt
+
+  diagnosis           String?
+  symptoms            String?
+  phone               String?
+  bloodGroup          String?
+
+  finalDiagnosis      String?
+  treatmentSummary    String?
+  outcome             String?
+  dischargeDate       DateTime?
+  dischargeNotes      String?
+  dischargedBy        String?
+  nextReviewDate      DateTime?
+  reviewDepartment    String?
+  patientInstructions String?
+
+  causeOfDeath        String?
+
+  statusLogs          StatusLog[]
 }
 
 model StatusLog {
@@ -44,6 +62,7 @@ model Employee {
   id                Int                @id @default(autoincrement())
   name              String
   department        String
+  role              String?
   wardId            Int?
   ward              Ward?              @relation(fields: [wardId], references: [id])
   status            String             @default("active")
@@ -72,6 +91,8 @@ model OrderRequest {
   quantity              Int
   reason                String
   status                String                    @default("pending")
+  urgency               String?                   @default("normal")
+  category              String?
   createdAt             DateTime                  @default(now())
   updatedAt             DateTime                  @updatedAt
   statusLogs            OrderRequestStatusLog[]
@@ -107,6 +128,8 @@ model InventoryItem {
   name         String        @unique
   quantity     Int           @default(0)
   unit         String
+  category     String?
+  expiryDate   DateTime?
   lastReceived DateTime?
   itemReceives ItemReceive[]
   createdAt    DateTime      @default(now())
@@ -134,4 +157,10 @@ model User {
   department   String
   role         String  @default("staff")
   wardId       Int?
+}
+
+model SystemSettings {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
 }

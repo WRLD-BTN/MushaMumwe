@@ -4,7 +4,6 @@ const { requireAuth } = require('../auth');
 
 const router = express.Router();
 
-// GET /api/wards — list all wards
 router.get('/', requireAuth, async (req, res) => {
   try {
     const wards = await prisma.ward.findMany({ orderBy: { name: 'asc' } });
