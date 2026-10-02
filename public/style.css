@@ -23,16 +23,25 @@
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
+  --board-bg: #f8fafc;
+  --board-surface: #ffffff;
+  --board-surface-2: #f1f5f9;
+  --board-line: #e2e8f0;
+  --board-text: #0f172a;
+  --board-muted: #64748b;
+  --status-admitted: #3B82F6;
+  --status-treatment: #F0A93A;
+  --status-discharged: #2FBF71;
+  --status-deceased: #7A8199;
+}
+
+[data-theme="dark"] {
   --board-bg: #0B1220;
   --board-surface: #141C2E;
   --board-surface-2: #1B2540;
   --board-line: #26314D;
   --board-text: #E7ECF5;
   --board-muted: #8D97AF;
-  --status-admitted: #3B82F6;
-  --status-treatment: #F0A93A;
-  --status-discharged: #2FBF71;
-  --status-deceased: #7A8199;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -259,6 +268,7 @@ details summary:hover { color: var(--primary); }
 .badge-pending { background: #fef3c7; color: #92400e; }
 .badge-approved { background: #dbeafe; color: #1e40af; }
 .badge-rejected { background: #fee2e2; color: #991b1b; }
+.badge-awaiting_quotation { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; }
 .badge-ordered { background: #e0e7ff; color: #3730a3; }
 .badge-received { background: #dcfce7; color: #166534; }
 
@@ -360,6 +370,31 @@ code {
 .radio-row label { display: flex; align-items: center; gap: 6px; font-weight: 500; }
 .radio-row input[type="radio"] { width: auto; }
 
+/* ============ SUPER ADMIN LAUNCHER ============ */
+.launcher-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+.launcher-btn {
+  display: block;
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.launcher-btn:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+  transform: translateY(-1px);
+}
+.launcher-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.launcher-desc { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+
 /* ============ PRINT LAYOUT ============ */
 .print-area { display: none; }
 
@@ -386,6 +421,7 @@ code {
 .print-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
 .print-header h1 { font-size: 22px; letter-spacing: 2px; margin-bottom: 4px; }
 .print-header h2 { font-size: 16px; font-weight: normal; }
+.print-contact { text-align: center; font-size: 11px; margin-bottom: 16px; color: #333; }
 
 .print-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px; margin-bottom: 20px; font-size: 12px; }
 .print-meta p { margin: 0; }
@@ -409,7 +445,7 @@ code {
 }
 
 /* ==========================================================================
-   LIVE BOARD
+   LIVE BOARD - THEME AWARE
    ========================================================================== */
 body.live-board {
   background: var(--board-bg);
@@ -417,26 +453,49 @@ body.live-board {
   min-height: 100vh;
   padding: 0 0 48px 0;
   font-family: var(--font-body);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 18px 28px; border-bottom: 1px solid var(--board-line);
-  background: linear-gradient(180deg, #0D1526, #0B1220);
+  background: var(--board-surface);
   position: sticky; top: 0; z-index: 10;
   flex-wrap: wrap; gap: 10px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
+
+[data-theme="dark"] .topbar {
+  background: linear-gradient(180deg, #0D1526, #0B1220);
+}
+
 .brand h1 { font-family: var(--font-body); font-size: 19px; font-weight: 600; color: var(--board-text); }
 .brand .sub { font-size: 12px; color: var(--board-muted); font-family: var(--font-mono); }
 .pulse-wrap { display: flex; align-items: center; gap: 10px; }
 .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--status-discharged); animation: blink 1.6s infinite; }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 .sync-text { font-family: var(--font-mono); font-size: 11px; color: var(--board-muted); }
-.clock { font-family: var(--font-mono); font-size: 13px; min-width: 150px; text-align: right; color: var(--board-text); }
+.clock { font-family: var(--font-mono); font-size: 13px; min-width: 110px; text-align: right; color: var(--board-text); }
+
+.theme-toggle {
+  background: var(--board-surface-2);
+  color: var(--board-text);
+  border: 1px solid var(--board-line);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.theme-toggle:hover { border-color: var(--primary); color: var(--primary); }
+
 .staff-login-link {
   color: var(--board-muted); font-family: var(--font-mono); font-size: 11px;
   text-decoration: none; border: 1px solid var(--board-line);
-  padding: 6px 12px; border-radius: 6px; margin-left: 14px;
+  padding: 6px 12px; border-radius: 6px; margin-left: 6px;
   transition: all 0.3s ease;
 }
 .staff-login-link:hover { color: var(--board-text); border-color: var(--board-muted); background: var(--board-surface-2); }
@@ -509,7 +568,7 @@ body.live-board {
 .patient-name { font-size: 13.5px; font-weight: 600; color: var(--board-text); }
 .patient-id { font-family: var(--font-mono); font-size: 10.5px; color: var(--board-muted); }
 .patient-card-meta { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11.5px; color: var(--board-muted); }
-.ward-tag { font-family: var(--font-mono); font-size: 10px; background: #101728; border: 1px solid var(--board-line); padding: 2px 6px; border-radius: 4px; }
+.ward-tag { font-family: var(--font-mono); font-size: 10px; background: var(--board-surface); border: 1px solid var(--board-line); padding: 2px 6px; border-radius: 4px; }
 
 .employee-summary { margin: 40px 28px 0; padding: 20px; background: var(--board-surface); border: 1px solid var(--board-line); border-radius: 8px; }
 .employee-summary-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -546,39 +605,3 @@ body.live-board {
   .distbar, .distbar-labels { padding-left: 16px; padding-right: 16px; }
 }
 @media (max-width: 620px) { .board { grid-template-columns: 1fr; } .stats { flex-direction: column; } }
-/* ============================================================
-   SUPER ADMIN LAUNCHER
-   ============================================================ */
-.launcher-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 14px;
-}
-
-.launcher-btn {
-  display: block;
-  text-align: left;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px 20px;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-family: inherit;
-}
-.launcher-btn:hover {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-light);
-  transform: translateY(-1px);
-}
-.launcher-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 4px;
-}
-.launcher-desc {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 400;
-}

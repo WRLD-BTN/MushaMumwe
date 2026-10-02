@@ -1,5 +1,5 @@
 // ============================================================
-// MushaMumwe - Procurement Department
+// Sally Mugabe Central Hospital - Procurement Department
 // ============================================================
 
 let allProcurementOrders = [];
@@ -18,7 +18,9 @@ async function init_proc() {
       loadTenderHistory();
     }
     const myDept = String(currentDeptName || '').toLowerCase();
-    if (String(payload?.department || '').toLowerCase() === myDept) loadMyTenders();
+    const sub = String(payload?.department || '').toLowerCase();
+    const orig = String(payload?.originator || '').toLowerCase();
+    if (sub === myDept || orig === myDept) loadMyTenders();
   };
   window.onOrderCreated = () => loadProcurementDashboard();
 }
@@ -56,10 +58,14 @@ async function loadProcurementDashboard() {
     renderProcurementOrders();
 
     document.getElementById('proc-procPending').textContent = summary.pending;
-    document.getElementById('proc-procApproved').textContent = summary.approved;
     document.getElementById('proc-procOrdered').textContent = summary.ordered;
-    document.getElementById('proc-procInStorage').textContent = summary.inStorage;
-    document.getElementById('proc-procRejected').textContent = summary.rejected;
+    document.getElementById('proc-procInStorage').textContent = summary.received;
+
+    const awaitEl = document.getElementById('proc-procAwaiting');
+    if (awaitEl) awaitEl.textContent = summary.awaitingQuotation ?? 0;
+
+    const rejEl = document.getElementById('proc-procRejected');
+    if (rejEl) rejEl.textContent = 0;
   } catch (e) {
     console.error(e);
   }
@@ -85,6 +91,7 @@ function renderProcurementOrders() {
     list = list.filter(o =>
       String(o.itemName || '').toLowerCase().includes(q) ||
       String(o.requestingDepartment || '').toLowerCase().includes(q) ||
+      String(o.originatorDepartment || '').toLowerCase().includes(q) ||
       String(o.requestingBy || '').toLowerCase().includes(q) ||
       String(o.id).includes(q));
   }
@@ -96,6 +103,13 @@ function renderProcurementOrders() {
   }
 
   el.innerHTML = list.map(o => {
+    const submitter = o.requestingDepartment || '';
+    const originator = o.originatorDepartment || submitter;
+    let originatorLine = '';
+    if (submitter.toLowerCase() !== originator.toLowerCase()) {
+      originatorLine = ' <span class="muted">(submitted by ' + escapeHtml(submitter) + ' for ' + escapeHtml(originator) + ')</span>';
+    }
+
     const supplier = o.procurementOrder && o.procurementOrder.supplierName
       ? '<p><em>Supplier:</em> ' + escapeHtml(o.procurementOrder.supplierName) + '</p>'
       : '';
@@ -105,8 +119,8 @@ function renderProcurementOrders() {
       '<div class="tender-head">' +
       '<div>' +
       '<strong>#' + o.id + ' - ' + escapeHtml(o.itemName) + ' x' + o.quantity + '</strong>' +
-      '<div class="muted"><span class="dept-pill">' + escapeHtml(o.requestingDepartment) +
-      '</span> by ' + escapeHtml(o.requestingBy) + '</div>' +
+      '<div class="muted"><span class="dept-pill">' + escapeHtml(originator) + '</span>' +
+      originatorLine + '</div>' +
       '</div>' +
       '<div>' + statusBadge(o.status) + '</div>' +
       '</div>' +
@@ -120,65 +134,123 @@ function renderProcurementOrders() {
 }
 
 function renderProcOrderActions(o) {
-  if (o.status === 'pending') {
-    return '<button class="success-btn" onclick="approveOrder(' + o.id + ')">Approve</button>' +
-           '<button class="danger-btn" onclick="rejectOrder(' + o.id + ')">Reject</button>';
-  }
-  if (o.status === 'approved') {
-    return '<button class="pill-btn" onclick="sendOrder(' + o.id + ')">Send to Supplier</button>';
+  if (o.status === 'pending' || o.status === 'awaiting_quotation') {
+    return '<button class="success-btn" onclick="openApproveModal(' + o.id + ')">Approve and Send</button>' +
+           '<button class="ghost-btn" onclick="openAwaitQuotationModal(' + o.id + ')">Waiting for Quotation</button>';
   }
   return '';
 }
 
 function filterProcurementOrders() { renderProcurementOrders(); }
 
-async function approveOrder(orderId) {
-  const supplierName = prompt('Enter supplier name:');
-  if (!supplierName) return;
+// ============================================================
+// APPROVE MODAL
+// ============================================================
+function openApproveModal(orderId) {
+  const o = allProcurementOrders.find(x => x.id === orderId);
+  if (!o) return;
+
+  document.getElementById('approveOrderId') || (function () {
+    // Create hidden field if not present
+    const f = document.createElement('input');
+    f.type = 'hidden';
+    f.id = 'approveOrderId';
+    document.body.appendChild(f);
+  })();
+
+  document.getElementById('approveOrderId').value = orderId;
+  document.getElementById('approveOrderLabel').textContent =
+    '#' + o.id + ' - ' + o.itemName + ' x' + o.quantity +
+    ' (for ' + (o.originatorDepartment || o.requestingDepartment) + ')';
+  document.getElementById('approveSupplierName').value = '';
+  document.getElementById('approveExpectedDate').value = '';
+  document.getElementById('approveNotes').value = '';
+  document.getElementById('approveMessage').innerHTML = '';
+
+  document.getElementById('approveModal').classList.add('active');
+  document.getElementById('modalBackdrop').classList.add('active');
+}
+
+function closeApproveModal() {
+  document.getElementById('approveModal').classList.remove('active');
+  document.getElementById('modalBackdrop').classList.remove('active');
+}
+
+async function confirmApprove() {
+  const id = document.getElementById('approveOrderId').value;
+  const supplierName = document.getElementById('approveSupplierName').value.trim();
+  const expectedDeliveryDate = document.getElementById('approveExpectedDate').value;
+  const approvalNotes = document.getElementById('approveNotes').value.trim();
+  const msg = document.getElementById('approveMessage');
+
+  if (!supplierName) {
+    msg.innerHTML = '<div class="error">Supplier name is required</div>';
+    return;
+  }
+
   try {
-    const res = await fetch('/api/orders/requests/' + orderId + '/approve', {
+    const res = await fetch('/api/orders/requests/' + id + '/approve', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() },
-      body: JSON.stringify({ supplierName }),
+      body: JSON.stringify({ supplierName, expectedDeliveryDate, approvalNotes }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
+
+    closeApproveModal();
     await loadProcurementDashboard();
   } catch (e) {
-    alert('Error: ' + e.message);
+    msg.innerHTML = '<div class="error">' + e.message + '</div>';
   }
 }
 
-async function rejectOrder(orderId) {
-  const reason = prompt('Enter rejection reason:');
-  if (!reason) return;
-  try {
-    const res = await fetch('/api/orders/requests/' + orderId + '/reject', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() },
-      body: JSON.stringify({ reason }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-    await loadProcurementDashboard();
-  } catch (e) {
-    alert('Error: ' + e.message);
+// ============================================================
+// WAITING FOR QUOTATION MODAL
+// ============================================================
+function openAwaitQuotationModal(orderId) {
+  const o = allProcurementOrders.find(x => x.id === orderId);
+  if (!o) return;
+
+  if (!document.getElementById('awaitOrderId')) {
+    const f = document.createElement('input');
+    f.type = 'hidden';
+    f.id = 'awaitOrderId';
+    document.body.appendChild(f);
   }
+
+  document.getElementById('awaitOrderId').value = orderId;
+  document.getElementById('awaitOrderLabel').textContent =
+    '#' + o.id + ' - ' + o.itemName + ' x' + o.quantity;
+  document.getElementById('awaitNote').value = '';
+  document.getElementById('awaitMessage').innerHTML = '';
+
+  document.getElementById('awaitModal').classList.add('active');
+  document.getElementById('modalBackdrop').classList.add('active');
 }
 
-async function sendOrder(orderId) {
-  if (!confirm('Send this order to the supplier?')) return;
+function closeAwaitModal() {
+  document.getElementById('awaitModal').classList.remove('active');
+  document.getElementById('modalBackdrop').classList.remove('active');
+}
+
+async function confirmAwaitQuotation() {
+  const id = document.getElementById('awaitOrderId').value;
+  const note = document.getElementById('awaitNote').value.trim();
+  const msg = document.getElementById('awaitMessage');
+
   try {
-    const res = await fetch('/api/orders/requests/' + orderId + '/send', {
+    const res = await fetch('/api/orders/requests/' + id + '/await-quotation', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() },
-      body: JSON.stringify({}),
+      body: JSON.stringify({ note }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
+
+    closeAwaitModal();
     await loadProcurementDashboard();
   } catch (e) {
-    alert('Error: ' + e.message);
+    msg.innerHTML = '<div class="error">' + e.message + '</div>';
   }
 }
 
@@ -198,8 +270,8 @@ async function loadHistorySummary() {
 
     document.getElementById('hTotal').textContent = s.total;
     document.getElementById('hPending').textContent = s.byStatus.pending || 0;
-    document.getElementById('hApproved').textContent = s.byStatus.approved || 0;
-    document.getElementById('hRejected').textContent = s.byStatus.rejected || 0;
+    document.getElementById('hApproved').textContent = s.byStatus.ordered || 0;
+    document.getElementById('hRejected').textContent = s.byStatus.awaiting_quotation || 0;
     document.getElementById('hReceived').textContent =
       (s.byStatus.received || 0) + (s.byStatus.in_storage || 0);
     document.getElementById('hRecent').textContent = s.last30Days;
@@ -238,6 +310,8 @@ async function loadTenderHistory() {
     }
 
     el.innerHTML = tenders.map(t => {
+      const submitter = t.requestingDepartment || '';
+      const originator = t.originatorDepartment || submitter;
       const supplier = t.procurementOrder && t.procurementOrder.supplierName
         ? '<p><em>Supplier:</em> ' + escapeHtml(t.procurementOrder.supplierName) + '</p>'
         : '';
@@ -258,8 +332,9 @@ async function loadTenderHistory() {
         '<div class="tender-head">' +
         '<div>' +
         '<strong>#' + t.id + ' - ' + escapeHtml(t.itemName) + ' x' + t.quantity + '</strong>' +
-        '<div class="muted"><span class="dept-pill">' + escapeHtml(t.requestingDepartment) +
-        '</span> by ' + escapeHtml(t.requestingBy) + ' - ' + fmtDate(t.createdAt) + '</div>' +
+        '<div class="muted"><span class="dept-pill">' + escapeHtml(originator) + '</span>' +
+        (submitter !== originator ? ' (submitted by ' + escapeHtml(submitter) + ')' : '') +
+        ' by ' + escapeHtml(t.requestingBy) + ' - ' + fmtDate(t.createdAt) + '</div>' +
         '</div>' +
         '<div>' + statusBadge(t.status) + '</div>' +
         '</div>' +
@@ -299,6 +374,7 @@ async function exportTenderHistory() {
 // MY TENDERS
 // ============================================================
 async function submitTenderRequest(deptKey) {
+  const originatorDepartment = document.getElementById(deptKey + '-reqOriginator')?.value || currentDeptName;
   const itemName = document.getElementById(deptKey + '-reqItemName').value.trim();
   const quantity = document.getElementById(deptKey + '-reqQuantity').value;
   const reason = document.getElementById(deptKey + '-reqReason').value.trim();
@@ -313,7 +389,7 @@ async function submitTenderRequest(deptKey) {
     const res = await fetch('/api/orders/request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() },
-      body: JSON.stringify({ itemName, quantity: parseInt(quantity), reason }),
+      body: JSON.stringify({ itemName, quantity: parseInt(quantity), reason, originatorDepartment }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
@@ -357,15 +433,32 @@ function renderTenderTracker() {
     return;
   }
 
-  el.innerHTML = list.map(t =>
-    '<div class="tender-card">' +
-    '<div class="tender-head">' +
-    '<div><strong>#' + t.id + ' - ' + escapeHtml(t.itemName) + ' x' + t.quantity + '</strong></div>' +
-    '<div>' + statusBadge(t.status) + '</div>' +
-    '</div>' +
-    '<div class="tender-body"><p><em>Reason:</em> ' + escapeHtml(t.reason) + '</p></div>' +
-    '</div>'
-  ).join('');
+  const myDept = String(currentDeptName || '').toLowerCase();
+
+  el.innerHTML = list.map(t => {
+    const submitter = t.requestingDepartment || '';
+    const originator = t.originatorDepartment || submitter;
+    const submittedByMe = String(submitter).toLowerCase() === myDept;
+    const submittedForMe = String(originator).toLowerCase() === myDept;
+
+    let meta = 'Requested by: ' + escapeHtml(submitter);
+    if (!submittedByMe && submittedForMe) {
+      meta = 'Requested FOR your department by ' + escapeHtml(submitter);
+    } else if (submittedByMe && originator !== submitter) {
+      meta = 'Submitted by you FOR ' + escapeHtml(originator);
+    }
+
+    return '<div class="tender-card">' +
+      '<div class="tender-head">' +
+      '<div>' +
+      '<strong>#' + t.id + ' - ' + escapeHtml(t.itemName) + ' x' + t.quantity + '</strong>' +
+      '<div class="muted">' + meta + '</div>' +
+      '</div>' +
+      '<div>' + statusBadge(t.status) + '</div>' +
+      '</div>' +
+      '<div class="tender-body"><p><em>Reason:</em> ' + escapeHtml(t.reason) + '</p></div>' +
+      '</div>';
+  }).join('');
 }
 
 async function exportMyTenders() {

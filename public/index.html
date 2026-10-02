@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MushaMumwe - Live Board</title>
+<title>Sally Mugabe Central Hospital - Live Board</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="live-board">
 
   <div class="topbar">
     <div class="brand">
-      <h1>MUSHAMUMWE - LIVE BOARD</h1>
+      <h1 id="boardTitle">SALLY MUGABE CENTRAL HOSPITAL</h1>
       <div class="sub" id="apiTarget">connecting...</div>
     </div>
     <div class="pulse-wrap">
@@ -18,6 +18,9 @@
       <span class="sync-text" id="syncText">CONNECTING</span>
     </div>
     <div class="clock" id="clock">--:--:--</div>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+      <span id="themeIcon">DARK</span>
+    </button>
     <a href="/entry.html" class="staff-login-link">Staff Login</a>
   </div>
 
@@ -171,6 +174,46 @@ const columnKeys = {
 let activeColumn = null;
 let patientsCache = [];
 
+// ============================================================
+// THEME TOGGLE
+// ============================================================
+function initTheme() {
+  const saved = localStorage.getItem("mushamumwe_theme") || "light";
+  applyTheme(saved);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme") || "light";
+  const next = current === "light" ? "dark" : "light";
+  applyTheme(next);
+  localStorage.setItem("mushamumwe_theme", next);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  const icon = document.getElementById("themeIcon");
+  if (icon) icon.textContent = theme === "light" ? "DARK" : "LIGHT";
+}
+
+// ============================================================
+// SETTINGS - load hospital name
+// ============================================================
+async function loadBoardSettings() {
+  try {
+    const res = await fetch("/api/settings/public");
+    if (!res.ok) return;
+    const data = await res.json();
+    const title = document.getElementById("boardTitle");
+    if (title) title.textContent = (data.hospitalName || "Hospital").toUpperCase() + " - LIVE BOARD";
+    document.title = (data.hospitalName || "Hospital") + " - Live Board";
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// ============================================================
+// UTILS
+// ============================================================
 function fmtTime(iso) {
   return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
@@ -187,6 +230,9 @@ async function fetchJSON(url) {
   return res.json();
 }
 
+// ============================================================
+// PATIENT BOARD
+// ============================================================
 function renderPatientCard(p) {
   const el = document.createElement("div");
   el.className = "patient-card";
@@ -293,6 +339,9 @@ function toggleBoardColumn(key) {
   if (hint) hint.style.display = "none";
 }
 
+// ============================================================
+// EMPLOYEE SUMMARY
+// ============================================================
 async function loadEmployeeSummary() {
   try {
     const res = await fetch("/api/employees/summary", {
@@ -323,6 +372,9 @@ function toggleEmployeeView() {
   document.getElementById("deptBreakdown").classList.toggle("active");
 }
 
+// ============================================================
+// TOAST + CLOCK
+// ============================================================
 function showToast(msg) {
   const t = document.getElementById("toast");
   t.innerHTML = msg;
@@ -334,6 +386,11 @@ function tickClock() {
   document.getElementById("clock").textContent = new Date().toLocaleTimeString("en-GB");
 }
 
+// ============================================================
+// INIT
+// ============================================================
+initTheme();
+loadBoardSettings();
 tickClock();
 setInterval(tickClock, 1000);
 
@@ -397,7 +454,7 @@ document.addEventListener("keydown", (e) => {
   }
   if (e.key === "Escape") {
     document.getElementById("deptBreakdown").classList.remove("active");
-    toggleBoardColumn(activeColumn);
+    if (activeColumn) toggleBoardColumn(activeColumn);
   }
 });
 
@@ -408,8 +465,7 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-console.log("MushaMumwe Live Board initialized");
-console.log("Keyboard: R=Refresh, T=Toggle Details, ESC=Close");
+console.log("Sally Mugabe Central Hospital Live Board initialized");
 </script>
 </body>
 </html>
