@@ -203,6 +203,57 @@
     </div>
   </div>
 
+  <!-- NEW MODAL: Approve and Send -->
+  <div id="approveModal" class="modal">
+    <div class="modal-content">
+      <h3>Approve and Send Order</h3>
+      <p class="muted" id="approveOrderLabel" style="margin-bottom:16px;"></p>
+
+      <div class="form-group">
+        <label>Supplier Name: <span class="req">*</span></label>
+        <input type="text" id="approveSupplierName" placeholder="e.g. MedSupply Ltd">
+      </div>
+      <div class="form-group">
+        <label>Expected Delivery Date:</label>
+        <input type="date" id="approveExpectedDate">
+      </div>
+      <div class="form-group">
+        <label>Notes:</label>
+        <textarea id="approveNotes" placeholder="Optional notes for this approval"></textarea>
+      </div>
+
+      <div id="approveMessage"></div>
+
+      <div class="modal-actions">
+        <button onclick="confirmApprove()" class="primary-btn">Approve and Send</button>
+        <button onclick="closeApproveModal()" class="ghost-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW MODAL: Waiting for Quotation -->
+  <div id="awaitModal" class="modal">
+    <div class="modal-content">
+      <h3>Waiting for Quotation</h3>
+      <p class="muted" id="awaitOrderLabel" style="margin-bottom:16px;"></p>
+      <p class="muted" style="margin-bottom:16px;">
+        This will pause the tender while the supplier provides a quote. You can approve it later.
+      </p>
+
+      <div class="form-group">
+        <label>Note (optional):</label>
+        <textarea id="awaitNote" placeholder="e.g. Awaiting quote from MedSupply Ltd"></textarea>
+      </div>
+
+      <div id="awaitMessage"></div>
+
+      <div class="modal-actions">
+        <button onclick="confirmAwaitQuotation()" class="primary-btn">Mark Waiting for Quotation</button>
+        <button onclick="closeAwaitModal()" class="ghost-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div id="modalBackdrop" class="modal-backdrop" onclick="closeAllModals()"></div>
 
   <div id="printArea" class="print-area"></div>
