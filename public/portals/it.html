@@ -37,6 +37,16 @@
     <div class="card">
       <h3>Submit Tender Request</h3>
       <div class="form-group">
+        <label for="it-reqOriginator">This tender is for:</label>
+        <select id="it-reqOriginator">
+          <option value="IT">IT</option>
+          <option value="Nurses">Nurses</option>
+          <option value="Procurement">Procurement</option>
+          <option value="Stores">Stores</option>
+          <option value="HR">HR</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label for="it-reqItemName">Item Name:</label>
         <input type="text" id="it-reqItemName">
       </div>
@@ -74,8 +84,7 @@
     <div class="tender-filters" id="it-tenderFilters">
       <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this,'it')">All</button>
       <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this,'it')">Pending</button>
-      <button class="filter-btn" data-filter="approved" onclick="setTenderFilter(this,'it')">Approved</button>
-      <button class="filter-btn" data-filter="rejected" onclick="setTenderFilter(this,'it')">Rejected</button>
+      <button class="filter-btn" data-filter="awaiting_quotation" onclick="setTenderFilter(this,'it')">Awaiting Quotation</button>
       <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this,'it')">Ordered</button>
       <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this,'it')">Received</button>
     </div>

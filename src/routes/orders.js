@@ -1,22 +1,28 @@
 const express = require('express');
 const prisma = require('../prismaClient');
-const { requireAuth, canonicalDept, isSuperAdmin, isITOrSuperAdmin } = require('../auth');
+const { requireAuth, canonicalDept, isITOrSuperAdmin } = require('../auth');
 
 const router = express.Router();
 
 // ============================================================
-// CREATE request
+// CREATE request - accepts originatorDepartment
 // ============================================================
 router.post('/request', requireAuth, async (req, res) => {
-  const { itemName, quantity, reason, urgency, category } = req.body;
+  const { itemName, quantity, reason, urgency, category, originatorDepartment } = req.body;
   if (!itemName || !quantity || !reason) {
     return res.status(400).json({ error: 'itemName, quantity, and reason are required' });
   }
 
   try {
+    const submitterDept = canonicalDept(req.user.department);
+    const originatorDept = originatorDepartment
+      ? canonicalDept(originatorDepartment)
+      : submitterDept;
+
     const orderRequest = await prisma.orderRequest.create({
       data: {
-        requestingDepartment: canonicalDept(req.user.department),
+        requestingDepartment: submitterDept,
+        originatorDepartment: originatorDept,
         requestingBy: req.user.fullName,
         itemName,
         quantity: parseInt(quantity),
@@ -33,13 +39,16 @@ router.post('/request', requireAuth, async (req, res) => {
         oldStatus: 'created',
         newStatus: 'pending',
         changedBy: req.user.fullName,
-        notes: 'Order request created',
+        notes: submitterDept === originatorDept
+          ? 'Order request created'
+          : 'Created by ' + submitterDept + ' for ' + originatorDept,
       },
     });
 
     req.app.locals.emit('order:created', {
       id: orderRequest.id,
       department: orderRequest.requestingDepartment,
+      originator: orderRequest.originatorDepartment,
       itemName: orderRequest.itemName,
     });
 
@@ -73,7 +82,7 @@ router.get('/requests', requireAuth, async (req, res) => {
 });
 
 // ============================================================
-// MY tenders
+// MY tenders - sees ones I submitted OR ones requested for my dept
 // ============================================================
 router.get('/my', requireAuth, async (req, res) => {
   try {
@@ -85,7 +94,11 @@ router.get('/my', requireAuth, async (req, res) => {
       },
       orderBy: { createdAt: 'desc' },
     });
-    const mine = all.filter(r => String(r.requestingDepartment || '').trim().toLowerCase() === myDept);
+    const mine = all.filter(r => {
+      const submitter = String(r.requestingDepartment || '').trim().toLowerCase();
+      const originator = String(r.originatorDepartment || '').trim().toLowerCase();
+      return submitter === myDept || originator === myDept;
+    });
     res.json(mine);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -102,13 +115,23 @@ router.get('/my/export', requireAuth, async (req, res) => {
       include: { procurementOrder: true },
       orderBy: { createdAt: 'desc' },
     });
-    const mine = all.filter(r => String(r.requestingDepartment || '').trim().toLowerCase() === myDept);
+    const mine = all.filter(r => {
+      const submitter = String(r.requestingDepartment || '').trim().toLowerCase();
+      const originator = String(r.originatorDepartment || '').trim().toLowerCase();
+      return submitter === myDept || originator === myDept;
+    });
 
     const escape = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    const header = ['ID', 'Item', 'Quantity', 'Reason', 'Status', 'Requested By', 'Supplier', 'Created'].join(',');
+    const header = ['ID','Submitted By','Originator','Item','Quantity','Reason','Status','Supplier','Created'].join(',');
     const rows = mine.map(t => [
-      t.id, escape(t.itemName), t.quantity, escape(t.reason), escape(t.status),
-      escape(t.requestingBy), escape(t.procurementOrder?.supplierName || ''),
+      t.id,
+      escape(t.requestingDepartment),
+      escape(t.originatorDepartment || t.requestingDepartment),
+      escape(t.itemName),
+      t.quantity,
+      escape(t.reason),
+      escape(t.status),
+      escape(t.procurementOrder?.supplierName || ''),
       escape(t.createdAt.toISOString()),
     ].join(','));
 
@@ -142,7 +165,10 @@ router.get('/history', requireAuth, async (req, res) => {
     if (status && status !== 'all') filtered = filtered.filter(r => r.status === status);
     if (department && department !== 'all') {
       const d = department.toLowerCase();
-      filtered = filtered.filter(r => String(r.requestingDepartment || '').toLowerCase() === d);
+      filtered = filtered.filter(r =>
+        String(r.requestingDepartment || '').toLowerCase() === d ||
+        String(r.originatorDepartment || '').toLowerCase() === d
+      );
     }
     if (search) {
       const q = search.toLowerCase();
@@ -150,6 +176,7 @@ router.get('/history', requireAuth, async (req, res) => {
         String(r.itemName || '').toLowerCase().includes(q) ||
         String(r.requestingBy || '').toLowerCase().includes(q) ||
         String(r.requestingDepartment || '').toLowerCase().includes(q) ||
+        String(r.originatorDepartment || '').toLowerCase().includes(q) ||
         String(r.reason || '').toLowerCase().includes(q) ||
         String(r.id) === q
       );
@@ -175,16 +202,16 @@ router.get('/history/summary', requireAuth, async (req, res) => {
   }
   try {
     const all = await prisma.orderRequest.findMany({
-      select: { status: true, requestingDepartment: true, createdAt: true },
+      select: { status: true, requestingDepartment: true, originatorDepartment: true, createdAt: true },
     });
-    const statuses = ['pending', 'approved', 'rejected', 'ordered', 'received', 'in_storage'];
+    const statuses = ['pending', 'awaiting_quotation', 'ordered', 'received', 'in_storage'];
     const byStatus = {};
     statuses.forEach(s => byStatus[s] = 0);
     all.forEach(r => { byStatus[r.status] = (byStatus[r.status] || 0) + 1; });
 
     const byDept = {};
     all.forEach(r => {
-      const d = r.requestingDepartment || 'Unknown';
+      const d = r.originatorDepartment || r.requestingDepartment || 'Unknown';
       byDept[d] = (byDept[d] || 0) + 1;
     });
 
@@ -211,10 +238,16 @@ router.get('/history/export', requireAuth, async (req, res) => {
       orderBy: { createdAt: 'desc' },
     });
     const escape = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    const header = ['ID', 'Department', 'Requested By', 'Item', 'Quantity', 'Reason', 'Status', 'Supplier', 'Created'].join(',');
+    const header = ['ID','Submitted By','Originator','Requested By','Item','Quantity','Reason','Status','Supplier','Created'].join(',');
     const rows = all.map(t => [
-      t.id, escape(t.requestingDepartment), escape(t.requestingBy), escape(t.itemName),
-      t.quantity, escape(t.reason), escape(t.status),
+      t.id,
+      escape(t.requestingDepartment),
+      escape(t.originatorDepartment || t.requestingDepartment),
+      escape(t.requestingBy),
+      escape(t.itemName),
+      t.quantity,
+      escape(t.reason),
+      escape(t.status),
       escape(t.procurementOrder?.supplierName || ''),
       escape(t.createdAt.toISOString()),
     ].join(','));
@@ -228,110 +261,114 @@ router.get('/history/export', requireAuth, async (req, res) => {
 });
 
 // ============================================================
-// APPROVE
+// APPROVE AND SEND
+// Accepts tenders in status 'pending' OR 'awaiting_quotation'
+// Sets status to 'ordered' directly (no separate Send step)
 // ============================================================
 router.patch('/requests/:id/approve', requireAuth, async (req, res) => {
   if (req.user.department !== 'Procurement' && !isITOrSuperAdmin(req)) {
     return res.status(403).json({ error: 'Only Procurement can approve' });
   }
-  const { supplierName } = req.body;
+  const { supplierName, expectedDeliveryDate, approvalNotes } = req.body;
+
   try {
     const request = await prisma.orderRequest.findUnique({ where: { id: parseInt(req.params.id) } });
     if (!request) return res.status(404).json({ error: 'Request not found' });
-    if (request.status !== 'pending') {
+    if (!['pending', 'awaiting_quotation'].includes(request.status)) {
       return res.status(400).json({ error: 'Cannot approve request in status ' + request.status });
     }
+    if (!supplierName) return res.status(400).json({ error: 'Supplier name is required' });
 
     const updated = await prisma.orderRequest.update({
-      where: { id: request.id }, data: { status: 'approved' },
+      where: { id: request.id },
+      data: { status: 'ordered' },
     });
+
     await prisma.orderRequestStatusLog.create({
       data: {
-        orderRequestId: request.id, oldStatus: 'pending', newStatus: 'approved',
+        orderRequestId: request.id,
+        oldStatus: request.status,
+        newStatus: 'ordered',
         changedBy: req.user.fullName,
-        notes: 'Approved. Supplier: ' + (supplierName || 'TBD'),
+        notes: 'Approved and sent. Supplier: ' + supplierName,
       },
     });
 
     const existingPO = await prisma.procurementOrder.findUnique({ where: { orderRequestId: request.id } });
+    const poData = {
+      supplierName,
+      expectedDeliveryDate: expectedDeliveryDate ? new Date(expectedDeliveryDate) : null,
+      approvalNotes: approvalNotes || null,
+      status: 'ordered',
+    };
+
     if (!existingPO) {
       await prisma.procurementOrder.create({
-        data: { orderRequestId: request.id, supplierName: supplierName || 'TBD', status: 'approved' },
+        data: { orderRequestId: request.id, ...poData },
       });
     } else {
       await prisma.procurementOrder.update({
         where: { id: existingPO.id },
-        data: { supplierName: supplierName || existingPO.supplierName },
+        data: poData,
       });
     }
 
-    req.app.locals.emit('order:updated', { id: updated.id, status: 'approved', department: updated.requestingDepartment });
+    req.app.locals.emit('order:updated', {
+      id: updated.id,
+      status: 'ordered',
+      department: updated.requestingDepartment,
+      originator: updated.originatorDepartment,
+    });
+
     res.json(updated);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ============================================================
-// REJECT
+// WAITING FOR QUOTATION - temporary hold, not rejection
+// Can be approved later via /approve
 // ============================================================
-router.patch('/requests/:id/reject', requireAuth, async (req, res) => {
+router.patch('/requests/:id/await-quotation', requireAuth, async (req, res) => {
   if (req.user.department !== 'Procurement' && !isITOrSuperAdmin(req)) {
-    return res.status(403).json({ error: 'Only Procurement can reject' });
+    return res.status(403).json({ error: 'Only Procurement can mark awaiting quotation' });
   }
-  const { reason } = req.body;
+  const { note } = req.body;
+
   try {
     const request = await prisma.orderRequest.findUnique({ where: { id: parseInt(req.params.id) } });
     if (!request) return res.status(404).json({ error: 'Request not found' });
+    if (request.status === 'ordered' || request.status === 'received') {
+      return res.status(400).json({ error: 'Cannot pause a tender already ' + request.status });
+    }
 
     const updated = await prisma.orderRequest.update({
-      where: { id: request.id }, data: { status: 'rejected' },
+      where: { id: request.id },
+      data: { status: 'awaiting_quotation' },
     });
+
     await prisma.orderRequestStatusLog.create({
       data: {
-        orderRequestId: request.id, oldStatus: request.status, newStatus: 'rejected',
-        changedBy: req.user.fullName, notes: reason || 'Rejected',
+        orderRequestId: request.id,
+        oldStatus: request.status,
+        newStatus: 'awaiting_quotation',
+        changedBy: req.user.fullName,
+        notes: note ? 'Waiting for quotation: ' + note : 'Waiting for quotation from supplier',
       },
     });
 
-    req.app.locals.emit('order:updated', { id: updated.id, status: 'rejected', department: updated.requestingDepartment });
-    res.json(updated);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
+    req.app.locals.emit('order:updated', {
+      id: updated.id,
+      status: 'awaiting_quotation',
+      department: updated.requestingDepartment,
+      originator: updated.originatorDepartment,
+    });
 
-// ============================================================
-// SEND
-// ============================================================
-router.patch('/requests/:id/send', requireAuth, async (req, res) => {
-  if (req.user.department !== 'Procurement' && !isITOrSuperAdmin(req)) {
-    return res.status(403).json({ error: 'Only Procurement can send orders' });
+    res.json(updated);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
-  try {
-    const request = await prisma.orderRequest.findUnique({
-      where: { id: parseInt(req.params.id) },
-      include: { procurementOrder: true },
-    });
-    if (!request) return res.status(404).json({ error: 'Request not found' });
-    if (request.status !== 'approved') {
-      return res.status(400).json({ error: 'Only approved requests can be sent' });
-    }
-
-    const updated = await prisma.orderRequest.update({
-      where: { id: request.id }, data: { status: 'ordered' },
-    });
-    if (request.procurementOrder) {
-      await prisma.procurementOrder.update({
-        where: { id: request.procurementOrder.id }, data: { status: 'ordered' },
-      });
-    }
-    await prisma.orderRequestStatusLog.create({
-      data: {
-        orderRequestId: request.id, oldStatus: 'approved', newStatus: 'ordered',
-        changedBy: req.user.fullName, notes: 'Order sent to supplier',
-      },
-    });
-
-    req.app.locals.emit('order:updated', { id: updated.id, status: 'ordered', department: updated.requestingDepartment });
-    res.json(updated);
-  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ============================================================
@@ -339,15 +376,19 @@ router.patch('/requests/:id/send', requireAuth, async (req, res) => {
 // ============================================================
 router.get('/summary', requireAuth, async (req, res) => {
   try {
-    const statuses = ['pending', 'approved', 'rejected', 'ordered', 'in_storage', 'received'];
+    const statuses = ['pending', 'awaiting_quotation', 'ordered', 'received', 'in_storage'];
     const counts = {};
     for (const s of statuses) counts[s] = await prisma.orderRequest.count({ where: { status: s } });
     res.json({
-      pending: counts.pending, approved: counts.approved, rejected: counts.rejected,
-      ordered: counts.ordered, inStorage: counts.in_storage + counts.received,
+      pending: counts.pending,
+      awaitingQuotation: counts.awaiting_quotation,
+      ordered: counts.ordered,
+      received: counts.received + counts.in_storage,
       total: Object.values(counts).reduce((a, b) => a + b, 0),
     });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 module.exports = router;

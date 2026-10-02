@@ -1,5 +1,5 @@
 // ============================================================
-// MushaMumwe - Nurses Department
+// Sally Mugabe Central Hospital - Nurses Department
 // ============================================================
 
 let allPatients = [];
@@ -311,15 +311,24 @@ function doPrintDischarge() {
 
 function buildDischargePrintHTML(p, paperSize, copies) {
   const pageClass = paperSize === 'A5' ? 'a5' : 'a4';
+  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
+  const phone = systemSettings.contactPhone || '';
+  const address = systemSettings.contactAddress || '';
 
   function singleCopy(label) {
     const wardName = p.ward ? p.ward.name : '-';
     let html = '<div class="print-page ' + pageClass + '">';
     if (label) html += '<div class="copy-label">' + label + '</div>';
     html += '<div class="print-header">' +
-      '<h1>MUSHAMUMWE HOSPITAL</h1>' +
+      '<h1>' + escapeHtml(hospitalName) + '</h1>' +
       '<h2>Discharge Summary</h2>' +
       '</div>';
+    if (phone || address) {
+      html += '<div class="print-contact">';
+      if (address) html += '<p>' + escapeHtml(address) + '</p>';
+      if (phone) html += '<p>Tel: ' + escapeHtml(phone) + '</p>';
+      html += '</div>';
+    }
     html += '<div class="print-meta">' +
       '<p><strong>Patient:</strong> ' + escapeHtml(p.name) + ' (#' + p.id + ')</p>' +
       '<p><strong>Ward:</strong> ' + escapeHtml(wardName) + '</p>' +
@@ -351,7 +360,7 @@ function buildDischargePrintHTML(p, paperSize, copies) {
       '<div><span>Patient / Guardian Signature</span><div class="sig-line"></div></div>' +
       '</div>';
     html += '<div class="print-footer">' +
-      'MushaMumwe - Generated ' + fmtDateTime(new Date()) +
+      escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(new Date()) +
       '</div>';
     html += '</div>';
     return html;
@@ -464,6 +473,7 @@ async function exportDischarges() {
 // TENDERS
 // ============================================================
 async function submitTenderRequest(deptKey) {
+  const originatorDepartment = document.getElementById(deptKey + '-reqOriginator')?.value || currentDeptName;
   const itemName = document.getElementById(deptKey + '-reqItemName').value.trim();
   const quantity = document.getElementById(deptKey + '-reqQuantity').value;
   const reason = document.getElementById(deptKey + '-reqReason').value.trim();
@@ -478,7 +488,12 @@ async function submitTenderRequest(deptKey) {
     const res = await fetch('/api/orders/request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() },
-      body: JSON.stringify({ itemName, quantity: parseInt(quantity), reason }),
+      body: JSON.stringify({
+        itemName,
+        quantity: parseInt(quantity),
+        reason,
+        originatorDepartment,
+      }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
@@ -526,13 +541,31 @@ function renderTenderTracker() {
     return;
   }
 
+  const myDept = String(currentDeptName || '').toLowerCase();
+
   el.innerHTML = list.map(t => {
+    const submitter = t.requestingDepartment || '';
+    const originator = t.originatorDepartment || submitter;
+    const submittedByMe = String(submitter).toLowerCase() === myDept;
+    const submittedForMe = String(originator).toLowerCase() === myDept;
+
+    let meta = 'Requested by: ' + escapeHtml(submitter);
+    if (!submittedByMe && submittedForMe) {
+      meta = 'Requested FOR your department by ' + escapeHtml(submitter);
+    } else if (submittedByMe && originator.toLowerCase() !== submitter.toLowerCase()) {
+      meta = 'Submitted by you FOR ' + escapeHtml(originator);
+    }
+
     const supplier = t.procurementOrder && t.procurementOrder.supplierName
       ? '<p><em>Supplier:</em> ' + escapeHtml(t.procurementOrder.supplierName) + '</p>'
       : '';
+
     return '<div class="tender-card">' +
       '<div class="tender-head">' +
-      '<div><strong>#' + t.id + ' - ' + escapeHtml(t.itemName) + ' x' + t.quantity + '</strong></div>' +
+      '<div>' +
+      '<strong>#' + t.id + ' - ' + escapeHtml(t.itemName) + ' x' + t.quantity + '</strong>' +
+      '<div class="muted">' + meta + '</div>' +
+      '</div>' +
       '<div>' + statusBadge(t.status) + '</div>' +
       '</div>' +
       '<div class="tender-body">' +
@@ -551,12 +584,15 @@ async function exportMyTenders() {
 }
 
 // ============================================================
-// SOCKET HANDLERS
+// SOCKET
 // ============================================================
 function registerNursesSocketHandlers() {
   window.onPatientUpdated = () => runPatientSearch();
   window.onPatientCreated = () => runPatientSearch();
-  window.onOrderUpdated = (p) => {
-    if (String(p?.department || '').toLowerCase() === 'nurses') loadMyTenders();
+  window.onOrderUpdated = (payload) => {
+    const myDept = String(currentDeptName || '').toLowerCase();
+    const sub = String(payload?.department || '').toLowerCase();
+    const orig = String(payload?.originator || '').toLowerCase();
+    if (sub === myDept || orig === myDept) loadMyTenders();
   };
 }

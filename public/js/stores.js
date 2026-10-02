@@ -1,5 +1,5 @@
 // ============================================================
-// MushaMumwe - Stores Department
+// Sally Mugabe Central Hospital - Stores Department
 // ============================================================
 
 let allInventory = [];
@@ -11,7 +11,13 @@ async function init_stores() {
   await loadStoresInventory();
   await loadApprovedOrdersForStores();
   await loadMyTenders();
-  window.onOrderUpdated = () => loadApprovedOrdersForStores();
+  window.onOrderUpdated = (payload) => {
+    loadApprovedOrdersForStores();
+    const myDept = String(currentDeptName || '').toLowerCase();
+    const sub = String(payload?.department || '').toLowerCase();
+    const orig = String(payload?.originator || '').toLowerCase();
+    if (sub === myDept || orig === myDept) loadMyTenders();
+  };
   window.onInventoryUpdated = () => loadStoresInventory();
 }
 
@@ -132,14 +138,15 @@ function renderApprovedForStores() {
     return;
   }
 
-  el.innerHTML = list.map(o =>
-    '<div class="order-card-mini">' +
-    '<div><strong>#' + o.id + '</strong> ' + escapeHtml(o.itemName) + ' x' + o.quantity + '</div>' +
-    '<div class="muted">' + escapeHtml(o.requestingDepartment) + ' - ' + statusBadge(o.status) + '</div>' +
-    '<button class="pill-btn" onclick="prefillReceive(' + o.id + ', \'' +
-    o.itemName.replace(/'/g, "\\'") + '\', ' + o.quantity + ')">Receive This</button>' +
-    '</div>'
-  ).join('');
+  el.innerHTML = list.map(o => {
+    const originator = o.originatorDepartment || o.requestingDepartment;
+    return '<div class="order-card-mini">' +
+      '<div><strong>#' + o.id + '</strong> ' + escapeHtml(o.itemName) + ' x' + o.quantity + '</div>' +
+      '<div class="muted">' + escapeHtml(originator) + ' - ' + statusBadge(o.status) + '</div>' +
+      '<button class="pill-btn" onclick="prefillReceive(' + o.id + ', \'' +
+      o.itemName.replace(/'/g, "\\'") + '\', ' + o.quantity + ')">Receive This</button>' +
+      '</div>';
+  }).join('');
 }
 
 function filterApprovedForStores() { renderApprovedForStores(); }
@@ -198,6 +205,7 @@ async function receiveItems() {
 // TENDERS
 // ============================================================
 async function submitTenderRequest(deptKey) {
+  const originatorDepartment = document.getElementById(deptKey + '-reqOriginator')?.value || currentDeptName;
   const itemName = document.getElementById(deptKey + '-reqItemName').value.trim();
   const quantity = document.getElementById(deptKey + '-reqQuantity').value;
   const reason = document.getElementById(deptKey + '-reqReason').value.trim();
@@ -212,7 +220,7 @@ async function submitTenderRequest(deptKey) {
     const res = await fetch('/api/orders/request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() },
-      body: JSON.stringify({ itemName, quantity: parseInt(quantity), reason }),
+      body: JSON.stringify({ itemName, quantity: parseInt(quantity), reason, originatorDepartment }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
@@ -256,15 +264,32 @@ function renderTenderTracker() {
     return;
   }
 
-  el.innerHTML = list.map(t =>
-    '<div class="tender-card">' +
-    '<div class="tender-head">' +
-    '<div><strong>#' + t.id + ' - ' + escapeHtml(t.itemName) + ' x' + t.quantity + '</strong></div>' +
-    '<div>' + statusBadge(t.status) + '</div>' +
-    '</div>' +
-    '<div class="tender-body"><p><em>Reason:</em> ' + escapeHtml(t.reason) + '</p></div>' +
-    '</div>'
-  ).join('');
+  const myDept = String(currentDeptName || '').toLowerCase();
+
+  el.innerHTML = list.map(t => {
+    const submitter = t.requestingDepartment || '';
+    const originator = t.originatorDepartment || submitter;
+    const submittedByMe = String(submitter).toLowerCase() === myDept;
+    const submittedForMe = String(originator).toLowerCase() === myDept;
+
+    let meta = 'Requested by: ' + escapeHtml(submitter);
+    if (!submittedByMe && submittedForMe) {
+      meta = 'Requested FOR your department by ' + escapeHtml(submitter);
+    } else if (submittedByMe && originator.toLowerCase() !== submitter.toLowerCase()) {
+      meta = 'Submitted by you FOR ' + escapeHtml(originator);
+    }
+
+    return '<div class="tender-card">' +
+      '<div class="tender-head">' +
+      '<div>' +
+      '<strong>#' + t.id + ' - ' + escapeHtml(t.itemName) + ' x' + t.quantity + '</strong>' +
+      '<div class="muted">' + meta + '</div>' +
+      '</div>' +
+      '<div>' + statusBadge(t.status) + '</div>' +
+      '</div>' +
+      '<div class="tender-body"><p><em>Reason:</em> ' + escapeHtml(t.reason) + '</p></div>' +
+      '</div>';
+  }).join('');
 }
 
 async function exportMyTenders() {
