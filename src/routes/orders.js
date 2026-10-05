@@ -4,9 +4,28 @@ const { requireAuth, canonicalDept, isITOrSuperAdmin } = require('../auth');
 
 const router = express.Router();
 
-// ============================================================
-// CREATE request - accepts originatorDepartment
-// ============================================================
+function parseRange(query) {
+  let from, to;
+
+  if (query.from) {
+    from = new Date(query.from);
+    from.setHours(0, 0, 0, 0);
+  } else {
+    from = new Date();
+    from.setHours(0, 0, 0, 0);
+  }
+
+  if (query.to) {
+    to = new Date(query.to);
+    to.setHours(23, 59, 59, 999);
+  } else {
+    to = new Date();
+    to.setHours(23, 59, 59, 999);
+  }
+
+  return { from, to };
+}
+
 router.post('/request', requireAuth, async (req, res) => {
   const { itemName, quantity, reason, urgency, category, originatorDepartment } = req.body;
   if (!itemName || !quantity || !reason) {
@@ -58,9 +77,6 @@ router.post('/request', requireAuth, async (req, res) => {
   }
 });
 
-// ============================================================
-// LIST requests
-// ============================================================
 router.get('/requests', requireAuth, async (req, res) => {
   try {
     const where = {};
@@ -81,9 +97,6 @@ router.get('/requests', requireAuth, async (req, res) => {
   }
 });
 
-// ============================================================
-// MY tenders - sees ones I submitted OR ones requested for my dept
-// ============================================================
 router.get('/my', requireAuth, async (req, res) => {
   try {
     const myDept = String(req.user.department || '').trim().toLowerCase();
@@ -105,9 +118,6 @@ router.get('/my', requireAuth, async (req, res) => {
   }
 });
 
-// ============================================================
-// MY tenders CSV export
-// ============================================================
 router.get('/my/export', requireAuth, async (req, res) => {
   try {
     const myDept = String(req.user.department || '').trim().toLowerCase();
@@ -144,9 +154,6 @@ router.get('/my/export', requireAuth, async (req, res) => {
   }
 });
 
-// ============================================================
-// HISTORY
-// ============================================================
 router.get('/history', requireAuth, async (req, res) => {
   if (req.user.department !== 'Procurement' && !isITOrSuperAdmin(req)) {
     return res.status(403).json({ error: 'Only Procurement can view tender history' });
@@ -193,9 +200,6 @@ router.get('/history', requireAuth, async (req, res) => {
   }
 });
 
-// ============================================================
-// HISTORY SUMMARY
-// ============================================================
 router.get('/history/summary', requireAuth, async (req, res) => {
   if (req.user.department !== 'Procurement' && !isITOrSuperAdmin(req)) {
     return res.status(403).json({ error: 'Only Procurement can view tender history' });
@@ -225,9 +229,6 @@ router.get('/history/summary', requireAuth, async (req, res) => {
   }
 });
 
-// ============================================================
-// HISTORY CSV EXPORT
-// ============================================================
 router.get('/history/export', requireAuth, async (req, res) => {
   if (req.user.department !== 'Procurement' && !isITOrSuperAdmin(req)) {
     return res.status(403).json({ error: 'Only Procurement can export tender history' });
@@ -260,11 +261,6 @@ router.get('/history/export', requireAuth, async (req, res) => {
   }
 });
 
-// ============================================================
-// APPROVE AND SEND
-// Accepts tenders in status 'pending' OR 'awaiting_quotation'
-// Sets status to 'ordered' directly (no separate Send step)
-// ============================================================
 router.patch('/requests/:id/approve', requireAuth, async (req, res) => {
   if (req.user.department !== 'Procurement' && !isITOrSuperAdmin(req)) {
     return res.status(403).json({ error: 'Only Procurement can approve' });
@@ -326,10 +322,6 @@ router.patch('/requests/:id/approve', requireAuth, async (req, res) => {
   }
 });
 
-// ============================================================
-// WAITING FOR QUOTATION - temporary hold, not rejection
-// Can be approved later via /approve
-// ============================================================
 router.patch('/requests/:id/await-quotation', requireAuth, async (req, res) => {
   if (req.user.department !== 'Procurement' && !isITOrSuperAdmin(req)) {
     return res.status(403).json({ error: 'Only Procurement can mark awaiting quotation' });
@@ -371,9 +363,6 @@ router.patch('/requests/:id/await-quotation', requireAuth, async (req, res) => {
   }
 });
 
-// ============================================================
-// SUMMARY
-// ============================================================
 router.get('/summary', requireAuth, async (req, res) => {
   try {
     const statuses = ['pending', 'awaiting_quotation', 'ordered', 'received', 'in_storage'];
@@ -385,6 +374,39 @@ router.get('/summary', requireAuth, async (req, res) => {
       ordered: counts.ordered,
       received: counts.received + counts.in_storage,
       total: Object.values(counts).reduce((a, b) => a + b, 0),
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ============================================================
+// SUMMARY PUBLIC - no auth - accepts ?from= and ?to=
+// ============================================================
+router.get('/summary-public', async (req, res) => {
+  try {
+    const { from, to } = parseRange(req.query);
+
+    const pending = await prisma.orderRequest.count({
+      where: { status: 'pending', createdAt: { gte: from, lte: to } },
+    });
+    const awaitingQuotation = await prisma.orderRequest.count({
+      where: { status: 'awaiting_quotation', createdAt: { gte: from, lte: to } },
+    });
+    const ordered = await prisma.orderRequest.count({
+      where: { status: 'ordered', createdAt: { gte: from, lte: to } },
+    });
+    const received = await prisma.orderRequest.count({
+      where: { status: { in: ['received', 'in_storage'] }, createdAt: { gte: from, lte: to } },
+    });
+
+    res.json({
+      from: from.toISOString(),
+      to: to.toISOString(),
+      pending,
+      awaitingQuotation,
+      ordered,
+      received,
     });
   } catch (e) {
     res.status(500).json({ error: e.message });

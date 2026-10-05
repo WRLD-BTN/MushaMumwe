@@ -61,8 +61,15 @@ async function login() {
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
 
+  // Super Admin can log in without picking a department
+  const isSuperAdminAttempt = username === 'Admin';
+
   if (!username || !password) {
     return showLoginError('Username and password required');
+  }
+
+  if (!isSuperAdminAttempt && !dept) {
+    return showLoginError('Please select a department');
   }
 
   try {
@@ -83,6 +90,12 @@ async function login() {
   } catch (e) {
     showLoginError(e.message);
   }
+}
+
+function updateLoginButton() {
+  const dept = document.getElementById('department').value;
+  const btn = document.getElementById('loginBtn');
+  if (btn) btn.disabled = !dept;
 }
 
 function showLoginError(msg) {
@@ -146,14 +159,11 @@ function logout() {
 // SUPER ADMIN - Load a portal from the launcher
 // ============================================================
 async function openPortalAsSuperAdmin(deptName) {
-  // Update the current "department context" so portal-specific logic works
   currentDeptName = deptName;
   currentDeptKey = DEPT_MAP[deptName]?.key;
 
-  // Swap the portal content
   await loadPortal(deptName);
 
-  // Update the header to reflect acting-as dept
   document.getElementById('headerUserLabel').textContent =
     'Super Admin (acting as ' + deptName + ')';
 }
@@ -272,7 +282,6 @@ async function saveSystemSettings() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed');
 
-    // Update local cache + shell UI
     systemSettings.hospitalName = payload.hospital_name;
     systemSettings.hospitalSubtitle = payload.hospital_subtitle;
     systemSettings.contactPhone = payload.contact_phone;
@@ -294,12 +303,13 @@ function statusBadge(status) {
     pending: 'badge-pending',
     approved: 'badge-approved',
     rejected: 'badge-rejected',
+    awaiting_quotation: 'badge-awaiting_quotation',
     ordered: 'badge-ordered',
     received: 'badge-received',
     in_storage: 'badge-received',
   };
   const cls = map[status] || 'badge-pending';
-  return '<span class="badge ' + cls + '">' + String(status).toUpperCase() + '</span>';
+  return '<span class="badge ' + cls + '">' + String(status).toUpperCase().replace('_', ' ') + '</span>';
 }
 
 function escapeHtml(s) {
@@ -343,6 +353,7 @@ socket.on('employee:updated', (p) => window.onEmployeeUpdated?.(p));
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
   loadSystemSettings();
+  updateLoginButton();
 
   const pwd = document.getElementById('password');
   if (pwd) {

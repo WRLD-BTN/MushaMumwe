@@ -27,7 +27,7 @@
 
       <div class="form-group">
         <label for="department">Select Department:</label>
-        <select id="department">
+        <select id="department" onchange="updateLoginButton()">
           <option value="">-- Choose Department --</option>
           <option value="Nurses">Nurses / Ward Staff</option>
           <option value="IT">IT Management</option>
@@ -44,9 +44,9 @@
         <label for="password">Password:</label>
         <input type="password" id="password" placeholder="Enter password">
       </div>
-      <button onclick="login()" class="primary-btn block">Login</button>
+      <button id="loginBtn" onclick="login()" class="primary-btn block" disabled>Login</button>
       <p class="muted" style="text-align:center; margin-top:14px; font-size:11px;">
-        Super Admin: enter username and password. Department selection is ignored.
+        Enter your department and credentials.
       </p>
     </div>
 
@@ -203,7 +203,6 @@
     </div>
   </div>
 
-  <!-- NEW MODAL: Approve and Send -->
   <div id="approveModal" class="modal">
     <div class="modal-content">
       <h3>Approve and Send Order</h3>
@@ -231,7 +230,6 @@
     </div>
   </div>
 
-  <!-- NEW MODAL: Waiting for Quotation -->
   <div id="awaitModal" class="modal">
     <div class="modal-content">
       <h3>Waiting for Quotation</h3>
