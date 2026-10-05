@@ -1,8 +1,31 @@
-node_modules/
-dev.db
-dev.db-shm
-dev.db-wal
+# Secrets
 .env
+
+# Dependencies
+node_modules/
+
+# Database
+prisma/dev.db
+prisma/*.db-journal
+prisma/*.db-shm
+prisma/*.db-wal
+
+# Uploads
+public/uploads/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
 .DS_Store
-dist/
-build/
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Stray files from misdirected commands
+main
+mushamumwe@1.0.0
+node
