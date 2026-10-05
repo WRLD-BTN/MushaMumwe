@@ -58,10 +58,10 @@
   </div>
 
   <div class="distbar" id="distbar">
-    <div class="seg" id="segA" style="background:#3B82F6;"></div>
-    <div class="seg" id="segT" style="background:#F0A93A;"></div>
-    <div class="seg" id="segD" style="background:#2FBF71;"></div>
-    <div class="seg" id="segX" style="background:#7A8199;"></div>
+    <div class="seg" id="segA" style="background:#2563eb;"></div>
+    <div class="seg" id="segT" style="background:#d97706;"></div>
+    <div class="seg" id="segD" style="background:#16a34a;"></div>
+    <div class="seg" id="segX" style="background:#64748b;"></div>
   </div>
   <div class="distbar-labels">
     <span>Case mix - percent of total patients on record</span>
@@ -69,7 +69,7 @@
   </div>
 
   <div class="board-hint" id="boardHint">
-    Click any column below to expand the patient list. Click again to collapse.
+    Click any column below to expand the patient list. Click again or press ESC to collapse.
   </div>
 
   <div class="board board-collapsed" id="boardColumns">
@@ -113,6 +113,84 @@
       </div>
       <div id="colDeceased" class="col-body"></div>
     </div>
+  </div>
+
+  <div class="public-widgets">
+
+    <div class="widget" id="patientsWidget">
+      <div class="widget-head">
+        <div>
+          <h3>Today's Numbers</h3>
+          <div class="widget-caption" id="patientsCaption">-</div>
+        </div>
+      </div>
+      <div class="widget-range" id="patientsRange">
+        <button class="range-btn active" data-range="today" onclick="setWidgetRange('patients', 'today')">Today</button>
+        <button class="range-btn" data-range="week" onclick="setWidgetRange('patients', 'week')">This Week</button>
+        <button class="range-btn" data-range="month" onclick="setWidgetRange('patients', 'month')">This Month</button>
+        <button class="range-btn" data-range="custom" onclick="setWidgetRange('patients', 'custom')">Custom</button>
+      </div>
+      <div class="widget-custom" id="patientsCustom" style="display:none;">
+        <label>From: <input type="date" id="patientsFrom" onchange="onCustomDateChange('patients')"></label>
+        <label>To: <input type="date" id="patientsTo" onchange="onCustomDateChange('patients')"></label>
+      </div>
+      <div class="widget-row">
+        <div class="widget-stat admitted">
+          <div class="widget-number" id="todayAdmitted">-</div>
+          <div class="widget-label">Admitted</div>
+        </div>
+        <div class="widget-stat discharged">
+          <div class="widget-number" id="todayDischarged">-</div>
+          <div class="widget-label">Discharged</div>
+        </div>
+        <div class="widget-stat followups">
+          <div class="widget-number" id="todayFollowups">-</div>
+          <div class="widget-label">Follow-ups Due</div>
+        </div>
+        <div class="widget-stat deaths">
+          <div class="widget-number" id="todayDeaths">-</div>
+          <div class="widget-label">Deaths</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="widget" id="tenderWidget">
+      <div class="widget-head">
+        <div>
+          <h3>Tender Activity</h3>
+          <div class="widget-caption" id="tenderCaption">-</div>
+        </div>
+      </div>
+      <div class="widget-range" id="tenderRange">
+        <button class="range-btn active" data-range="today" onclick="setWidgetRange('tender', 'today')">Today</button>
+        <button class="range-btn" data-range="week" onclick="setWidgetRange('tender', 'week')">This Week</button>
+        <button class="range-btn" data-range="month" onclick="setWidgetRange('tender', 'month')">This Month</button>
+        <button class="range-btn" data-range="custom" onclick="setWidgetRange('tender', 'custom')">Custom</button>
+      </div>
+      <div class="widget-custom" id="tenderCustom" style="display:none;">
+        <label>From: <input type="date" id="tenderFrom" onchange="onCustomDateChange('tender')"></label>
+        <label>To: <input type="date" id="tenderTo" onchange="onCustomDateChange('tender')"></label>
+      </div>
+      <div class="widget-row">
+        <div class="widget-stat pending">
+          <div class="widget-number" id="tenderPending">-</div>
+          <div class="widget-label">Pending</div>
+        </div>
+        <div class="widget-stat awaiting">
+          <div class="widget-number" id="tenderAwaiting">-</div>
+          <div class="widget-label">Awaiting Quote</div>
+        </div>
+        <div class="widget-stat ordered">
+          <div class="widget-number" id="tenderOrdered">-</div>
+          <div class="widget-label">Ordered</div>
+        </div>
+        <div class="widget-stat received">
+          <div class="widget-number" id="tenderReceived">-</div>
+          <div class="widget-label">Received</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div class="employee-summary">
@@ -175,7 +253,7 @@ let activeColumn = null;
 let patientsCache = [];
 
 // ============================================================
-// THEME TOGGLE
+// THEME
 // ============================================================
 function initTheme() {
   const saved = localStorage.getItem("mushamumwe_theme") || "light";
@@ -196,7 +274,7 @@ function applyTheme(theme) {
 }
 
 // ============================================================
-// SETTINGS - load hospital name
+// SETTINGS
 // ============================================================
 async function loadBoardSettings() {
   try {
@@ -218,8 +296,15 @@ function fmtTime(iso) {
   return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
-function fmtDate(iso) {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+function fmtDateShort(d) {
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function toInputDate(d) {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return yyyy + "-" + mm + "-" + dd;
 }
 
 async function fetchJSON(url) {
@@ -228,6 +313,175 @@ async function fetchJSON(url) {
   });
   if (!res.ok) throw new Error("API error " + res.status);
   return res.json();
+}
+
+// ============================================================
+// WIDGET RANGE STATE
+// ============================================================
+const widgetState = {
+  patients: { range: "today", from: null, to: null },
+  tender: { range: "today", from: null, to: null },
+};
+
+function computeRange(preset, customFrom, customTo) {
+  const now = new Date();
+  let from, to;
+
+  if (preset === "today") {
+    from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  } else if (preset === "week") {
+    // Sunday-start week
+    const day = now.getDay();
+    const sunday = new Date(now);
+    sunday.setDate(now.getDate() - day);
+    from = new Date(sunday.getFullYear(), sunday.getMonth(), sunday.getDate(), 0, 0, 0, 0);
+    to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  } else if (preset === "month") {
+    from = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  } else if (preset === "custom") {
+    if (customFrom) {
+      from = new Date(customFrom);
+      from.setHours(0, 0, 0, 0);
+    } else {
+      from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    }
+    if (customTo) {
+      to = new Date(customTo);
+      to.setHours(23, 59, 59, 999);
+    } else {
+      to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    }
+  }
+
+  return { from, to };
+}
+
+function loadWidgetStateFromStorage() {
+  try {
+    const p = localStorage.getItem("mushamumwe_widget_patients");
+    if (p) widgetState.patients = JSON.parse(p);
+
+    const t = localStorage.getItem("mushamumwe_widget_tender");
+    if (t) widgetState.tender = JSON.parse(t);
+  } catch (e) {
+    console.error("Failed to load widget state:", e);
+  }
+}
+
+function saveWidgetState(type) {
+  try {
+    localStorage.setItem("mushamumwe_widget_" + type, JSON.stringify(widgetState[type]));
+  } catch (e) {
+    console.error("Failed to save widget state:", e);
+  }
+}
+
+// ============================================================
+// PUBLIC WIDGETS
+// ============================================================
+async function loadTodaySummary() {
+  try {
+    const state = widgetState.patients;
+    const { from, to } = computeRange(state.range, state.from, state.to);
+
+    const params = new URLSearchParams();
+    params.set("from", toInputDate(from));
+    params.set("to", toInputDate(to));
+
+    const res = await fetch("/api/patients/today-summary?" + params);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    document.getElementById("todayAdmitted").textContent = data.admittedToday ?? "-";
+    document.getElementById("todayDischarged").textContent = data.dischargedToday ?? "-";
+    document.getElementById("todayFollowups").textContent = data.followUpsDueToday ?? "-";
+    document.getElementById("todayDeaths").textContent = data.deathsToday ?? "-";
+
+    document.getElementById("patientsCaption").textContent =
+      fmtDateShort(from) + " - " + fmtDateShort(to);
+  } catch (e) {
+    console.error("Failed to load today summary:", e);
+  }
+}
+
+async function loadTenderActivity() {
+  try {
+    const state = widgetState.tender;
+    const { from, to } = computeRange(state.range, state.from, state.to);
+
+    const params = new URLSearchParams();
+    params.set("from", toInputDate(from));
+    params.set("to", toInputDate(to));
+
+    const res = await fetch("/api/orders/summary-public?" + params);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    document.getElementById("tenderPending").textContent = data.pending ?? "-";
+    document.getElementById("tenderAwaiting").textContent = data.awaitingQuotation ?? "-";
+    document.getElementById("tenderOrdered").textContent = data.ordered ?? "-";
+    document.getElementById("tenderReceived").textContent = data.received ?? "-";
+
+    document.getElementById("tenderCaption").textContent =
+      fmtDateShort(from) + " - " + fmtDateShort(to);
+  } catch (e) {
+    console.error("Failed to load tender activity:", e);
+  }
+}
+
+function setWidgetRange(type, range) {
+  widgetState[type].range = range;
+  saveWidgetState(type);
+
+  const rangeEl = document.getElementById(type + "Range");
+  if (rangeEl) {
+    rangeEl.querySelectorAll(".range-btn").forEach(b => {
+      b.classList.toggle("active", b.dataset.range === range);
+    });
+  }
+
+  const customEl = document.getElementById(type + "Custom");
+  if (customEl) {
+    customEl.style.display = range === "custom" ? "flex" : "none";
+  }
+
+  if (type === "patients") loadTodaySummary();
+  else loadTenderActivity();
+}
+
+function onCustomDateChange(type) {
+  const fromEl = document.getElementById(type + "From");
+  const toEl = document.getElementById(type + "To");
+  widgetState[type].from = fromEl?.value || null;
+  widgetState[type].to = toEl?.value || null;
+  saveWidgetState(type);
+
+  if (type === "patients") loadTodaySummary();
+  else loadTenderActivity();
+}
+
+function restoreWidgetUI() {
+  ["patients", "tender"].forEach(type => {
+    const state = widgetState[type];
+    const rangeEl = document.getElementById(type + "Range");
+    if (rangeEl) {
+      rangeEl.querySelectorAll(".range-btn").forEach(b => {
+        b.classList.toggle("active", b.dataset.range === state.range);
+      });
+    }
+    const customEl = document.getElementById(type + "Custom");
+    if (customEl) {
+      customEl.style.display = state.range === "custom" ? "flex" : "none";
+    }
+    if (state.range === "custom") {
+      const fromEl = document.getElementById(type + "From");
+      const toEl = document.getElementById(type + "To");
+      if (fromEl && state.from) fromEl.value = state.from;
+      if (toEl && state.to) toEl.value = state.to;
+    }
+  });
 }
 
 // ============================================================
@@ -391,11 +645,18 @@ function tickClock() {
 // ============================================================
 initTheme();
 loadBoardSettings();
+loadWidgetStateFromStorage();
+restoreWidgetUI();
 tickClock();
 setInterval(tickClock, 1000);
 
 loadPatientBoard();
 loadEmployeeSummary();
+loadTodaySummary();
+loadTenderActivity();
+
+setInterval(loadTodaySummary, 60000);
+setInterval(loadTenderActivity, 60000);
 
 const socket = io();
 
@@ -412,11 +673,13 @@ socket.on("disconnect", () => {
 socket.on("patient:updated", (payload) => {
   showToast("Case #" + payload.id + " - " + String(payload.status).toUpperCase());
   loadPatientBoard();
+  loadTodaySummary();
 });
 
 socket.on("patient:created", (payload) => {
   showToast("New patient registered: Case #" + payload.id);
   loadPatientBoard();
+  loadTodaySummary();
 });
 
 socket.on("employee:updated", () => {
@@ -434,12 +697,20 @@ socket.on("inventory:updated", () => {
 
 socket.on("order:updated", () => {
   showToast("Order status updated");
+  loadTenderActivity();
+});
+
+socket.on("order:created", () => {
+  showToast("New tender submitted");
+  loadTenderActivity();
 });
 
 setInterval(() => {
   if (document.getElementById("syncText").textContent === "OFFLINE") {
     loadPatientBoard();
     loadEmployeeSummary();
+    loadTodaySummary();
+    loadTenderActivity();
   }
 }, 300000);
 
@@ -447,6 +718,8 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "r" || e.key === "R") {
     loadPatientBoard();
     loadEmployeeSummary();
+    loadTodaySummary();
+    loadTenderActivity();
     showToast("Manual refresh triggered");
   }
   if (e.key === "t" || e.key === "T") {
@@ -462,6 +735,8 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
     loadPatientBoard();
     loadEmployeeSummary();
+    loadTodaySummary();
+    loadTenderActivity();
   }
 });
 
