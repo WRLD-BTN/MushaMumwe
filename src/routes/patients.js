@@ -11,6 +11,28 @@ function normalizeStatus(s) {
   return s;
 }
 
+function parseRange(query) {
+  let from, to;
+
+  if (query.from) {
+    from = new Date(query.from);
+    from.setHours(0, 0, 0, 0);
+  } else {
+    from = new Date();
+    from.setHours(0, 0, 0, 0);
+  }
+
+  if (query.to) {
+    to = new Date(query.to);
+    to.setHours(23, 59, 59, 999);
+  } else {
+    to = new Date();
+    to.setHours(23, 59, 59, 999);
+  }
+
+  return { from, to };
+}
+
 router.get('/', requireAuth, async (req, res) => {
   try {
     const { search, status, ward, diagnosis, from, to } = req.query;
@@ -75,6 +97,42 @@ router.get('/summary', async (req, res) => {
       percentages[s] = total === 0 ? 0 : +((counts[s] / total) * 100).toFixed(1);
     }
     res.json({ counts, percentages, total });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ============================================================
+// TODAY SUMMARY - PUBLIC - accepts ?from= and ?to=
+// ============================================================
+router.get('/today-summary', async (req, res) => {
+  try {
+    const { from, to } = parseRange(req.query);
+
+    const admittedCount = await prisma.patient.count({
+      where: { admissionDate: { gte: from, lte: to } },
+    });
+
+    const dischargedCount = await prisma.patient.count({
+      where: { dischargeDate: { gte: from, lte: to } },
+    });
+
+    const followUpsCount = await prisma.patient.count({
+      where: { nextReviewDate: { gte: from, lte: to } },
+    });
+
+    const deathsCount = await prisma.patient.count({
+      where: { status: 'deceased', updatedAt: { gte: from, lte: to } },
+    });
+
+    res.json({
+      from: from.toISOString(),
+      to: to.toISOString(),
+      admittedToday: admittedCount,
+      dischargedToday: dischargedCount,
+      followUpsDueToday: followUpsCount,
+      deathsToday: deathsCount,
+    });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

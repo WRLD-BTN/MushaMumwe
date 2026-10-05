@@ -9,85 +9,120 @@ const router = express.Router();
 
 // ============================================================
 // LOGIN
-// Super Admin credentials come from .env, not the database.
-// Everyone else authenticates against the User table.
+// Super Admin password is stored as a bcrypt HASH in .env.
+// Regular users authenticate against the User table.
 // ============================================================
 router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, department } = req.body;
+
   if (!username || !password) {
     return res.status(400).json({ error: 'Username and password required' });
   }
 
-  // Check Super Admin first
+  // --- Super Admin check first ---
   const saUser = process.env.SUPER_ADMIN_USERNAME || 'Admin';
-  const saPass = process.env.SUPER_ADMIN_PASSWORD || '';
+  const saHash = process.env.SUPER_ADMIN_PASSWORD_HASH || '';
 
-  if (username === saUser && password === saPass) {
+  if (username === saUser && saHash) {
+    let superAdminValid = false;
+    try {
+      superAdminValid = await bcrypt.compare(password, saHash);
+    } catch (e) {
+      // Malformed hash in .env — fail silently to "invalid credentials"
+      superAdminValid = false;
+    }
+
+    if (superAdminValid) {
+      const token = jwt.sign(
+        {
+          id: 0,
+          username: saUser,
+          fullName: 'Super Admin',
+          department: 'SuperAdmin',
+          role: 'superadmin',
+          wardId: null,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '12h' }
+      );
+
+      return res.json({
+        token,
+        user: {
+          id: 0,
+          username: saUser,
+          fullName: 'Super Admin',
+          department: 'SuperAdmin',
+          role: 'superadmin',
+          wardId: null,
+        },
+      });
+    }
+
+    // Wrong password for Super Admin — fall through to generic error
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+
+  // --- Regular user login: department is REQUIRED ---
+  if (!department || !department.trim()) {
+    return res.status(400).json({ error: 'Please select a department' });
+  }
+
+  const deptNormalized = String(department).trim();
+
+  try {
+    const anyUser = await prisma.user.findUnique({ where: { username } });
+
+    if (!anyUser) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    if (String(anyUser.department).trim().toLowerCase() !== deptNormalized.toLowerCase()) {
+      return res.status(401).json({
+        error: 'This username belongs to the ' + anyUser.department +
+               ' department. Please select the correct department.'
+      });
+    }
+
+    const valid = await bcrypt.compare(password, anyUser.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
     const token = jwt.sign(
       {
-        id: 0,
-        username: saUser,
-        fullName: 'Super Admin',
-        department: 'SuperAdmin',
-        role: 'superadmin',
-        wardId: null,
+        id: anyUser.id,
+        username: anyUser.username,
+        fullName: anyUser.fullName,
+        department: anyUser.department,
+        role: anyUser.role,
+        wardId: anyUser.wardId,
       },
       process.env.JWT_SECRET,
       { expiresIn: '12h' }
     );
 
-    return res.json({
+    res.json({
       token,
       user: {
-        id: 0,
-        username: saUser,
-        fullName: 'Super Admin',
-        department: 'SuperAdmin',
-        role: 'superadmin',
-        wardId: null,
+        id: anyUser.id,
+        username: anyUser.username,
+        fullName: anyUser.fullName,
+        department: anyUser.department,
+        role: anyUser.role,
+        wardId: anyUser.wardId,
       },
     });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
-
-  // Regular user login
-  const user = await prisma.user.findUnique({ where: { username } });
-  if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
-
-  const token = jwt.sign(
-    {
-      id: user.id,
-      username: user.username,
-      fullName: user.fullName,
-      department: user.department,
-      role: user.role,
-      wardId: user.wardId,
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: '12h' }
-  );
-
-  res.json({
-    token,
-    user: {
-      id: user.id,
-      username: user.username,
-      fullName: user.fullName,
-      department: user.department,
-      role: user.role,
-      wardId: user.wardId,
-    },
-  });
 });
 
 // ============================================================
-// ME - confirm current session
+// ME
 // ============================================================
 router.get('/me', requireAuth, async (req, res) => {
   try {
-    // Super Admin is not in the DB
     if (req.user.department === 'SuperAdmin') {
       return res.json({
         id: 0,
@@ -112,7 +147,7 @@ router.get('/me', requireAuth, async (req, res) => {
 
 // ============================================================
 // CHANGE OWN PASSWORD
-// Super Admin cannot change password here - it lives in .env
+// Super Admin password is managed via .env — cannot be changed here.
 // ============================================================
 router.post('/change-password', requireAuth, async (req, res) => {
   if (req.user.department === 'SuperAdmin') {
