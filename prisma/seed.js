@@ -1,6 +1,7 @@
 // ============================================================
 // Full seed script
-// Creates: wards, users, 1000 patients, 1000 employees, inventory, tenders
+// Creates: wards, users, 1000 patients, 1000 employees,
+//          inventory, tenders, 60 disciplinary cases
 // Run with: npm run seed
 // ============================================================
 
@@ -18,9 +19,9 @@ const FIRST_NAMES_M = [
   'Kudakwashe', 'Panashe', 'Takudzwa', 'Nyasha', 'Tinashe', 'Rufaro', 'Tafara',
   'Prosper', 'Knowledge', 'Prince', 'Wellington', 'Tichaona', 'Marshall',
   'Brighton', 'Lovemore', 'Never', 'Gift', 'Praise', 'Wisdom', 'Takunda',
-  'Tanaka', 'Tanatswa', 'Tawananyasha', 'Tinashe', 'Tirivashe', 'Tonderai',
-  'Tongai', 'Tungamirai', 'Vusumuzi', 'Wasu', 'Zvikomborero', 'Simbarashe',
-  'Shingirai', 'Shadreck', 'Ropafadzo', 'Panashe', 'Nokutenda', 'Ngonidzashe',
+  'Tanaka', 'Tanatswa', 'Tawananyasha', 'Tirivashe', 'Tonderai',
+  'Tongai', 'Tungamirai', 'Vusumuzi', 'Zvikomborero', 'Simbarashe',
+  'Shingirai', 'Shadreck', 'Ropafadzo', 'Nokutenda', 'Ngonidzashe',
   'Munyaradzi', 'Mthokozisi', 'Mqondisi', 'Luckson', 'Kudzanai',
 ];
 
@@ -28,11 +29,11 @@ const FIRST_NAMES_F = [
   'Rudo', 'Chipo', 'Nyasha', 'Tariro', 'Rumbidzai', 'Vimbai', 'Rutendo',
   'Fadzai', 'Nyaradzo', 'Tanyaradzwa', 'Anesu', 'Chiedza', 'Danai', 'Kudzai',
   'Precious', 'Memory', 'Grace', 'Faith', 'Hope', 'Patience', 'Mercy',
-  'Charity', 'Beauty', 'Praise', 'Joy', 'Ropafadzo', 'Tafadzwa', 'Ropafadzo',
-  'Tariro', 'Tendai', 'Thandiwe', 'Thandeka', 'Sibongile', 'Sithembile',
-  'Rutendo', 'Ropafadzo', 'Priscilla', 'Panashe', 'Nyari', 'Nyarai',
+  'Charity', 'Beauty', 'Praise', 'Joy', 'Tafadzwa',
+  'Tendai', 'Thandiwe', 'Thandeka', 'Sibongile', 'Sithembile',
+  'Priscilla', 'Nyari', 'Nyarai',
   'Nomatter', 'Nomsa', 'Nokuthula', 'Nobuhle', 'Melody', 'Loveness',
-  'Kudakwashe', 'Kundai', 'Gamuchirai', 'Fungai', 'Constance',
+  'Kundai', 'Gamuchirai', 'Fungai', 'Constance',
 ];
 
 const SURNAMES = [
@@ -42,8 +43,8 @@ const SURNAMES = [
   'Chiwenga', 'Mnangagwa', 'Mavima', 'Marapira', 'Muswere', 'Mangwana',
   'Chigumba', 'Rusere', 'Sanyatwe', 'Kazembe', 'Murambinda', 'Nyathi',
   'Chikwanha', 'Mutinhiri', 'Mabuwa', 'Muronzi', 'Chimene', 'Madziva',
-  'Mudzuri', 'Chibaya', 'Mliswa', 'Matemadanda', 'Moyo', 'Ndebele',
-  'Sibanda', 'Dlodlo', 'Mabuza', 'Ziyambi', 'Musabayana', 'Mhona',
+  'Mudzuri', 'Chibaya', 'Mliswa', 'Matemadanda', 'Ndebele',
+  'Dlodlo', 'Mabuza', 'Ziyambi', 'Musabayana', 'Mhona',
 ];
 
 const DIAGNOSES = [
@@ -72,13 +73,11 @@ const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 const REVIEW_DEPARTMENTS = ['Outpatient', 'Nurses', 'Medical', 'Pharmacy', 'Laboratory'];
 
-// Employee departments (matches the HR form dropdown)
 const EMPLOYEE_DEPARTMENTS = [
   'Medical', 'Nurses', 'Pharmacy', 'Laboratory', 'Admin',
   'Support', 'Maintenance', 'Security',
 ];
 
-// Employee roles (weighted by department)
 const ROLES_BY_DEPT = {
   Medical: ['Doctor', 'Consultant', 'Medical Officer', 'Intern'],
   Nurses: ['Registered Nurse', 'Enrolled Nurse', 'Nurse Aide', 'Sister', 'Matron'],
@@ -90,14 +89,130 @@ const ROLES_BY_DEPT = {
   Security: ['Guard', 'Security Officer', 'Gate Officer'],
 };
 
-// Employee statuses and rough distribution
-// Active ~85%, on_leave ~8%, sick ~4%, terminated ~3%
 function pickEmployeeStatus() {
   const r = Math.random();
   if (r < 0.85) return 'active';
   if (r < 0.93) return 'on_leave';
   if (r < 0.97) return 'sick';
   return 'terminated';
+}
+
+// ============================================================
+// DISCIPLINARY POOLS
+// ============================================================
+
+const DISCIPLINARY_OFFENSES = [
+  'Absenteeism', 'Late arrival', 'Insubordination', 'Negligence', 'Misconduct',
+  'Theft', 'Substance abuse', 'Harassment', 'Patient mistreatment',
+  'Breach of confidentiality', 'Falsification of records', 'Other',
+];
+
+const DISCIPLINARY_DESCRIPTIONS = {
+  'Absenteeism': [
+    'Failed to report for shift on three consecutive days without notification.',
+    'Absent from duty without approved leave for two days.',
+    'Repeated unexcused absences documented over the past month.',
+  ],
+  'Late arrival': [
+    'Arrived 90 minutes after scheduled start without notifying supervisor.',
+    'Chronic lateness reported by shift supervisor over two weeks.',
+    'Late for three consecutive morning handovers.',
+  ],
+  'Insubordination': [
+    'Refused to follow supervisor instructions during ward round.',
+    'Openly argued with senior nurse in front of patients.',
+    'Failed to comply with departmental procedure.',
+  ],
+  'Negligence': [
+    'Failed to record patient vitals for an entire shift.',
+    'Did not administer prescribed medication at the scheduled time.',
+    'Left patient unattended in restricted area.',
+  ],
+  'Misconduct': [
+    'Used hospital equipment for personal purposes.',
+    'Inappropriate conduct toward a colleague during working hours.',
+    'Violated uniform and hygiene policy after prior warnings.',
+  ],
+  'Theft': [
+    'Removed hospital supplies without authorisation.',
+    'Reported for taking medication from the pharmacy store.',
+    'Alleged theft of a colleague personal belongings.',
+  ],
+  'Substance abuse': [
+    'Reported to duty under the influence of alcohol.',
+    'Suspected substance use during shift, referred for testing.',
+    'Positive breathalyser test at facility entrance.',
+  ],
+  'Harassment': [
+    'Repeated unwanted comments toward a colleague.',
+    'Reported for inappropriate messaging outside working hours.',
+    'Verbal harassment complaint filed by junior staff.',
+  ],
+  'Patient mistreatment': [
+    'Rough handling of a patient reported by another staff member.',
+    'Patient complaint regarding verbal abuse during procedure.',
+    'Inappropriate response to a patient request, witnessed by relative.',
+  ],
+  'Breach of confidentiality': [
+    'Shared patient information with unauthorised third party.',
+    'Posted patient details on social media.',
+    'Discussed a patient case outside the clinical setting.',
+  ],
+  'Falsification of records': [
+    'Recorded vitals that were not actually taken.',
+    'Altered a shift log after the fact.',
+    'Signed for another staff member duties.',
+  ],
+  'Other': [
+    'Repeated failure to follow infection control procedures.',
+    'Brought unauthorised persons into restricted areas.',
+    'Refused mandatory training without valid reason.',
+  ],
+};
+
+const DISCIPLINARY_OUTCOMES = [
+  'Employee acknowledged the offense and received formal warning.',
+  'Employee disputed the finding; case referred for arbitration.',
+  'Employee accepted responsibility; case closed with corrective action.',
+  'Committee recommended formal disciplinary action.',
+  'Matter resolved through counselling and monitoring.',
+];
+
+const DISCIPLINARY_WITNESSES = [
+  'Sister Mutsa, Nurse Tatenda',
+  'Dr. Mwale',
+  'Ward Supervisor',
+  'Senior Nurse on duty',
+  'Two colleagues on shift',
+  null,
+];
+
+function pickDisciplinaryStatus(dayAge) {
+  const r = Math.random();
+  if (dayAge <= 7) {
+    if (r < 0.6) return 'open';
+    if (r < 0.9) return 'under_investigation';
+    return 'resolved';
+  }
+  if (dayAge <= 30) {
+    if (r < 0.2) return 'open';
+    if (r < 0.55) return 'under_investigation';
+    if (r < 0.9) return 'resolved';
+    return 'dismissed';
+  }
+  if (r < 0.75) return 'resolved';
+  if (r < 0.95) return 'dismissed';
+  return 'under_investigation';
+}
+
+function pickDisciplinaryAction(status) {
+  if (status === 'resolved') {
+    return pick(['Verbal warning', 'Written warning', 'Final written warning', 'Suspension', 'Demotion', 'Termination', 'Counselling']);
+  }
+  if (status === 'dismissed') {
+    return pick(['No action', 'Counselling']);
+  }
+  return null;
 }
 
 // ============================================================
@@ -126,7 +241,6 @@ function generateNationalId() {
   return part1 + '-' + part2 + '-' + part3 + part4;
 }
 
-// Patient status distribution by age of admission
 function pickPatientStatus(dayAge) {
   const r = Math.random();
   if (dayAge <= 7) {
@@ -161,6 +275,10 @@ async function main() {
   try {
     // ---------- Clear all tables (order matters) ----------
     console.log('Clearing existing data...');
+    await prisma.disciplinaryAttachment.deleteMany();
+    await prisma.disciplinaryStatusLog.deleteMany();
+    await prisma.disciplinaryCase.deleteMany();
+
     await prisma.itemReceive.deleteMany();
     await prisma.procurementOrder.deleteMany();
     await prisma.orderRequestStatusLog.deleteMany();
@@ -215,7 +333,7 @@ async function main() {
     console.log('Creating 1000 employees...');
 
     const TOTAL_EMPLOYEES = 1000;
-    const EMPLOYEE_DAYS_SPAN = 1825; // 5 years of hire dates
+    const EMPLOYEE_DAYS_SPAN = 1825;
 
     const employeeBatchSize = 100;
     let empCreated = 0;
@@ -230,15 +348,12 @@ async function main() {
       const role = pick(ROLES_BY_DEPT[department]);
       const status = pickEmployeeStatus();
 
-      // Hire date within last 5 years
       const hireDaysAgo = Math.floor(Math.random() * EMPLOYEE_DAYS_SPAN);
       const hireDate = randomDateWithinDays(hireDaysAgo, 8, 17);
 
-      // Some employees assigned to a ward (Nurses, Medical, Support in particular)
       const wardAssigned = ['Nurses', 'Medical', 'Support'].includes(department);
       const wardId = wardAssigned && Math.random() < 0.85 ? pick(wards).id : null;
 
-      // Termination date when terminated
       let terminationDate = null;
       if (status === 'terminated') {
         const daysAfterHire = 30 + Math.floor(Math.random() * Math.min(hireDaysAgo, 1000));
@@ -310,7 +425,6 @@ async function main() {
 
       const nationalId = Math.random() < 0.8 ? generateNationalId() : null;
 
-      // Discharge fields
       let dischargeDate = null;
       let finalDiagnosis = null;
       let treatmentSummary = null;
@@ -381,7 +495,6 @@ async function main() {
             oldStatus: 'new',
             newStatus: status,
             changedBy: 'Seed Script',
-            notes: 'Created by bulk seed',
           },
         });
 
@@ -469,6 +582,113 @@ async function main() {
     }
     console.log('  Created ' + orderRequests.length + ' sample tenders');
 
+    // ---------- Disciplinary cases (60) ----------
+    console.log('Creating disciplinary cases...');
+
+    const sampleEmployees = await prisma.employee.findMany({
+      select: { id: true },
+      take: 500,
+    });
+
+    if (sampleEmployees.length > 0) {
+      const TOTAL_DISCIPLINARY = 60;
+      const DISC_DAYS_SPAN = 90;
+      const discYear = new Date().getFullYear();
+      let discSeq = 1;
+
+      for (let i = 0; i < TOTAL_DISCIPLINARY; i++) {
+        const employee = pick(sampleEmployees);
+        const offenseType = pick(DISCIPLINARY_OFFENSES);
+        const description = pick(DISCIPLINARY_DESCRIPTIONS[offenseType] || DISCIPLINARY_DESCRIPTIONS.Other);
+
+        const daysAgo = Math.floor(Math.random() * DISC_DAYS_SPAN);
+        const reportedDate = randomDateWithinDays(daysAgo, 8, 17);
+        const status = pickDisciplinaryStatus(daysAgo);
+        const actionTaken = pickDisciplinaryAction(status);
+        const witnesses = pick(DISCIPLINARY_WITNESSES);
+
+        const caseNumber = 'DISC-' + discYear + '-' + String(discSeq).padStart(4, '0');
+        discSeq++;
+
+        let hearingDate = null;
+        let hearingNotes = null;
+        let effectiveDate = null;
+        let durationDays = null;
+        let outcome = null;
+        let closedBy = null;
+        let closedDate = null;
+
+        if (status === 'resolved' || status === 'dismissed') {
+          hearingDate = new Date(reportedDate);
+          hearingDate.setDate(hearingDate.getDate() + 3 + Math.floor(Math.random() * 10));
+          if (hearingDate > new Date()) hearingDate = new Date();
+
+          hearingNotes = 'Panel reviewed the evidence and interviewed all parties.';
+          outcome = pick(DISCIPLINARY_OUTCOMES);
+          closedBy = 'HR Manager';
+          closedDate = new Date(hearingDate);
+          closedDate.setDate(closedDate.getDate() + 1 + Math.floor(Math.random() * 5));
+          if (closedDate > new Date()) closedDate = new Date();
+
+          if (actionTaken === 'Suspension') {
+            effectiveDate = new Date(closedDate);
+            durationDays = 3 + Math.floor(Math.random() * 25);
+          }
+        }
+
+        try {
+          const record = await prisma.disciplinaryCase.create({
+            data: {
+              caseNumber,
+              employeeId: employee.id,
+              offenseType,
+              description,
+              reportedBy: pick(['Ward Supervisor', 'Senior Nurse', 'Department Head', 'Shift Coordinator', 'Colleague']),
+              reportedDate,
+              witnesses,
+              status,
+              actionTaken,
+              actionDetails: actionTaken ? 'Action approved by HR committee.' : null,
+              outcome,
+              hearingDate,
+              hearingNotes,
+              effectiveDate,
+              durationDays,
+              closedBy,
+              closedDate,
+            },
+          });
+
+          await prisma.disciplinaryStatusLog.create({
+            data: {
+              caseId: record.id,
+              oldStatus: 'new',
+              newStatus: 'open',
+              changedBy: 'System',
+              notes: 'Case filed',
+            },
+          });
+
+          if (status !== 'open') {
+            await prisma.disciplinaryStatusLog.create({
+              data: {
+                caseId: record.id,
+                oldStatus: 'open',
+                newStatus: status,
+                changedBy: 'HR Manager',
+                notes: 'Status updated to ' + status,
+              },
+            });
+          }
+        } catch (e) {
+          console.error('  Skipped one disciplinary case:', e.message);
+        }
+      }
+      console.log('  Created ' + TOTAL_DISCIPLINARY + ' disciplinary cases');
+    } else {
+      console.log('  Skipped disciplinary cases (no employees found)');
+    }
+
     // ---------- Summary ----------
     console.log('');
     console.log('Database seeded successfully.');
@@ -477,11 +697,13 @@ async function main() {
     const totalPatients = await prisma.patient.count();
     const totalEmployees = await prisma.employee.count();
     const totalUsers = await prisma.user.count();
+    const totalCases = await prisma.disciplinaryCase.count();
 
     console.log('Totals:');
     console.log('  Patients: ' + totalPatients);
     console.log('  Employees: ' + totalEmployees);
     console.log('  Users: ' + totalUsers);
+    console.log('  Disciplinary cases: ' + totalCases);
     console.log('');
 
     const patientStatuses = ['admitted', 'treatment', 'discharged', 'deceased'];
@@ -502,13 +724,22 @@ async function main() {
     empStatuses.forEach(s => console.log('  ' + s + ': ' + eCounts[s]));
     console.log('');
 
+    const discStatuses = ['open', 'under_investigation', 'resolved', 'dismissed'];
+    const dCounts = {};
+    for (const s of discStatuses) {
+      dCounts[s] = await prisma.disciplinaryCase.count({ where: { status: s } });
+    }
+    console.log('Disciplinary status breakdown:');
+    discStatuses.forEach(s => console.log('  ' + s + ': ' + dCounts[s]));
+    console.log('');
+
     console.log('Test credentials:');
     console.log('  Nurses:      nurse1 / nurse123');
     console.log('  IT:          it1 / it123');
     console.log('  Procurement: procurement1 / proc123');
     console.log('  Stores:      stores1 / store123');
     console.log('  HR:          hr1 / hr123');
-    console.log('  Super Admin: Admin / #Brandon1906');
+    console.log('  Super Admin: Admin / (your hashed password)');
     console.log('');
   } catch (e) {
     console.error('');

@@ -21,34 +21,34 @@
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
       <span id="themeIcon">DARK</span>
     </button>
-    <a href="/entry.html" class="staff-login-link">Staff Login</a>
+    <a href="/dashboard" class="staff-login-link">Staff Login</a>
   </div>
 
   <div class="toast" id="toast"></div>
 
   <div class="stats">
-    <div class="stat admitted" onclick="toggleBoardColumn('admitted')" style="cursor:pointer;">
+    <div class="stat admitted" onclick="openPatientModal('admitted')" title="Click to view patients">
       <div>
         <span class="n" id="countAdmitted">0</span>
         <span class="pct" id="pctAdmitted">0%</span>
       </div>
       <div class="l">Admitted</div>
     </div>
-    <div class="stat treatment" onclick="toggleBoardColumn('treatment')" style="cursor:pointer;">
+    <div class="stat treatment" onclick="openPatientModal('treatment')" title="Click to view patients">
       <div>
         <span class="n" id="countTreatment">0</span>
         <span class="pct" id="pctTreatment">0%</span>
       </div>
       <div class="l">In Treatment</div>
     </div>
-    <div class="stat discharged" onclick="toggleBoardColumn('discharged')" style="cursor:pointer;">
+    <div class="stat discharged" onclick="openPatientModal('discharged')" title="Click to view patients">
       <div>
         <span class="n" id="countDischarged">0</span>
         <span class="pct" id="pctDischarged">0%</span>
       </div>
       <div class="l">Discharged</div>
     </div>
-    <div class="stat deceased" onclick="toggleBoardColumn('deceased')" style="cursor:pointer;">
+    <div class="stat deceased" onclick="openPatientModal('deceased')" title="Click to view patients">
       <div>
         <span class="n" id="countDeceased">0</span>
         <span class="pct" id="pctDeceased">0%</span>
@@ -66,53 +66,6 @@
   <div class="distbar-labels">
     <span>Case mix - percent of total patients on record</span>
     <span id="totalCount">0 total</span>
-  </div>
-
-  <div class="board-hint" id="boardHint">
-    Click any column below to expand the patient list. Click again or press ESC to collapse.
-  </div>
-
-  <div class="board board-collapsed" id="boardColumns">
-    <div class="col admitted" id="colA" onclick="toggleBoardColumn('admitted')">
-      <div class="col-head">
-        <div>
-          <span class="dot"></span>
-          <span class="col-title">Admitted</span>
-        </div>
-        <span class="col-count" id="cA">0</span>
-      </div>
-      <div id="colAdmitted" class="col-body"></div>
-    </div>
-    <div class="col treatment" id="colT" onclick="toggleBoardColumn('treatment')">
-      <div class="col-head">
-        <div>
-          <span class="dot"></span>
-          <span class="col-title">In Treatment</span>
-        </div>
-        <span class="col-count" id="cT">0</span>
-      </div>
-      <div id="colTreatment" class="col-body"></div>
-    </div>
-    <div class="col discharged" id="colD" onclick="toggleBoardColumn('discharged')">
-      <div class="col-head">
-        <div>
-          <span class="dot"></span>
-          <span class="col-title">Discharged</span>
-        </div>
-        <span class="col-count" id="cD">0</span>
-      </div>
-      <div id="colDischarged" class="col-body"></div>
-    </div>
-    <div class="col deceased" id="colX" onclick="toggleBoardColumn('deceased')">
-      <div class="col-head">
-        <div>
-          <span class="dot"></span>
-          <span class="col-title">Deceased</span>
-        </div>
-        <span class="col-count" id="cX">0</span>
-      </div>
-      <div id="colDeceased" class="col-body"></div>
-    </div>
   </div>
 
   <div class="public-widgets">
@@ -191,6 +144,51 @@
       </div>
     </div>
 
+    <div class="widget" id="disciplinaryWidget">
+      <div class="widget-head">
+        <div>
+          <h3>Labour Relations</h3>
+          <div class="widget-caption" id="discCaption">-</div>
+        </div>
+      </div>
+      <div class="widget-range" id="discRange">
+        <button class="range-btn active" data-range="today" onclick="setWidgetRange('disc', 'today')">Today</button>
+        <button class="range-btn" data-range="week" onclick="setWidgetRange('disc', 'week')">This Week</button>
+        <button class="range-btn" data-range="month" onclick="setWidgetRange('disc', 'month')">This Month</button>
+        <button class="range-btn" data-range="custom" onclick="setWidgetRange('disc', 'custom')">Custom</button>
+      </div>
+      <div class="widget-custom" id="discCustom" style="display:none;">
+        <label>From: <input type="date" id="discFrom" onchange="onCustomDateChange('disc')"></label>
+        <label>To: <input type="date" id="discTo" onchange="onCustomDateChange('disc')"></label>
+      </div>
+      <div class="widget-row">
+        <div class="widget-stat disc-open">
+          <div class="widget-number" id="discOpen">-</div>
+          <div class="widget-label">Open</div>
+        </div>
+        <div class="widget-stat disc-investigation">
+          <div class="widget-number" id="discInvestigation">-</div>
+          <div class="widget-label">Investigating</div>
+        </div>
+        <div class="widget-stat disc-resolved">
+          <div class="widget-number" id="discResolved">-</div>
+          <div class="widget-label">Resolved</div>
+        </div>
+        <div class="widget-stat disc-dismissed">
+          <div class="widget-number" id="discDismissed">-</div>
+          <div class="widget-label">Dismissed</div>
+        </div>
+        <div class="widget-stat disc-total">
+          <div class="widget-number" id="discTotal">-</div>
+          <div class="widget-label">Total</div>
+        </div>
+      </div>
+      <div class="widget-recent">
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; color: var(--board-muted); margin-bottom:8px; letter-spacing:0.5px;">Recent Cases</div>
+        <div id="discRecentList"></div>
+      </div>
+    </div>
+
   </div>
 
   <div class="employee-summary">
@@ -230,27 +228,34 @@
     Live data from database via REST and Socket.io - real-time updates enabled
   </div>
 
+  <!-- ============================================================
+       PATIENT MODAL
+       ============================================================ -->
+  <div id="patientModalBackdrop" class="patient-modal-backdrop" onclick="closePatientModal()"></div>
+  <div id="patientModal" class="patient-modal">
+    <div class="patient-modal-head">
+      <div>
+        <h3 id="patientModalTitle">Patients</h3>
+        <span class="modal-count" id="patientModalCount"></span>
+      </div>
+      <button class="patient-modal-close" onclick="closePatientModal()" aria-label="Close">x</button>
+    </div>
+    <div class="patient-modal-body">
+      <div id="patientModalList" class="patient-modal-list"></div>
+    </div>
+    <div class="patient-modal-footer">Press ESC or click outside to close</div>
+  </div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const API_BASE = "";
 const AUTH_TOKEN = localStorage.getItem("token") || "";
 
-const targets = {
-  admitted: "colAdmitted",
-  treatment: "colTreatment",
-  discharged: "colDischarged",
-  deceased: "colDeceased",
-};
-
-const columnKeys = {
-  admitted: { col: "colA", id: "colAdmitted" },
-  treatment: { col: "colT", id: "colTreatment" },
-  discharged: { col: "colD", id: "colDischarged" },
-  deceased: { col: "colX", id: "colDeceased" },
-};
-
-let activeColumn = null;
-let patientsCache = [];
+// ============================================================
+// STATE
+// ============================================================
+let patientBoardCache = [];
+let patientModalStatus = null;
 
 // ============================================================
 // THEME
@@ -301,26 +306,25 @@ function fmtDateShort(d) {
 }
 
 function toInputDate(d) {
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
+  const dt = d instanceof Date ? d : new Date(d);
+  const yyyy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getDate()).padStart(2, "0");
   return yyyy + "-" + mm + "-" + dd;
 }
 
-async function fetchJSON(url) {
-  const res = await fetch(API_BASE + url, {
-    headers: AUTH_TOKEN ? { Authorization: "Bearer " + AUTH_TOKEN } : {},
-  });
-  if (!res.ok) throw new Error("API error " + res.status);
-  return res.json();
+function escapeHtml(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
 // ============================================================
-// WIDGET RANGE STATE
+// WIDGET STATE
 // ============================================================
 const widgetState = {
   patients: { range: "today", from: null, to: null },
   tender: { range: "today", from: null, to: null },
+  disc: { range: "today", from: null, to: null },
 };
 
 function computeRange(preset, customFrom, customTo) {
@@ -331,7 +335,6 @@ function computeRange(preset, customFrom, customTo) {
     from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
     to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
   } else if (preset === "week") {
-    // Sunday-start week
     const day = now.getDay();
     const sunday = new Date(now);
     sunday.setDate(now.getDate() - day);
@@ -365,6 +368,9 @@ function loadWidgetStateFromStorage() {
 
     const t = localStorage.getItem("mushamumwe_widget_tender");
     if (t) widgetState.tender = JSON.parse(t);
+
+    const d = localStorage.getItem("mushamumwe_widget_disc");
+    if (d) widgetState.disc = JSON.parse(d);
   } catch (e) {
     console.error("Failed to load widget state:", e);
   }
@@ -379,7 +385,7 @@ function saveWidgetState(type) {
 }
 
 // ============================================================
-// PUBLIC WIDGETS
+// WIDGET LOADERS
 // ============================================================
 async function loadTodaySummary() {
   try {
@@ -431,6 +437,57 @@ async function loadTenderActivity() {
   }
 }
 
+async function loadDisciplinarySummary() {
+  try {
+    const state = widgetState.disc;
+    const { from, to } = computeRange(state.range, state.from, state.to);
+
+    const params = new URLSearchParams();
+    params.set("from", toInputDate(from));
+    params.set("to", toInputDate(to));
+
+    const res = await fetch("/api/disciplinary/summary-public?" + params);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    document.getElementById("discOpen").textContent = data.byStatus.open || 0;
+    document.getElementById("discInvestigation").textContent = data.byStatus.under_investigation || 0;
+    document.getElementById("discResolved").textContent = data.byStatus.resolved || 0;
+    document.getElementById("discDismissed").textContent = data.byStatus.dismissed || 0;
+    document.getElementById("discTotal").textContent = data.total || 0;
+
+    document.getElementById("discCaption").textContent =
+      fmtDateShort(from) + " - " + fmtDateShort(to);
+
+    const list = document.getElementById("discRecentList");
+    if (!data.recent || data.recent.length === 0) {
+      list.innerHTML = '<p class="muted" style="font-size:11px; text-align:center; padding:8px;">No cases in this range</p>';
+    } else {
+      list.innerHTML = data.recent.map(c => {
+        const statusLabel = c.status === "under_investigation" ? "INVESTIGATING" : c.status.toUpperCase();
+        const statusClass = "badge-disc-" + c.status;
+        const daysAgo = Math.floor((new Date() - new Date(c.reportedDate)) / (1000 * 60 * 60 * 24));
+        const daysLabel = daysAgo === 0 ? "today" : daysAgo === 1 ? "1 day ago" : daysAgo + " days ago";
+        return '<div class="disc-recent-item">' +
+          '<div class="disc-recent-head">' +
+          '<span class="disc-recent-case">' + escapeHtml(c.caseNumber) + '</span>' +
+          '<span class="badge ' + statusClass + '" style="font-size:9px; padding:2px 8px;">' + statusLabel + '</span>' +
+          '</div>' +
+          '<div class="disc-recent-body">' +
+          '<span>' + escapeHtml(c.offenseType) + '</span>' +
+          '<span class="disc-recent-days">' + daysLabel + '</span>' +
+          '</div>' +
+          '</div>';
+      }).join("");
+    }
+  } catch (e) {
+    console.error("Failed to load disciplinary summary:", e);
+  }
+}
+
+// ============================================================
+// WIDGET CONTROLS
+// ============================================================
 function setWidgetRange(type, range) {
   widgetState[type].range = range;
   saveWidgetState(type);
@@ -448,7 +505,8 @@ function setWidgetRange(type, range) {
   }
 
   if (type === "patients") loadTodaySummary();
-  else loadTenderActivity();
+  else if (type === "tender") loadTenderActivity();
+  else if (type === "disc") loadDisciplinarySummary();
 }
 
 function onCustomDateChange(type) {
@@ -459,11 +517,12 @@ function onCustomDateChange(type) {
   saveWidgetState(type);
 
   if (type === "patients") loadTodaySummary();
-  else loadTenderActivity();
+  else if (type === "tender") loadTenderActivity();
+  else if (type === "disc") loadDisciplinarySummary();
 }
 
 function restoreWidgetUI() {
-  ["patients", "tender"].forEach(type => {
+  ["patients", "tender", "disc"].forEach(type => {
     const state = widgetState[type];
     const rangeEl = document.getElementById(type + "Range");
     if (rangeEl) {
@@ -485,112 +544,101 @@ function restoreWidgetUI() {
 }
 
 // ============================================================
-// PATIENT BOARD
+// PATIENT SUMMARY + BOARD CACHE
 // ============================================================
-function renderPatientCard(p) {
-  const el = document.createElement("div");
-  el.className = "patient-card";
-  el.innerHTML =
-    '<div class="patient-card-top">' +
-    '<span class="patient-name">Case #' + p.id + '</span>' +
-    '<span class="patient-id">' + (p.nationalId || "N/A") + '</span>' +
-    '</div>' +
-    '<div class="patient-card-meta">' +
-    '<span class="ward-tag">' + (p.ward ? p.ward.name : "-") + '</span>' +
-    '<span>' + fmtTime(p.updatedAt) + '</span>' +
-    '</div>';
-  return el;
-}
-
-async function loadPatientBoard() {
+async function loadPatientSummary() {
   try {
-    const [patients, summary] = await Promise.all([
-      fetchJSON("/api/patients/board"),
-      fetchJSON("/api/patients/summary"),
+    const [summaryRes, boardRes] = await Promise.all([
+      fetch("/api/patients/summary"),
+      fetch("/api/patients/board"),
     ]);
+    if (!summaryRes.ok) throw new Error("summary fetch failed");
+    const summary = await summaryRes.json();
 
-    patientsCache = patients;
+    if (boardRes.ok) {
+      patientBoardCache = await boardRes.json();
+    }
 
-    Object.values(targets).forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = "";
-    });
+    const c = summary.counts;
+    const p = summary.percentages;
 
-    patients.forEach((p) => {
-      const target = targets[p.status];
-      if (target) {
-        const el = document.getElementById(target);
-        if (el) el.appendChild(renderPatientCard(p));
-      }
-    });
+    document.getElementById("countAdmitted").textContent = c.admitted;
+    document.getElementById("countTreatment").textContent = c.treatment;
+    document.getElementById("countDischarged").textContent = c.discharged;
+    document.getElementById("countDeceased").textContent = c.deceased;
 
-    applyPatientSummary(summary);
+    document.getElementById("pctAdmitted").textContent = p.admitted + "%";
+    document.getElementById("pctTreatment").textContent = p.treatment + "%";
+    document.getElementById("pctDischarged").textContent = p.discharged + "%";
+    document.getElementById("pctDeceased").textContent = p.deceased + "%";
+
+    document.getElementById("totalCount").textContent = summary.total + " total";
+
+    document.getElementById("segA").style.width = p.admitted + "%";
+    document.getElementById("segT").style.width = p.treatment + "%";
+    document.getElementById("segD").style.width = p.discharged + "%";
+    document.getElementById("segX").style.width = p.deceased + "%";
 
     document.getElementById("syncText").textContent = "SYNCED";
     document.getElementById("apiTarget").textContent = "Connected - " + window.location.host;
+
+    if (patientModalStatus) renderPatientModalList();
   } catch (err) {
     document.getElementById("syncText").textContent = "OFFLINE";
     document.getElementById("apiTarget").textContent = "Could not reach API - check server";
-    console.error("Failed to load patient board:", err);
+    console.error("Failed to load patient summary:", err);
   }
 }
 
-function applyPatientSummary(summary) {
-  const c = summary.counts;
-  const p = summary.percentages;
+// ============================================================
+// PATIENT MODAL
+// ============================================================
+function openPatientModal(status) {
+  patientModalStatus = status;
 
-  document.getElementById("countAdmitted").textContent = c.admitted;
-  document.getElementById("countTreatment").textContent = c.treatment;
-  document.getElementById("countDischarged").textContent = c.discharged;
-  document.getElementById("countDeceased").textContent = c.deceased;
+  const titles = {
+    admitted: "Admitted Patients",
+    treatment: "Patients In Treatment",
+    discharged: "Discharged Patients",
+    deceased: "Deceased Patients",
+  };
 
-  document.getElementById("cA").textContent = c.admitted;
-  document.getElementById("cT").textContent = c.treatment;
-  document.getElementById("cD").textContent = c.discharged;
-  document.getElementById("cX").textContent = c.deceased;
+  document.getElementById("patientModalTitle").textContent = titles[status] || "Patients";
+  renderPatientModalList();
 
-  document.getElementById("pctAdmitted").textContent = p.admitted + "%";
-  document.getElementById("pctTreatment").textContent = p.treatment + "%";
-  document.getElementById("pctDischarged").textContent = p.discharged + "%";
-  document.getElementById("pctDeceased").textContent = p.deceased + "%";
-
-  document.getElementById("totalCount").textContent = summary.total + " total";
-
-  document.getElementById("segA").style.width = p.admitted + "%";
-  document.getElementById("segT").style.width = p.treatment + "%";
-  document.getElementById("segD").style.width = p.discharged + "%";
-  document.getElementById("segX").style.width = p.deceased + "%";
+  document.getElementById("patientModalBackdrop").classList.add("active");
+  document.getElementById("patientModal").classList.add("active");
 }
 
-function toggleBoardColumn(key) {
-  const board = document.getElementById("boardColumns");
-  const hint = document.getElementById("boardHint");
+function closePatientModal() {
+  patientModalStatus = null;
+  document.getElementById("patientModalBackdrop").classList.remove("active");
+  document.getElementById("patientModal").classList.remove("active");
+}
 
-  if (activeColumn === key) {
-    board.classList.add("board-collapsed");
-    Object.values(columnKeys).forEach((c) => {
-      const el = document.getElementById(c.col);
-      if (el) el.classList.remove("expanded");
-    });
-    activeColumn = null;
-    if (hint) hint.style.display = "block";
+function renderPatientModalList() {
+  if (!patientModalStatus) return;
+
+  const list = patientBoardCache.filter(p => p.status === patientModalStatus);
+  const listEl = document.getElementById("patientModalList");
+  const countEl = document.getElementById("patientModalCount");
+
+  countEl.textContent = "(" + list.length + ")";
+
+  if (list.length === 0) {
+    listEl.innerHTML = '<div class="patient-modal-empty">No patients in this category</div>';
     return;
   }
 
-  board.classList.remove("board-collapsed");
-  Object.values(columnKeys).forEach((c) => {
-    const el = document.getElementById(c.col);
-    if (el) el.classList.remove("expanded");
-  });
-
-  const chosen = columnKeys[key];
-  if (chosen) {
-    const el = document.getElementById(chosen.col);
-    if (el) el.classList.add("expanded");
-  }
-
-  activeColumn = key;
-  if (hint) hint.style.display = "none";
+  listEl.innerHTML = list.map(p => {
+    const wardName = p.ward ? p.ward.name : "-";
+    const time = fmtTime(p.updatedAt);
+    return '<div class="patient-modal-item">' +
+      '<span class="patient-modal-item-case">Case #' + p.id + '</span>' +
+      '<span class="patient-modal-item-ward">' + escapeHtml(wardName) + '</span>' +
+      '<span class="patient-modal-item-time">' + time + '</span>' +
+      '</div>';
+  }).join("");
 }
 
 // ============================================================
@@ -650,14 +698,19 @@ restoreWidgetUI();
 tickClock();
 setInterval(tickClock, 1000);
 
-loadPatientBoard();
+loadPatientSummary();
 loadEmployeeSummary();
 loadTodaySummary();
 loadTenderActivity();
+loadDisciplinarySummary();
 
 setInterval(loadTodaySummary, 60000);
 setInterval(loadTenderActivity, 60000);
+setInterval(loadDisciplinarySummary, 60000);
 
+// ============================================================
+// SOCKET
+// ============================================================
 const socket = io();
 
 socket.on("connect", () => {
@@ -672,13 +725,13 @@ socket.on("disconnect", () => {
 
 socket.on("patient:updated", (payload) => {
   showToast("Case #" + payload.id + " - " + String(payload.status).toUpperCase());
-  loadPatientBoard();
+  loadPatientSummary();
   loadTodaySummary();
 });
 
 socket.on("patient:created", (payload) => {
   showToast("New patient registered: Case #" + payload.id);
-  loadPatientBoard();
+  loadPatientSummary();
   loadTodaySummary();
 });
 
@@ -705,38 +758,61 @@ socket.on("order:created", () => {
   loadTenderActivity();
 });
 
+socket.on("disciplinary:created", () => {
+  showToast("New disciplinary case filed");
+  loadDisciplinarySummary();
+});
+
+socket.on("disciplinary:updated", () => {
+  showToast("Disciplinary case updated");
+  loadDisciplinarySummary();
+});
+
+// ============================================================
+// FALLBACK REFRESH
+// ============================================================
 setInterval(() => {
   if (document.getElementById("syncText").textContent === "OFFLINE") {
-    loadPatientBoard();
+    loadPatientSummary();
     loadEmployeeSummary();
     loadTodaySummary();
     loadTenderActivity();
+    loadDisciplinarySummary();
   }
 }, 300000);
 
+// ============================================================
+// KEYBOARD SHORTCUTS
+// ============================================================
 document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const modal = document.getElementById("patientModal");
+    if (modal && modal.classList.contains("active")) {
+      closePatientModal();
+      return;
+    }
+    document.getElementById("deptBreakdown").classList.remove("active");
+  }
   if (e.key === "r" || e.key === "R") {
-    loadPatientBoard();
+    loadPatientSummary();
     loadEmployeeSummary();
     loadTodaySummary();
     loadTenderActivity();
+    loadDisciplinarySummary();
     showToast("Manual refresh triggered");
   }
   if (e.key === "t" || e.key === "T") {
     toggleEmployeeView();
   }
-  if (e.key === "Escape") {
-    document.getElementById("deptBreakdown").classList.remove("active");
-    if (activeColumn) toggleBoardColumn(activeColumn);
-  }
 });
 
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
-    loadPatientBoard();
+    loadPatientSummary();
     loadEmployeeSummary();
     loadTodaySummary();
     loadTenderActivity();
+    loadDisciplinarySummary();
   }
 });
 
