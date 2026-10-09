@@ -71,6 +71,7 @@ model Employee {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   statusLogs        EmployeeStatusLog[]
+  disciplinaryCases DisciplinaryCase[]
 }
 
 model EmployeeStatusLog {
@@ -166,4 +167,62 @@ model SystemSettings {
   id    Int    @id @default(autoincrement())
   key   String @unique
   value String
+}
+
+model DisciplinaryCase {
+  id            Int      @id @default(autoincrement())
+  caseNumber    String   @unique
+  employeeId    Int
+  employee      Employee @relation(fields: [employeeId], references: [id])
+
+  offenseType   String
+  description   String
+  reportedBy    String
+  reportedDate  DateTime
+  witnesses     String?
+
+  status        String   @default("open")
+
+  actionTaken   String?
+  actionDetails String?
+  outcome       String?
+
+  hearingDate   DateTime?
+  hearingNotes  String?
+  effectiveDate DateTime?
+  durationDays  Int?
+
+  closedBy      String?
+  closedDate    DateTime?
+  reopenedBy    String?
+  reopenedDate  DateTime?
+  reopenReason  String?
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  statusLogs    DisciplinaryStatusLog[]
+  attachments   DisciplinaryAttachment[]
+}
+
+model DisciplinaryStatusLog {
+  id        Int              @id @default(autoincrement())
+  caseId    Int
+  case      DisciplinaryCase @relation(fields: [caseId], references: [id])
+  oldStatus String
+  newStatus String
+  changedBy String
+  notes     String?
+  timestamp DateTime         @default(now())
+}
+
+model DisciplinaryAttachment {
+  id           Int              @id @default(autoincrement())
+  caseId       Int
+  case         DisciplinaryCase @relation(fields: [caseId], references: [id])
+  originalName String
+  storedName   String
+  mimeType     String
+  sizeBytes    Int
+  uploadedBy   String
+  uploadedAt   DateTime         @default(now())
 }
