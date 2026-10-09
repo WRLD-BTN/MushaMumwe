@@ -3,7 +3,8 @@
     <h2>HR - Staff Management</h2>
   </div>
 
-  <div class="grid">
+  <!-- ROW 1: Three compact action cards -->
+  <div class="grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
     <div class="card">
       <h3>Add New Employee</h3>
       <div class="form-group">
@@ -40,19 +41,14 @@
     </div>
 
     <div class="card">
-      <h3>Export Staff Data</h3>
-      <p class="muted">Download employee records as CSV. Respects current filters.</p>
-      <button onclick="exportStaffCSV()" class="pill-btn block">Export Staff CSV</button>
-      <div id="hr-exportMessage"></div>
-    </div>
-
-    <div class="card">
       <h3>Staffing Summary</h3>
-      <p>On Duty: <strong id="hr-empOnDuty">-</strong></p>
-      <p>On Leave: <strong id="hr-empOnLeave">-</strong></p>
-      <p>Sick: <strong id="hr-empSick">-</strong></p>
-      <p>Terminated: <strong id="hr-empTerminated">-</strong></p>
-      <p>Total Active: <strong id="hr-empTotal">-</strong></p>
+      <div class="emp-summary" style="margin-bottom:16px;">
+        <p><strong>On Duty:</strong> <span id="hr-empOnDuty">-</span></p>
+        <p><strong>On Leave:</strong> <span id="hr-empOnLeave">-</span></p>
+        <p><strong>Sick:</strong> <span id="hr-empSick">-</span></p>
+        <p><strong>Terminated:</strong> <span id="hr-empTerminated">-</span></p>
+        <p class="total-row"><strong>Total Active:</strong> <span id="hr-empTotal">-</span></p>
+      </div>
       <button onclick="loadStaffingSummary()" class="ghost-btn block">Refresh</button>
     </div>
 
@@ -83,80 +79,173 @@
       <button onclick="submitTenderRequest('hr')" class="primary-btn block">Submit Request</button>
       <div id="hr-requestMessage"></div>
     </div>
+  </div>
 
-    <div class="card" style="grid-column: span 2;">
-      <div class="card-head">
-        <h3>Staff Roster</h3>
-        <div class="card-head-actions">
-          <button class="pill-btn" onclick="toggleAdvancedStaffFilters()">Filters</button>
+  <!-- ROW 2: Labour Relations -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-head">
+      <h3>Labour Relations</h3>
+      <div class="card-head-actions">
+        <button class="primary-btn small" onclick="openDisciplinaryNewModal()">File New Case</button>
+        <button class="pill-btn" onclick="exportDisciplinaryCSV()">Export CSV</button>
+      </div>
+    </div>
+
+    <div class="disc-summary" id="discSummary">
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="discSummaryTotal">0</div>
+        <div class="disc-summary-lbl">Total</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="discSummaryOpen">0</div>
+        <div class="disc-summary-lbl">Open</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="discSummaryInvestigation">0</div>
+        <div class="disc-summary-lbl">Investigating</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="discSummaryResolved">0</div>
+        <div class="disc-summary-lbl">Resolved</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="discSummaryDismissed">0</div>
+        <div class="disc-summary-lbl">Dismissed</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="discSummary30Days">0</div>
+        <div class="disc-summary-lbl">Last 30 Days</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <input type="text" id="discSearchBox" placeholder="Search by case #, employee name, offense, description..." oninput="debouncedDisciplinarySearch()">
+    </div>
+
+    <div class="form-row" style="margin-bottom:12px;">
+      <div class="form-group">
+        <label>Status</label>
+        <select id="discFilterStatus" onchange="runDisciplinarySearch()">
+          <option value="all">All</option>
+          <option value="open">Open</option>
+          <option value="under_investigation">Under Investigation</option>
+          <option value="resolved">Resolved</option>
+          <option value="dismissed">Dismissed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Offense</label>
+        <select id="discFilterOffense" onchange="runDisciplinarySearch()">
+          <option value="all">All</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Department</label>
+        <select id="discFilterDept" onchange="runDisciplinarySearch()">
+          <option value="all">All</option>
+          <option value="Medical">Medical</option>
+          <option value="Nurses">Nurses</option>
+          <option value="Pharmacy">Pharmacy</option>
+          <option value="Laboratory">Laboratory</option>
+          <option value="Admin">Admin</option>
+          <option value="Support">Support</option>
+          <option value="Maintenance">Maintenance</option>
+          <option value="Security">Security</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>From</label>
+        <input type="date" id="discFilterFrom" onchange="runDisciplinarySearch()">
+      </div>
+      <div class="form-group">
+        <label>To</label>
+        <input type="date" id="discFilterTo" onchange="runDisciplinarySearch()">
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button onclick="clearDisciplinaryFilters()" class="ghost-btn block">Clear</button>
+      </div>
+    </div>
+
+    <div id="discCaseList" class="table-wrap disc-case-scroll"></div>
+  </div>
+
+  <!-- ROW 3: Staff Roster -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-head">
+      <h3>Staff Roster</h3>
+      <div class="card-head-actions">
+        <button class="pill-btn" onclick="toggleAdvancedStaffFilters()">Filters</button>
+        <button class="pill-btn" onclick="exportStaffCSV()">Export CSV</button>
+        <button class="pill-btn" onclick="printStaffRoster()">Print</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <input type="text" id="hr-empSearchBox" placeholder="Search by name, department, or role..." oninput="debouncedStaffSearch()">
+    </div>
+    <div id="hr-advancedFilters" class="advanced-filters" style="display:none;">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Department</label>
+          <select id="hr-filterDept">
+            <option value="all">All</option>
+            <option value="Medical">Medical</option>
+            <option value="Nurses">Nurses</option>
+            <option value="Pharmacy">Pharmacy</option>
+            <option value="Laboratory">Laboratory</option>
+            <option value="Admin">Admin</option>
+            <option value="Support">Support</option>
+            <option value="Maintenance">Maintenance</option>
+            <option value="Security">Security</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="hr-filterStatus">
+            <option value="all">All</option>
+            <option value="active">Active (On Duty)</option>
+            <option value="on_leave">On Leave</option>
+            <option value="sick">Sick</option>
+            <option value="terminated">Terminated</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Hired From</label>
+          <input type="date" id="hr-filterFrom">
+        </div>
+        <div class="form-group">
+          <label>Hired To</label>
+          <input type="date" id="hr-filterTo">
         </div>
       </div>
       <div class="form-group">
-        <input type="text" id="hr-empSearchBox" placeholder="Search by name, department, or role..." oninput="debouncedStaffSearch()">
+        <label>Role</label>
+        <input type="text" id="hr-filterRole" placeholder="e.g. Nurse">
       </div>
-      <div id="hr-advancedFilters" class="advanced-filters" style="display:none;">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Department</label>
-            <select id="hr-filterDept">
-              <option value="all">All</option>
-              <option value="Medical">Medical</option>
-              <option value="Nurses">Nurses</option>
-              <option value="Pharmacy">Pharmacy</option>
-              <option value="Laboratory">Laboratory</option>
-              <option value="Admin">Admin</option>
-              <option value="Support">Support</option>
-              <option value="Maintenance">Maintenance</option>
-              <option value="Security">Security</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Status</label>
-            <select id="hr-filterStatus">
-              <option value="all">All</option>
-              <option value="active">Active (On Duty)</option>
-              <option value="on_leave">On Leave</option>
-              <option value="sick">Sick</option>
-              <option value="terminated">Terminated</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Hired From</label>
-            <input type="date" id="hr-filterFrom">
-          </div>
-          <div class="form-group">
-            <label>Hired To</label>
-            <input type="date" id="hr-filterTo">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Role</label>
-          <input type="text" id="hr-filterRole" placeholder="e.g. Nurse">
-        </div>
-        <button onclick="runStaffSearch()" class="primary-btn block">Search</button>
-        <button onclick="clearStaffFilters()" class="ghost-btn block" style="margin-top:8px;">Clear Filters</button>
-      </div>
-      <div id="hr-empRosterTable" class="table-wrap" style="margin-top:12px;"></div>
+      <button onclick="runStaffSearch()" class="primary-btn block">Search</button>
+      <button onclick="clearStaffFilters()" class="ghost-btn block" style="margin-top:8px;">Clear Filters</button>
     </div>
+    <div id="hr-empRosterTable" class="table-wrap roster-scroll" style="margin-top:12px;"></div>
+  </div>
 
-    <div class="card" style="grid-column: span 2;">
-      <div class="card-head">
-        <h3>My Tender Tracker <span class="lock-badge">LOCKED TO YOUR DEPARTMENT</span></h3>
-        <div class="card-head-actions">
-          <input type="text" class="search-input" id="hr-tenderSearch" placeholder="Search tenders..." oninput="filterTenders('hr')">
-          <button class="pill-btn" onclick="exportMyTenders()">Export CSV</button>
-        </div>
+  <!-- ROW 4: My Tender Tracker -->
+  <div class="card">
+    <div class="card-head">
+      <h3>My Tender Tracker <span class="lock-badge">LOCKED TO YOUR DEPARTMENT</span></h3>
+      <div class="card-head-actions">
+        <input type="text" class="search-input" id="hr-tenderSearch" placeholder="Search tenders..." oninput="filterTenders('hr')">
+        <button class="pill-btn" onclick="exportMyTenders()">Export CSV</button>
       </div>
-      <div class="tender-filters" id="hr-tenderFilters">
-        <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this,'hr')">All</button>
-        <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this,'hr')">Pending</button>
-        <button class="filter-btn" data-filter="awaiting_quotation" onclick="setTenderFilter(this,'hr')">Awaiting Quotation</button>
-        <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this,'hr')">Ordered</button>
-        <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this,'hr')">Received</button>
-      </div>
-      <div id="hr-tenderTrackerList" class="tender-tracker"></div>
     </div>
+    <div class="tender-filters" id="hr-tenderFilters">
+      <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this,'hr')">All</button>
+      <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this,'hr')">Pending</button>
+      <button class="filter-btn" data-filter="awaiting_quotation" onclick="setTenderFilter(this,'hr')">Awaiting Quotation</button>
+      <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this,'hr')">Ordered</button>
+      <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this,'hr')">Received</button>
+    </div>
+    <div id="hr-tenderTrackerList" class="tender-tracker"></div>
   </div>
 </div>

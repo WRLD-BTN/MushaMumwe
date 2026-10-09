@@ -3,6 +3,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const dotenv = require('dotenv');
 const os = require('os');
+const path = require('path');
 
 dotenv.config();
 
@@ -13,21 +14,52 @@ const io = socketIo(server, { cors: { origin: '*' } });
 app.use(express.json());
 app.use(express.static('public'));
 
-const authRoutes      = require('./routes/auth');
-const patientRoutes   = require('./routes/patients');
-const employeeRoutes  = require('./routes/employees');
-const orderRoutes     = require('./routes/orders');
-const inventoryRoutes = require('./routes/inventory');
-const wardRoutes      = require('./routes/wards');
-const settingsRoutes  = require('./routes/settings');
+// ============================================================
+// CLEAN URL ROUTES - serve entry.html for these friendly paths
+// ============================================================
+const CLEAN_ROUTES = [
+  '/dashboard',
+  '/portal',
+  '/login',
+  '/nurses',
+  '/it',
+  '/procurement',
+  '/stores',
+  '/hr',
+  '/admin',
+];
 
-app.use('/api/auth',      authRoutes);
-app.use('/api/patients',  patientRoutes);
-app.use('/api/employees', employeeRoutes);
-app.use('/api/orders',    orderRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/wards',     wardRoutes);
-app.use('/api/settings',  settingsRoutes);
+CLEAN_ROUTES.forEach(route => {
+  app.get(route, (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'entry.html'));
+  });
+});
+
+// Root -> dashboard
+app.get('/', (req, res) => {
+  res.redirect('/dashboard');
+});
+
+// ============================================================
+// API ROUTES
+// ============================================================
+const authRoutes          = require('./routes/auth');
+const patientRoutes       = require('./routes/patients');
+const employeeRoutes      = require('./routes/employees');
+const orderRoutes         = require('./routes/orders');
+const inventoryRoutes     = require('./routes/inventory');
+const wardRoutes          = require('./routes/wards');
+const settingsRoutes      = require('./routes/settings');
+const disciplinaryRoutes  = require('./routes/disciplinary');
+
+app.use('/api/auth',           authRoutes);
+app.use('/api/patients',       patientRoutes);
+app.use('/api/employees',      employeeRoutes);
+app.use('/api/orders',         orderRoutes);
+app.use('/api/inventory',      inventoryRoutes);
+app.use('/api/wards',          wardRoutes);
+app.use('/api/settings',       settingsRoutes);
+app.use('/api/disciplinary',   disciplinaryRoutes);
 
 app.locals.io = io;
 app.locals.emit = (event, payload) => io.emit(event, payload);

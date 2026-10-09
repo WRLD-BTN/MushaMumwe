@@ -17,16 +17,29 @@ let systemSettings = {
 function token() { return localStorage.getItem('token'); }
 
 const DEPT_MAP = {
-  Nurses:      { key: 'nurses', fragment: 'portals/nurses.html',      script: 'js/nurses.js' },
-  IT:          { key: 'it',     fragment: 'portals/it.html',          script: 'js/it.js' },
-  Procurement: { key: 'proc',   fragment: 'portals/procurement.html', script: 'js/procurement.js' },
-  Stores:      { key: 'stores', fragment: 'portals/stores.html',      script: 'js/stores.js' },
-  HR:          { key: 'hr',     fragment: 'portals/hr.html',          script: 'js/hr.js' },
-  SuperAdmin:  { key: 'super',  fragment: 'portals/superadmin.html',  script: 'js/superadmin.js' },
+  Nurses:      { key: 'nurses', fragment: 'portals/nurses.html',      script: 'js/nurses.js',      url: '/nurses' },
+  IT:          { key: 'it',     fragment: 'portals/it.html',          script: 'js/it.js',          url: '/it' },
+  Procurement: { key: 'proc',   fragment: 'portals/procurement.html', script: 'js/procurement.js', url: '/procurement' },
+  Stores:      { key: 'stores', fragment: 'portals/stores.html',      script: 'js/stores.js',      url: '/stores' },
+  HR:          { key: 'hr',     fragment: 'portals/hr.html',          script: 'js/hr.js',          url: '/hr' },
+  SuperAdmin:  { key: 'super',  fragment: 'portals/superadmin.html',  script: 'js/superadmin.js',  url: '/admin' },
+};
+
+// Map URL paths -> dept names (for auto-load on refresh)
+const URL_TO_DEPT = {
+  '/dashboard': null,
+  '/portal': null,
+  '/login': null,
+  '/nurses': 'Nurses',
+  '/it': 'IT',
+  '/procurement': 'Procurement',
+  '/stores': 'Stores',
+  '/hr': 'HR',
+  '/admin': 'SuperAdmin',
 };
 
 // ============================================================
-// SYSTEM SETTINGS - load and apply
+// SYSTEM SETTINGS
 // ============================================================
 async function loadSystemSettings() {
   try {
@@ -54,6 +67,26 @@ function applySettingsToShell() {
 }
 
 // ============================================================
+// URL SYNC
+// ============================================================
+function setURL(path, replace = false) {
+  try {
+    if (replace) {
+      window.history.replaceState({}, '', path);
+    } else {
+      window.history.pushState({}, '', path);
+    }
+  } catch (e) {
+    console.warn('Could not update URL:', e);
+  }
+}
+
+function getDeptFromURL() {
+  const path = window.location.pathname;
+  return URL_TO_DEPT[path] || null;
+}
+
+// ============================================================
 // AUTH
 // ============================================================
 async function login() {
@@ -61,7 +94,6 @@ async function login() {
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
 
-  // Super Admin can log in without picking a department
   const isSuperAdminAttempt = username === 'Admin';
 
   if (!username || !password) {
@@ -121,7 +153,6 @@ async function loadPortal(deptName) {
     document.getElementById('headerUserLabel').textContent =
       currentUser.fullName + ' (' + currentDeptName + ')';
 
-    // Super Admin gets no Change Password button (password in .env)
     const btnOwnPwd = document.getElementById('btnOwnPwd');
     const btnBackHome = document.getElementById('btnBackHome');
     if (currentDeptName === 'SuperAdmin') {
@@ -131,6 +162,9 @@ async function loadPortal(deptName) {
       btnOwnPwd.style.display = 'inline-block';
       btnBackHome.style.display = 'none';
     }
+
+    // Update URL
+    setURL(dept.url);
 
     const initFn = window['init_' + dept.key];
     if (typeof initFn === 'function') initFn();
@@ -152,11 +186,11 @@ function loadScript(src) {
 
 function logout() {
   localStorage.removeItem('token');
-  location.reload();
+  window.location.href = '/dashboard';
 }
 
 // ============================================================
-// SUPER ADMIN - Load a portal from the launcher
+// SUPER ADMIN
 // ============================================================
 async function openPortalAsSuperAdmin(deptName) {
   currentDeptName = deptName;
@@ -229,7 +263,7 @@ async function changeOwnPassword() {
 }
 
 // ============================================================
-// SYSTEM SETTINGS MODAL (Super Admin only)
+// SYSTEM SETTINGS MODAL
 // ============================================================
 async function openSettingsModal() {
   if (currentDeptName !== 'SuperAdmin') return;
@@ -327,6 +361,14 @@ function fmtDateTime(d) {
   return new Date(d).toLocaleString('en-GB');
 }
 
+function toInputDate(d) {
+  const dt = d instanceof Date ? d : new Date(d);
+  const yyyy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return yyyy + '-' + mm + '-' + dd;
+}
+
 function downloadCSV(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -339,6 +381,54 @@ function downloadCSV(blob, filename) {
 }
 
 // ============================================================
+// GENERIC PRINT HELPER
+// ============================================================
+function printContent(html) {
+  const area = document.getElementById('printArea');
+  if (!area) {
+    console.error('printArea element not found');
+    return;
+  }
+  area.innerHTML = html;
+  setTimeout(() => {
+    window.print();
+    // Clear print area after the dialog closes
+    setTimeout(() => { area.innerHTML = ''; }, 500);
+  }, 200);
+}
+
+function buildPrintHeader(title, filterLine, totalLabel) {
+  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
+  const phone = systemSettings.contactPhone || '';
+  const address = systemSettings.contactAddress || '';
+
+  let html = '<div class="print-header">';
+  html += '<h1>' + escapeHtml(hospitalName) + '</h1>';
+  html += '<h2>' + escapeHtml(title) + '</h2>';
+  html += '</div>';
+
+  if (phone || address) {
+    html += '<div class="print-contact">';
+    if (address) html += '<p>' + escapeHtml(address) + '</p>';
+    if (phone) html += '<p>Tel: ' + escapeHtml(phone) + '</p>';
+    html += '</div>';
+  }
+
+  html += '<div class="print-meta">';
+  if (totalLabel) html += '<p><strong>' + escapeHtml(totalLabel) + '</strong></p>';
+  html += '<p><strong>Generated:</strong> ' + fmtDateTime(new Date()) + '</p>';
+  if (filterLine) html += '<p style="grid-column: span 2;"><strong>' + escapeHtml(filterLine) + '</strong></p>';
+  html += '</div>';
+
+  return html;
+}
+
+function buildPrintFooter() {
+  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
+  return '<div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(new Date()) + '</div>';
+}
+
+// ============================================================
 // SOCKET DISPATCH
 // ============================================================
 socket.on('patient:updated', (p) => window.onPatientUpdated?.(p));
@@ -347,11 +437,35 @@ socket.on('order:updated', (p) => window.onOrderUpdated?.(p));
 socket.on('order:created', (p) => window.onOrderCreated?.(p));
 socket.on('inventory:updated', (p) => window.onInventoryUpdated?.(p));
 socket.on('employee:updated', (p) => window.onEmployeeUpdated?.(p));
+socket.on('disciplinary:created', (p) => window.onDisciplinaryUpdated?.(p));
+socket.on('disciplinary:updated', (p) => window.onDisciplinaryUpdated?.(p));
 
 // ============================================================
-// LOGIN - ENTER KEY SUPPORT (password field only)
+// AUTO-LOGIN FROM URL
 // ============================================================
-document.addEventListener('DOMContentLoaded', () => {
+async function tryAutoLogin() {
+  const t = token();
+  if (!t) return false;
+
+  try {
+    const res = await fetch('/api/auth/me', {
+      headers: { Authorization: 'Bearer ' + t },
+    });
+    if (!res.ok) return false;
+    const user = await res.json();
+    currentUser = user;
+    currentDeptName = user.department;
+    currentDeptKey = DEPT_MAP[currentDeptName]?.key;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', async () => {
   loadSystemSettings();
   updateLoginButton();
 
@@ -363,5 +477,18 @@ document.addEventListener('DOMContentLoaded', () => {
         login();
       }
     });
+  }
+
+  // If logged in, auto-load the portal (based on URL or last used dept)
+  const urlDept = getDeptFromURL();
+  if (urlDept) {
+    const ok = await tryAutoLogin();
+    if (ok) {
+      // If URL says /hr but user is HR, load HR. If mismatch, load user's actual dept.
+      const targetDept = (urlDept === currentUser.department || currentUser.department === 'SuperAdmin')
+        ? urlDept
+        : currentUser.department;
+      await loadPortal(targetDept);
+    }
   }
 });

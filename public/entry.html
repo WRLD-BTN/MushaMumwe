@@ -46,7 +46,7 @@
       </div>
       <button id="loginBtn" onclick="login()" class="primary-btn block" disabled>Login</button>
       <p class="muted" style="text-align:center; margin-top:14px; font-size:11px;">
-        Enter your department and credentials.
+        Super Admin: username and password only. Department can be left blank.
       </p>
     </div>
 
@@ -248,6 +248,186 @@
       <div class="modal-actions">
         <button onclick="confirmAwaitQuotation()" class="primary-btn">Mark Waiting for Quotation</button>
         <button onclick="closeAwaitModal()" class="ghost-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- LABOUR RELATIONS MODALS -->
+  <!-- ============================================================ -->
+
+  <div id="disciplinaryNewModal" class="modal">
+    <div class="modal-content modal-wide">
+      <h3>File New Disciplinary Case</h3>
+
+      <div class="form-group">
+        <label>Employee: <span class="req">*</span></label>
+        <select id="discNewEmployee"></select>
+      </div>
+      <div class="form-group">
+        <label>Offense Type: <span class="req">*</span></label>
+        <select id="discNewOffense"></select>
+      </div>
+      <div class="form-group">
+        <label>Description: <span class="req">*</span></label>
+        <textarea id="discNewDescription" placeholder="Describe what happened..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Reported By: <span class="req">*</span></label>
+          <input type="text" id="discNewReportedBy">
+        </div>
+        <div class="form-group">
+          <label>Reported Date: <span class="req">*</span></label>
+          <input type="date" id="discNewReportedDate">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Witnesses (optional):</label>
+        <input type="text" id="discNewWitnesses" placeholder="Names, comma-separated">
+      </div>
+
+      <div id="discNewMessage"></div>
+
+      <div class="modal-actions">
+        <button onclick="submitNewDisciplinaryCase()" class="primary-btn">File Case</button>
+        <button onclick="closeDisciplinaryNewModal()" class="ghost-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="disciplinaryDetailModal" class="modal">
+    <div class="modal-content modal-wide">
+      <h3 id="discDetailTitle">Case Detail</h3>
+      <div id="discDetailMeta" class="muted" style="margin-bottom:16px;"></div>
+
+      <div class="disc-status-row" id="discDetailStatusRow"></div>
+
+      <details class="disc-section">
+        <summary>Incident Details</summary>
+        <div class="disc-section-body">
+          <p><strong>Offense:</strong> <span id="discDetailOffense"></span></p>
+          <p><strong>Description:</strong> <span id="discDetailDescription"></span></p>
+          <p><strong>Reported By:</strong> <span id="discDetailReportedBy"></span></p>
+          <p><strong>Reported Date:</strong> <span id="discDetailReportedDate"></span></p>
+          <p><strong>Witnesses:</strong> <span id="discDetailWitnesses"></span></p>
+        </div>
+      </details>
+
+      <details class="disc-section" id="discActionSection">
+        <summary>Hearing & Action</summary>
+        <div class="disc-section-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Action Taken:</label>
+              <select id="discEditAction"><option value="">-- None --</option></select>
+            </div>
+            <div class="form-group">
+              <label>Hearing Date:</label>
+              <input type="date" id="discEditHearingDate">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Action Details:</label>
+            <textarea id="discEditActionDetails"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Hearing Notes:</label>
+            <textarea id="discEditHearingNotes"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Effective Date:</label>
+              <input type="date" id="discEditEffectiveDate">
+            </div>
+            <div class="form-group">
+              <label>Duration (days, for suspension):</label>
+              <input type="number" id="discEditDuration" min="0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Outcome:</label>
+            <input type="text" id="discEditOutcome" placeholder="Final outcome summary">
+          </div>
+          <button onclick="saveDisciplinaryDetails()" class="primary-btn" id="discSaveDetailsBtn">Save Action Details</button>
+          <div id="discDetailSaveMessage"></div>
+        </div>
+      </details>
+
+      <details class="disc-section">
+        <summary>Attachments (<span id="discAttachCount">0</span>)</summary>
+        <div class="disc-section-body">
+          <div id="discAttachList" class="disc-attach-list"></div>
+          <div class="disc-upload-zone" id="discUploadZone">
+            <input type="file" id="discAttachInput" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none;">
+            <button class="pill-btn" onclick="document.getElementById('discAttachInput').click()">
+              Add Files (PDF, JPG, PNG - max 10MB each, up to 5)
+            </button>
+            <div id="discUploadMessage" class="muted" style="margin-top:8px;"></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="disc-section">
+        <summary>Status History</summary>
+        <div class="disc-section-body">
+          <div id="discDetailTimeline" class="tender-timeline"></div>
+        </div>
+      </details>
+
+      <div class="modal-actions" style="flex-wrap:wrap;">
+        <button onclick="openStatusChangeOptions()" class="ghost-btn" id="discStatusBtn">Change Status</button>
+        <button onclick="openReopenModal()" class="ghost-btn" id="discReopenBtn" style="display:none;">Reopen Case</button>
+        <button onclick="closeDisciplinaryDetail()" class="primary-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="disciplinaryStatusModal" class="modal">
+    <div class="modal-content">
+      <h3>Change Case Status</h3>
+      <div class="form-group">
+        <label>New Status:</label>
+        <select id="discStatusNewStatus">
+          <option value="open">Open</option>
+          <option value="under_investigation">Under Investigation</option>
+          <option value="resolved">Resolved</option>
+          <option value="dismissed">Dismissed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notes (optional):</label>
+        <textarea id="discStatusNotes"></textarea>
+      </div>
+      <div id="discStatusMessage"></div>
+      <div class="modal-actions">
+        <button onclick="submitStatusChange()" class="primary-btn">Update Status</button>
+        <button onclick="closeStatusChangeModal()" class="ghost-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="disciplinaryReopenModal" class="modal">
+    <div class="modal-content">
+      <h3>Reopen Case</h3>
+      <p class="muted" style="margin-bottom:16px;">
+        Reopening returns the case to an active state. Provide a reason for the audit trail.
+      </p>
+      <div class="form-group">
+        <label>Reason for Reopening: <span class="req">*</span></label>
+        <textarea id="discReopenReason"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Return to Status:</label>
+        <select id="discReopenStatus">
+          <option value="under_investigation">Under Investigation</option>
+          <option value="open">Open</option>
+        </select>
+      </div>
+      <div id="discReopenMessage"></div>
+      <div class="modal-actions">
+        <button onclick="submitReopen()" class="primary-btn">Reopen Case</button>
+        <button onclick="closeReopenModal()" class="ghost-btn">Cancel</button>
       </div>
     </div>
   </div>
