@@ -3,7 +3,6 @@
     <h2>HR - Staff Management</h2>
   </div>
 
-  <!-- ROW 1: Three compact action cards -->
   <div class="grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
     <div class="card">
       <h3>Add New Employee</h3>
@@ -81,13 +80,12 @@
     </div>
   </div>
 
-  <!-- ROW 2: Labour Relations -->
   <div class="card" style="margin-bottom:20px;">
     <div class="card-head">
       <h3>Labour Relations</h3>
       <div class="card-head-actions">
         <button class="primary-btn small" onclick="openDisciplinaryNewModal()">File New Case</button>
-        <button class="pill-btn" onclick="exportDisciplinaryCSV()">Export CSV</button>
+        <button class="pill-btn" onclick="printDisciplinaryCases()">Print</button>
       </div>
     </div>
 
@@ -119,7 +117,7 @@
     </div>
 
     <div class="form-group">
-      <input type="text" id="discSearchBox" placeholder="Search by case #, employee name, offense, description..." oninput="debouncedDisciplinarySearch()">
+      <input type="text" id="discSearchBox" placeholder="Search by case, employee, offense, description..." oninput="debouncedDisciplinarySearch()">
     </div>
 
     <div class="form-row" style="margin-bottom:12px;">
@@ -170,13 +168,98 @@
     <div id="discCaseList" class="table-wrap disc-case-scroll"></div>
   </div>
 
-  <!-- ROW 3: Staff Roster -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-head">
+      <h3>Establishment</h3>
+      <div class="card-head-actions">
+        <button class="primary-btn small" onclick="openTransferModal()">Record Transfer</button>
+        <button class="primary-btn small" onclick="openRetirementModal()">Record Retirement</button>
+        <button class="primary-btn small" onclick="openResignationModal()">Record Resignation</button>
+        <button class="pill-btn" onclick="openHeadcountModal()">Headcount Settings</button>
+      </div>
+    </div>
+
+    <div class="disc-summary" id="estSummary">
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="estSummaryTotal">0</div>
+        <div class="disc-summary-lbl">Total (30d)</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="estSummaryTransfers">0</div>
+        <div class="disc-summary-lbl">Transfers</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="estSummaryRetirements">0</div>
+        <div class="disc-summary-lbl">Retirements</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="estSummaryResignations">0</div>
+        <div class="disc-summary-lbl">Resignations</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="estSummaryUnder" style="color:#dc2626;">0</div>
+        <div class="disc-summary-lbl">Understaffed</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="estSummaryOver" style="color:#ea580c;">0</div>
+        <div class="disc-summary-lbl">Overstaffed</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <input type="text" id="estSearchBox" placeholder="Search by employee, department, reason..." oninput="debouncedEstMovementSearch()">
+    </div>
+
+    <div class="form-row" style="margin-bottom:12px;">
+      <div class="form-group">
+        <label>Type</label>
+        <select id="estFilterType" onchange="runEstMovementSearch()">
+          <option value="all">All</option>
+          <option value="transfer">Transfers</option>
+          <option value="retirement">Retirements</option>
+          <option value="resignation">Resignations</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Department</label>
+        <select id="estFilterDept" onchange="runEstMovementSearch()">
+          <option value="all">All</option>
+          <option value="Medical">Medical</option>
+          <option value="Nurses">Nurses</option>
+          <option value="Pharmacy">Pharmacy</option>
+          <option value="Laboratory">Laboratory</option>
+          <option value="Admin">Admin</option>
+          <option value="Support">Support</option>
+          <option value="Maintenance">Maintenance</option>
+          <option value="Security">Security</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>From</label>
+        <input type="date" id="estFilterFrom" onchange="runEstMovementSearch()">
+      </div>
+      <div class="form-group">
+        <label>To</label>
+        <input type="date" id="estFilterTo" onchange="runEstMovementSearch()">
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button onclick="clearEstFilters()" class="ghost-btn block">Clear</button>
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button onclick="printMovementsReport()" class="pill-btn block">Print Report</button>
+      </div>
+    </div>
+
+    <div id="estMovementList" class="table-wrap disc-case-scroll"></div>
+  </div>
+
   <div class="card" style="margin-bottom:20px;">
     <div class="card-head">
       <h3>Staff Roster</h3>
       <div class="card-head-actions">
         <button class="pill-btn" onclick="toggleAdvancedStaffFilters()">Filters</button>
-        <button class="pill-btn" onclick="exportStaffCSV()">Export CSV</button>
         <button class="pill-btn" onclick="printStaffRoster()">Print</button>
       </div>
     </div>
@@ -207,6 +290,8 @@
             <option value="on_leave">On Leave</option>
             <option value="sick">Sick</option>
             <option value="terminated">Terminated</option>
+            <option value="retired">Retired</option>
+            <option value="resigned">Resigned</option>
           </select>
         </div>
       </div>
@@ -230,13 +315,12 @@
     <div id="hr-empRosterTable" class="table-wrap roster-scroll" style="margin-top:12px;"></div>
   </div>
 
-  <!-- ROW 4: My Tender Tracker -->
   <div class="card">
     <div class="card-head">
       <h3>My Tender Tracker <span class="lock-badge">LOCKED TO YOUR DEPARTMENT</span></h3>
       <div class="card-head-actions">
         <input type="text" class="search-input" id="hr-tenderSearch" placeholder="Search tenders..." oninput="filterTenders('hr')">
-        <button class="pill-btn" onclick="exportMyTenders()">Export CSV</button>
+        <button class="pill-btn" onclick="printMyTenders()">Print</button>
       </div>
     </div>
     <div class="tender-filters" id="hr-tenderFilters">

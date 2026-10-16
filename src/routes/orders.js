@@ -380,9 +380,7 @@ router.get('/summary', requireAuth, async (req, res) => {
   }
 });
 
-// ============================================================
-// SUMMARY PUBLIC - no auth - accepts ?from= and ?to=
-// ============================================================
+// Public summary for Live Board widget. No auth.
 router.get('/summary-public', async (req, res) => {
   try {
     const { from, to } = parseRange(req.query);
@@ -408,6 +406,46 @@ router.get('/summary-public', async (req, res) => {
       ordered,
       received,
     });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Detail list for a single tender status. Public.
+router.get('/detail-public', async (req, res) => {
+  try {
+    const { category } = req.query;
+    const { from, to } = parseRange(req.query);
+
+    const validCategories = ['pending', 'awaiting_quotation', 'ordered', 'received'];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+
+    let statuses = [category];
+    if (category === 'received') {
+      statuses = ['received', 'in_storage'];
+    }
+
+    const tenders = await prisma.orderRequest.findMany({
+      where: {
+        status: { in: statuses },
+        createdAt: { gte: from, lte: to },
+      },
+      select: {
+        id: true,
+        itemName: true,
+        quantity: true,
+        requestingDepartment: true,
+        originatorDepartment: true,
+        status: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+
+    res.json(tenders);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

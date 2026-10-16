@@ -53,6 +53,7 @@
     <div id="portalContainer"></div>
   </div>
 
+  <!-- OWN PASSWORD -->
   <div id="ownPwdModal" class="modal">
     <div class="modal-content">
       <h3>Change My Password</h3>
@@ -72,6 +73,7 @@
     </div>
   </div>
 
+  <!-- EMPLOYEE STATUS -->
   <div id="empStatusModal" class="modal">
     <div class="modal-content">
       <h3 id="modalEmpName"></h3>
@@ -82,6 +84,8 @@
           <option value="on_leave">On Leave</option>
           <option value="sick">Sick</option>
           <option value="terminated">Terminated</option>
+          <option value="retired">Retired</option>
+          <option value="resigned">Resigned</option>
         </select>
       </div>
       <div class="modal-actions">
@@ -92,6 +96,7 @@
     </div>
   </div>
 
+  <!-- DISCHARGE -->
   <div id="dischargeModal" class="modal">
     <div class="modal-content modal-wide">
       <h3>Discharge Patient: <span id="dischargePatientName"></span></h3>
@@ -147,6 +152,7 @@
     </div>
   </div>
 
+  <!-- PRINT OPTIONS -->
   <div id="printOptionsModal" class="modal">
     <div class="modal-content">
       <h3>Print Discharge Summary</h3>
@@ -172,6 +178,7 @@
     </div>
   </div>
 
+  <!-- SETTINGS -->
   <div id="settingsModal" class="modal">
     <div class="modal-content modal-wide">
       <h3>System Settings</h3>
@@ -203,6 +210,7 @@
     </div>
   </div>
 
+  <!-- APPROVE TENDER -->
   <div id="approveModal" class="modal">
     <div class="modal-content">
       <h3>Approve and Send Order</h3>
@@ -230,6 +238,7 @@
     </div>
   </div>
 
+  <!-- WAITING FOR QUOTATION -->
   <div id="awaitModal" class="modal">
     <div class="modal-content">
       <h3>Waiting for Quotation</h3>
@@ -315,7 +324,7 @@
       </details>
 
       <details class="disc-section" id="discActionSection">
-        <summary>Hearing & Action</summary>
+        <summary>Hearing and Action</summary>
         <div class="disc-section-body">
           <div class="form-row">
             <div class="form-group">
@@ -428,6 +437,312 @@
       <div class="modal-actions">
         <button onclick="submitReopen()" class="primary-btn">Reopen Case</button>
         <button onclick="closeReopenModal()" class="ghost-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- ESTABLISHMENT MODALS -->
+  <!-- ============================================================ -->
+
+  <div id="estTransferModal" class="modal">
+    <div class="modal-content modal-wide">
+      <h3>Record Employee Transfer</h3>
+
+      <div class="form-group">
+        <label>Employee: <span class="req">*</span></label>
+        <select id="estTransferEmployee"></select>
+      </div>
+      <div id="estTransferCurrentInfo" class="muted" style="margin-bottom:12px;"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>New Department: <span class="req">*</span></label>
+          <select id="estTransferToDept">
+            <option value="Medical">Medical / Doctors</option>
+            <option value="Nurses">Nurses</option>
+            <option value="Pharmacy">Pharmacy</option>
+            <option value="Laboratory">Laboratory</option>
+            <option value="Admin">Admin</option>
+            <option value="Support">Support / Cleaning</option>
+            <option value="Maintenance">Maintenance</option>
+            <option value="Security">Security</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>New Ward (optional):</label>
+          <select id="estTransferToWard">
+            <option value="">None</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Effective Date: <span class="req">*</span></label>
+        <input type="date" id="estTransferEffectiveDate">
+      </div>
+      <div class="form-group">
+        <label>Reason:</label>
+        <input type="text" id="estTransferReason" placeholder="e.g. Operational requirement">
+      </div>
+      <div class="form-group">
+        <label>Notes (optional):</label>
+        <textarea id="estTransferNotes"></textarea>
+      </div>
+
+      <div id="estTransferMessage"></div>
+
+      <div class="modal-actions">
+        <button onclick="submitTransfer()" class="primary-btn">Record Transfer</button>
+        <button onclick="closeTransferModal()" class="ghost-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="estRetirementModal" class="modal">
+    <div class="modal-content modal-wide">
+      <h3>Record Retirement</h3>
+
+      <div class="form-group">
+        <label>Employee: <span class="req">*</span></label>
+        <select id="estRetirementEmployee"></select>
+      </div>
+      <div id="estRetirementCurrentInfo" class="muted" style="margin-bottom:12px;"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Planned Retirement Date:</label>
+          <input type="date" id="estRetirementPlannedDate">
+        </div>
+        <div class="form-group">
+          <label>Actual Retirement Date:</label>
+          <input type="date" id="estRetirementActualDate">
+        </div>
+      </div>
+      <div class="muted" style="margin-bottom:12px;">
+        Leave "Actual" empty to record a planned retirement. Setting it will mark the employee as retired.
+      </div>
+
+      <div class="form-group">
+        <label>Pension Notes:</label>
+        <textarea id="estRetirementPension" placeholder="Pension arrangement details"></textarea>
+      </div>
+      <div class="form-group">
+        <label>General Notes (optional):</label>
+        <textarea id="estRetirementNotes"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label style="display:flex; align-items:center; gap:8px; font-weight:500;">
+          <input type="checkbox" id="estRetirementConfirm" style="width:auto; min-height:0;">
+          <span>I confirm this retirement action</span>
+        </label>
+      </div>
+
+      <div id="estRetirementMessage"></div>
+
+      <div class="modal-actions">
+        <button onclick="submitRetirement()" class="primary-btn">Record Retirement</button>
+        <button onclick="closeRetirementModal()" class="ghost-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="estResignationModal" class="modal">
+    <div class="modal-content modal-wide">
+      <h3>Record Resignation</h3>
+
+      <div class="form-group">
+        <label>Employee: <span class="req">*</span></label>
+        <select id="estResignationEmployee"></select>
+      </div>
+      <div id="estResignationCurrentInfo" class="muted" style="margin-bottom:12px;"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Resignation Date: <span class="req">*</span></label>
+          <input type="date" id="estResignationDate">
+        </div>
+        <div class="form-group">
+          <label>Last Working Day: <span class="req">*</span></label>
+          <input type="date" id="estResignationLastDay">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Notice Period (days):</label>
+          <input type="number" id="estResignationNotice" min="0" placeholder="e.g. 30">
+        </div>
+        <div class="form-group">
+          <label>Reason:</label>
+          <select id="estResignationReason"></select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label style="display:flex; align-items:center; gap:8px; font-weight:500;">
+            <input type="checkbox" id="estResignationExitInterview" style="width:auto; min-height:0;">
+            <span>Exit interview completed</span>
+          </label>
+        </div>
+        <div class="form-group">
+          <label style="display:flex; align-items:center; gap:8px; font-weight:500;">
+            <input type="checkbox" id="estResignationRehire" style="width:auto; min-height:0;">
+            <span>Eligible for rehire</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Notes (optional):</label>
+        <textarea id="estResignationNotes"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label style="display:flex; align-items:center; gap:8px; font-weight:500;">
+          <input type="checkbox" id="estResignationConfirm" style="width:auto; min-height:0;">
+          <span>I confirm this resignation action</span>
+        </label>
+      </div>
+
+      <div id="estResignationMessage"></div>
+
+      <div class="modal-actions">
+        <button onclick="submitResignation()" class="primary-btn">Record Resignation</button>
+        <button onclick="closeResignationModal()" class="ghost-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="estHeadcountModal" class="modal">
+    <div class="modal-content modal-wide">
+      <h3>Headcount Targets</h3>
+      <p class="muted" style="margin-bottom:16px;">
+        Set minimum and maximum headcount per department. The dashboard will flag departments that fall outside these ranges.
+      </p>
+
+      <div id="estHeadcountList" class="est-headcount-list"></div>
+
+      <div class="modal-actions">
+        <button onclick="closeHeadcountModal()" class="primary-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- PROJECT MODALS -->
+  <!-- ============================================================ -->
+
+  <div id="projectNewModal" class="modal">
+    <div class="modal-content modal-wide">
+      <h3>New Project</h3>
+
+      <div class="form-group">
+        <label for="projectNewName">Project Name: <span class="req">*</span></label>
+        <input type="text" id="projectNewName" placeholder="e.g. CCTV installation phase 2">
+      </div>
+      <div class="form-group">
+        <label for="projectNewDescription">Description: <span class="req">*</span></label>
+        <textarea id="projectNewDescription" placeholder="What is this project about?"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="projectNewHead">Project Head: <span class="req">*</span></label>
+        <input type="text" id="projectNewHead" placeholder="Person responsible">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="projectNewStatus">Status:</label>
+          <select id="projectNewStatus">
+            <option value="ongoing">Ongoing</option>
+            <option value="pending">Pending (blocked)</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="projectNewStart">Start Date:</label>
+          <input type="date" id="projectNewStart">
+        </div>
+        <div class="form-group">
+          <label for="projectNewTarget">Target Date:</label>
+          <input type="date" id="projectNewTarget">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="projectNewNote" id="projectNewNoteLabel">What's happening: <span class="req">*</span></label>
+        <textarea id="projectNewNote" placeholder="Current state of the project"></textarea>
+      </div>
+
+      <div id="projectNewObstacleRow" style="display:none;">
+        <div class="form-group">
+          <label for="projectNewObstacle">Obstacle Reason: <span class="req">*</span></label>
+          <textarea id="projectNewObstacle" placeholder="Why is this project blocked?"></textarea>
+        </div>
+      </div>
+
+      <div id="projectNewMessage"></div>
+
+      <div class="modal-actions">
+        <button onclick="submitProjectNew()" class="primary-btn">Create Project</button>
+        <button onclick="closeProjectNewModal()" class="ghost-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="projectUpdateModal" class="modal">
+    <div class="modal-content modal-wide">
+      <h3>Update Project: <span id="projectUpdateTitle"></span></h3>
+
+      <div class="form-group">
+        <label for="projectUpdateStatus">Status:</label>
+        <select id="projectUpdateStatus">
+          <option value="ongoing">Ongoing</option>
+          <option value="pending">Pending (blocked)</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="projectUpdateNote" id="projectUpdateNoteLabel">What's happening: <span class="req">*</span></label>
+        <textarea id="projectUpdateNote" placeholder="Describe the current state"></textarea>
+      </div>
+
+      <div id="projectUpdateObstacleRow" style="display:none;">
+        <div class="form-group">
+          <label for="projectUpdateObstacle">Obstacle Reason: <span class="req">*</span></label>
+          <textarea id="projectUpdateObstacle" placeholder="Why is this project blocked?"></textarea>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="projectUpdateAction">Action Taken (optional):</label>
+        <textarea id="projectUpdateAction" placeholder="What has been done so far about this?"></textarea>
+      </div>
+
+      <div id="projectUpdateMessage"></div>
+
+      <div class="modal-actions">
+        <button onclick="submitProjectUpdate()" class="primary-btn">Add Update</button>
+        <button onclick="closeProjectUpdateModal()" class="ghost-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="projectDetailModal" class="modal">
+    <div class="modal-content modal-wide">
+      <h3 id="projectDetailTitle">Project Details</h3>
+      <div id="projectDetailMeta" class="muted" style="margin-bottom:16px;"></div>
+
+      <div class="disc-section" style="border:none;">
+        <div class="disc-section-body">
+          <div id="projectDetailTimeline" class="tender-timeline"></div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button onclick="closeProjectDetail()" class="primary-btn">Close</button>
       </div>
     </div>
   </div>
