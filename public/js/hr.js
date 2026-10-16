@@ -1,27 +1,38 @@
-// ============================================================
-// Sally Mugabe Central Hospital - HR Department
-// ============================================================
+// HR Department - staff, labour relations, establishment.
 
 let allEmployees = [];
 let allTenders = [];
 let allDisciplinaryCases = [];
+let allEstMovements = [];
 let disciplinaryMetadata = { offenses: [], actions: [], statuses: [] };
+let establishmentMetadata = { movementTypes: [], resignationReasons: [] };
 let currentOpenCaseId = null;
 let tenderFilter = 'all';
 let staffSearchTimer = null;
 let discSearchTimer = null;
+let estSearchTimer = null;
 let selectedEmployeeId = null;
 
+// ============================================================
+// INIT
+// ============================================================
 async function init_hr() {
   await loadWards();
   await runStaffSearch();
   await loadStaffingSummary();
   await loadMyTenders();
+
   await loadDisciplinaryMetadata();
   await loadDisciplinarySummary();
   await runDisciplinarySearch();
   await populateEmployeeDropdown();
   wireDisciplinaryUpload();
+
+  await loadEstablishmentSummary();
+  await loadEstablishmentMetadata();
+  await runEstMovementSearch();
+  await populateEstDropdowns();
+  loadHeadcountSettings();
 
   window.onEmployeeUpdated = () => {
     runStaffSearch();
@@ -29,13 +40,18 @@ async function init_hr() {
   };
   window.onOrderUpdated = (payload) => {
     const myDept = String(currentDeptName || '').toLowerCase();
-    const sub = String(payload?.department || '').toLowerCase();
-    const orig = String(payload?.originator || '').toLowerCase();
+    const sub = String(payload && payload.department || '').toLowerCase();
+    const orig = String(payload && payload.originator || '').toLowerCase();
     if (sub === myDept || orig === myDept) loadMyTenders();
   };
   window.onDisciplinaryUpdated = () => {
     loadDisciplinarySummary();
     runDisciplinarySearch();
+  };
+  window.onEstablishmentUpdated = () => {
+    loadEstablishmentSummary();
+    runEstMovementSearch();
+    loadHeadcountSettings();
   };
 }
 
@@ -46,15 +62,22 @@ async function loadWards() {
   const res = await fetch('/api/wards', { headers: { Authorization: 'Bearer ' + token() } });
   if (!res.ok) return;
   const wards = await res.json();
+
   const empWard = document.getElementById('hr-empWard');
   if (empWard) {
     empWard.innerHTML = '<option value="">None</option>' +
       wards.map(w => '<option value="' + w.id + '">' + escapeHtml(w.name) + '</option>').join('');
   }
+
+  const transferWard = document.getElementById('estTransferToWard');
+  if (transferWard) {
+    transferWard.innerHTML = '<option value="">None</option>' +
+      wards.map(w => '<option value="' + w.id + '">' + escapeHtml(w.name) + '</option>').join('');
+  }
 }
 
 // ============================================================
-// STAFF SEARCH
+// STAFF SEARCH AND ROSTER
 // ============================================================
 function debouncedStaffSearch() {
   clearTimeout(staffSearchTimer);
@@ -66,6 +89,7 @@ function toggleAdvancedStaffFilters() {
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
+// Fetch staff matching current filters, render roster.
 async function runStaffSearch() {
   const params = new URLSearchParams();
   const search = document.getElementById('hr-empSearchBox').value.trim();
@@ -84,7 +108,7 @@ async function runStaffSearch() {
 
   try {
     const res = await fetch('/api/employees?' + params, { headers: { Authorization: 'Bearer ' + token() } });
-    if (!res.ok) throw new Error('Failed');
+    if (!res.ok) throw new Error('Failed to load staff');
     allEmployees = await res.json();
     renderStaffRoster();
   } catch (e) {
@@ -107,7 +131,7 @@ function renderStaffRoster() {
   const el = document.getElementById('hr-empRosterTable');
 
   if (allEmployees.length === 0) {
-    el.innerHTML = '<div class="empty-state">No Staff Found</div>';
+    el.innerHTML = '<div class="empty-state">No staff found</div>';
     return;
   }
 
@@ -122,6 +146,8 @@ function renderStaffRoster() {
         on_leave: 'status-low',
         sick: 'status-critical',
         terminated: 'status-terminated',
+        retired: 'status-terminated',
+        resigned: 'status-terminated',
       }[e.status] || 'status-ok';
 
       return '<tr>' +
@@ -173,6 +199,7 @@ async function addEmployee() {
     await runStaffSearch();
     await loadStaffingSummary();
     await populateEmployeeDropdown();
+    await populateEstDropdowns();
   } catch (e) {
     msg.innerHTML = '<div class="error">' + e.message + '</div>';
   }
@@ -234,51 +261,18 @@ async function loadStaffingSummary() {
 }
 
 // ============================================================
-// CSV EXPORT - STAFF
-// ============================================================
-async function exportStaffCSV() {
-  const params = new URLSearchParams();
-  const search = document.getElementById('hr-empSearchBox').value.trim();
-  const department = document.getElementById('hr-filterDept').value;
-  const status = document.getElementById('hr-filterStatus').value;
-  const role = document.getElementById('hr-filterRole').value.trim();
-  const from = document.getElementById('hr-filterFrom').value;
-  const to = document.getElementById('hr-filterTo').value;
-
-  if (search) params.set('search', search);
-  if (department && department !== 'all') params.set('department', department);
-  if (status && status !== 'all') params.set('status', status);
-  if (role) params.set('role', role);
-  if (from) params.set('from', from);
-  if (to) params.set('to', to);
-
-  try {
-    const res = await fetch('/api/employees/export?' + params, {
-      headers: { Authorization: 'Bearer ' + token() },
-    });
-    if (!res.ok) throw new Error('Export failed');
-    const blob = await res.blob();
-    downloadCSV(blob, 'staff-' + new Date().toISOString().split('T')[0] + '.csv');
-  } catch (e) {
-    alert('Export error: ' + e.message);
-  }
-}
-
-// ============================================================
 // PRINT - STAFF ROSTER
 // ============================================================
 function printStaffRoster() {
   if (allEmployees.length === 0) {
-    alert('No employees to print. Adjust your filters.');
+    alert('No employees to print. Adjust filters.');
     return;
   }
 
   const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
   const phone = systemSettings.contactPhone || '';
   const address = systemSettings.contactAddress || '';
-
   const now = new Date();
-  const rangeLabel = 'Generated ' + fmtDateTime(now);
 
   const filterParts = [];
   const search = document.getElementById('hr-empSearchBox').value.trim();
@@ -314,7 +308,7 @@ function printStaffRoster() {
 
   html += '<div class="print-meta">';
   html += '<p><strong>Total Employees:</strong> ' + allEmployees.length + '</p>';
-  html += '<p><strong>Report Generated:</strong> ' + rangeLabel + '</p>';
+  html += '<p><strong>Report Generated:</strong> ' + fmtDateTime(now) + '</p>';
   html += '<p style="grid-column: span 2;"><strong>' + escapeHtml(filterLine) + '</strong></p>';
   html += '</div>';
 
@@ -348,10 +342,11 @@ function printStaffRoster() {
 }
 
 // ============================================================
-// TENDERS
+// TENDERS - SUBMIT
 // ============================================================
 async function submitTenderRequest(deptKey) {
-  const originatorDepartment = document.getElementById(deptKey + '-reqOriginator')?.value || currentDeptName;
+  const originatorDepartment = document.getElementById(deptKey + '-reqOriginator') ?
+    document.getElementById(deptKey + '-reqOriginator').value : currentDeptName;
   const itemName = document.getElementById(deptKey + '-reqItemName').value.trim();
   const quantity = document.getElementById(deptKey + '-reqQuantity').value;
   const reason = document.getElementById(deptKey + '-reqReason').value.trim();
@@ -381,6 +376,9 @@ async function submitTenderRequest(deptKey) {
   }
 }
 
+// ============================================================
+// TENDERS - TRACKER
+// ============================================================
 async function loadMyTenders() {
   const res = await fetch('/api/orders/my', { headers: { Authorization: 'Bearer ' + token() } });
   if (!res.ok) return;
@@ -399,14 +397,15 @@ function filterTenders() { renderTenderTracker(); }
 
 function renderTenderTracker() {
   const el = document.getElementById('hr-tenderTrackerList');
-  const q = (document.getElementById('hr-tenderSearch')?.value || '').toLowerCase();
+  const q = (document.getElementById('hr-tenderSearch') ?
+    document.getElementById('hr-tenderSearch').value : '').toLowerCase();
 
   let list = allTenders;
   if (tenderFilter !== 'all') list = list.filter(t => t.status === tenderFilter);
   if (q) list = list.filter(t => String(t.itemName).toLowerCase().includes(q));
 
   if (list.length === 0) {
-    el.innerHTML = '<div class="empty-state">No Tenders</div>';
+    el.innerHTML = '<div class="empty-state">No tenders</div>';
     return;
   }
 
@@ -438,11 +437,72 @@ function renderTenderTracker() {
   }).join('');
 }
 
-async function exportMyTenders() {
-  const res = await fetch('/api/orders/my/export', { headers: { Authorization: 'Bearer ' + token() } });
-  if (!res.ok) return alert('Export failed');
-  const blob = await res.blob();
-  downloadCSV(blob, 'tenders-hr-' + new Date().toISOString().split('T')[0] + '.csv');
+// ============================================================
+// PRINT - MY TENDERS
+// ============================================================
+function printMyTenders() {
+  if (!allTenders || allTenders.length === 0) {
+    alert('No tenders to print.');
+    return;
+  }
+
+  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
+  const phone = systemSettings.contactPhone || '';
+  const address = systemSettings.contactAddress || '';
+  const now = new Date();
+
+  const filterParts = [];
+  const q = (document.getElementById('hr-tenderSearch') ?
+    document.getElementById('hr-tenderSearch').value : '').trim();
+  if (tenderFilter && tenderFilter !== 'all') filterParts.push('Status=' + tenderFilter);
+  if (q) filterParts.push('Search="' + q + '"');
+  const filterLine = filterParts.length > 0 ? 'Filters: ' + filterParts.join(', ') : 'Filters: none';
+
+  let html = '<div class="print-page a4">';
+  html += '<div class="print-header">';
+  html += '<h1>' + escapeHtml(hospitalName) + '</h1>';
+  html += '<h2>My Department Tenders - ' + escapeHtml(currentDeptName || '') + '</h2>';
+  html += '</div>';
+
+  if (phone || address) {
+    html += '<div class="print-contact">';
+    if (address) html += '<p>' + escapeHtml(address) + '</p>';
+    if (phone) html += '<p>Tel: ' + escapeHtml(phone) + '</p>';
+    html += '</div>';
+  }
+
+  html += '<div class="print-meta">';
+  html += '<p><strong>Total:</strong> ' + allTenders.length + '</p>';
+  html += '<p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p>';
+  html += '<p style="grid-column: span 2;"><strong>' + escapeHtml(filterLine) + '</strong></p>';
+  html += '</div>';
+
+  html += '<table class="print-table">';
+  html += '<thead><tr>';
+  html += '<th>#</th><th>Item</th><th>Qty</th><th>Reason</th><th>Status</th><th>Requested By</th><th>Date</th>';
+  html += '</tr></thead><tbody>';
+
+  allTenders.forEach((t, i) => {
+    const statusLabel = String(t.status || '').replace('_', ' ').toUpperCase();
+    html += '<tr>';
+    html += '<td>' + (i + 1) + '</td>';
+    html += '<td>' + escapeHtml(t.itemName || '') + '</td>';
+    html += '<td>' + t.quantity + '</td>';
+    html += '<td>' + escapeHtml(t.reason || '') + '</td>';
+    html += '<td>' + escapeHtml(statusLabel) + '</td>';
+    html += '<td>' + escapeHtml(t.requestingBy || '') + '</td>';
+    html += '<td>' + fmtDate(t.createdAt) + '</td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  html += '<div class="print-footer">';
+  html += escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now);
+  html += '</div>';
+  html += '</div>';
+
+  document.getElementById('printArea').innerHTML = html;
+  setTimeout(() => window.print(), 200);
 }
 
 // ============================================================
@@ -516,7 +576,7 @@ async function populateEmployeeDropdown() {
 }
 
 // ============================================================
-// LABOUR RELATIONS - SEARCH + RENDER
+// LABOUR RELATIONS - SEARCH AND RENDER
 // ============================================================
 function debouncedDisciplinarySearch() {
   clearTimeout(discSearchTimer);
@@ -603,8 +663,21 @@ function renderDisciplinaryCases() {
     '</tbody></table>';
 }
 
-async function exportDisciplinaryCSV() {
-  const params = new URLSearchParams();
+// ============================================================
+// PRINT - LABOUR RELATIONS CASES
+// ============================================================
+function printDisciplinaryCases() {
+  if (!allDisciplinaryCases || allDisciplinaryCases.length === 0) {
+    alert('No disciplinary cases to print. Adjust filters.');
+    return;
+  }
+
+  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
+  const phone = systemSettings.contactPhone || '';
+  const address = systemSettings.contactAddress || '';
+  const now = new Date();
+
+  const filterParts = [];
   const search = document.getElementById('discSearchBox').value.trim();
   const status = document.getElementById('discFilterStatus').value;
   const offense = document.getElementById('discFilterOffense').value;
@@ -612,23 +685,86 @@ async function exportDisciplinaryCSV() {
   const from = document.getElementById('discFilterFrom').value;
   const to = document.getElementById('discFilterTo').value;
 
-  if (search) params.set('search', search);
-  if (status && status !== 'all') params.set('status', status);
-  if (offense && offense !== 'all') params.set('offense', offense);
-  if (department && department !== 'all') params.set('department', department);
-  if (from) params.set('from', from);
-  if (to) params.set('to', to);
+  if (search) filterParts.push('Search="' + search + '"');
+  if (status && status !== 'all') filterParts.push('Status=' + status.replace('_', ' '));
+  if (offense && offense !== 'all') filterParts.push('Offense=' + offense);
+  if (department && department !== 'all') filterParts.push('Department=' + department);
+  if (from) filterParts.push('From=' + from);
+  if (to) filterParts.push('To=' + to);
 
-  try {
-    const res = await fetch('/api/disciplinary/export?' + params, {
-      headers: { Authorization: 'Bearer ' + token() },
-    });
-    if (!res.ok) throw new Error('Export failed');
-    const blob = await res.blob();
-    downloadCSV(blob, 'labour-relations-' + new Date().toISOString().split('T')[0] + '.csv');
-  } catch (e) {
-    alert(e.message);
+  const filterLine = filterParts.length > 0
+    ? 'Filters: ' + filterParts.join(', ')
+    : 'Filters: none (all cases)';
+
+  const statusCounts = { open: 0, under_investigation: 0, resolved: 0, dismissed: 0 };
+  allDisciplinaryCases.forEach(c => {
+    statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
+  });
+
+  let html = '<div class="print-page a4">';
+  html += '<div class="print-header">';
+  html += '<h1>' + escapeHtml(hospitalName) + '</h1>';
+  html += '<h2>Labour Relations - Disciplinary Cases</h2>';
+  html += '</div>';
+
+  if (phone || address) {
+    html += '<div class="print-contact">';
+    if (address) html += '<p>' + escapeHtml(address) + '</p>';
+    if (phone) html += '<p>Tel: ' + escapeHtml(phone) + '</p>';
+    html += '</div>';
   }
+
+  html += '<div class="print-meta">';
+  html += '<p><strong>Total Cases:</strong> ' + allDisciplinaryCases.length + '</p>';
+  html += '<p><strong>Report Generated:</strong> ' + fmtDateTime(now) + '</p>';
+  html += '<p style="grid-column: span 2;"><strong>' + escapeHtml(filterLine) + '</strong></p>';
+  html += '</div>';
+
+  html += '<div class="print-section">';
+  html += '<h3>Status Summary</h3>';
+  html += '<p><strong>Open:</strong> ' + statusCounts.open +
+          ' &nbsp;&nbsp; <strong>Under Investigation:</strong> ' + statusCounts.under_investigation +
+          ' &nbsp;&nbsp; <strong>Resolved:</strong> ' + statusCounts.resolved +
+          ' &nbsp;&nbsp; <strong>Dismissed:</strong> ' + statusCounts.dismissed +
+          '</p>';
+  html += '</div>';
+
+  html += '<table class="print-table">';
+  html += '<thead><tr>';
+  html += '<th>#</th>';
+  html += '<th>Case #</th>';
+  html += '<th>Employee</th>';
+  html += '<th>Dept</th>';
+  html += '<th>Offense</th>';
+  html += '<th>Status</th>';
+  html += '<th>Reported</th>';
+  html += '</tr></thead><tbody>';
+
+  allDisciplinaryCases.forEach((c, i) => {
+    const empName = c.employee ? c.employee.name : '-';
+    const empDept = c.employee ? c.employee.department : '-';
+    const reported = c.reportedDate ? fmtDate(c.reportedDate) : '-';
+    const statusLabel = (c.status || '').replace('_', ' ').toUpperCase();
+
+    html += '<tr>';
+    html += '<td>' + (i + 1) + '</td>';
+    html += '<td>' + escapeHtml(c.caseNumber || '') + '</td>';
+    html += '<td>' + escapeHtml(empName) + '</td>';
+    html += '<td>' + escapeHtml(empDept) + '</td>';
+    html += '<td>' + escapeHtml(c.offenseType || '') + '</td>';
+    html += '<td>' + escapeHtml(statusLabel) + '</td>';
+    html += '<td>' + reported + '</td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  html += '<div class="print-footer">';
+  html += escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now);
+  html += '</div>';
+  html += '</div>';
+
+  document.getElementById('printArea').innerHTML = html;
+  setTimeout(() => window.print(), 200);
 }
 
 // ============================================================
@@ -953,6 +1089,612 @@ async function deleteAttachment(attachmentId) {
     if (!res.ok) throw new Error(data.error);
 
     await openDisciplinaryDetail(currentOpenCaseId);
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+// ============================================================
+// ESTABLISHMENT - METADATA
+// ============================================================
+async function loadEstablishmentMetadata() {
+  try {
+    const res = await fetch('/api/establishment/metadata', {
+      headers: { Authorization: 'Bearer ' + token() },
+    });
+    if (!res.ok) return;
+    establishmentMetadata = await res.json();
+
+    const reasonSel = document.getElementById('estResignationReason');
+    if (reasonSel && establishmentMetadata.resignationReasons) {
+      reasonSel.innerHTML = '<option value="">-- Choose reason --</option>' +
+        establishmentMetadata.resignationReasons.map(r => '<option value="' + escapeHtml(r) + '">' + escapeHtml(r) + '</option>').join('');
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function loadEstablishmentSummary() {
+  try {
+    const res = await fetch('/api/establishment/summary', {
+      headers: { Authorization: 'Bearer ' + token() },
+    });
+    if (!res.ok) return;
+    const s = await res.json();
+
+    document.getElementById('estSummaryTotal').textContent = s.last30Days || 0;
+    document.getElementById('estSummaryTransfers').textContent = (s.byType && s.byType.transfer) || 0;
+    document.getElementById('estSummaryRetirements').textContent = (s.byType && s.byType.retirement) || 0;
+    document.getElementById('estSummaryResignations').textContent = (s.byType && s.byType.resignation) || 0;
+
+    const headRes = await fetch('/api/establishment/headcount', {
+      headers: { Authorization: 'Bearer ' + token() },
+    });
+    if (headRes.ok) {
+      const hc = await headRes.json();
+      const under = hc.filter(d => d.status === 'understaffed').length;
+      const over = hc.filter(d => d.status === 'overstaffed').length;
+      document.getElementById('estSummaryUnder').textContent = under;
+      document.getElementById('estSummaryOver').textContent = over;
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// ============================================================
+// ESTABLISHMENT - MOVEMENTS SEARCH AND RENDER
+// ============================================================
+function debouncedEstMovementSearch() {
+  clearTimeout(estSearchTimer);
+  estSearchTimer = setTimeout(runEstMovementSearch, 300);
+}
+
+async function runEstMovementSearch() {
+  const params = new URLSearchParams();
+  const search = document.getElementById('estSearchBox').value.trim();
+  const type = document.getElementById('estFilterType').value;
+  const department = document.getElementById('estFilterDept').value;
+  const from = document.getElementById('estFilterFrom').value;
+  const to = document.getElementById('estFilterTo').value;
+
+  if (search) params.set('search', search);
+  if (type && type !== 'all') params.set('type', type);
+  if (department && department !== 'all') params.set('department', department);
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+
+  try {
+    const res = await fetch('/api/establishment/movements?' + params, {
+      headers: { Authorization: 'Bearer ' + token() },
+    });
+    if (!res.ok) throw new Error('Failed to load movements');
+    allEstMovements = await res.json();
+    renderEstMovements();
+  } catch (e) {
+    document.getElementById('estMovementList').innerHTML = '<p class="error">' + e.message + '</p>';
+  }
+}
+
+function clearEstFilters() {
+  document.getElementById('estSearchBox').value = '';
+  document.getElementById('estFilterType').value = 'all';
+  document.getElementById('estFilterDept').value = 'all';
+  document.getElementById('estFilterFrom').value = '';
+  document.getElementById('estFilterTo').value = '';
+  runEstMovementSearch();
+}
+
+function renderEstMovements() {
+  const el = document.getElementById('estMovementList');
+
+  if (!allEstMovements || allEstMovements.length === 0) {
+    el.innerHTML = '<div class="empty-state">No movements recorded</div>';
+    return;
+  }
+
+  el.innerHTML = '<table class="data-table">' +
+    '<thead><tr>' +
+    '<th>Date</th><th>Employee</th><th>Type</th><th>Details</th><th>Approved By</th>' +
+    '</tr></thead><tbody>' +
+    allEstMovements.map(m => {
+      const date = m.effectiveDate || m.actualDate || m.lastWorkingDay || m.resignationDate || m.createdAt;
+      const empName = m.employee ? m.employee.name : '-';
+
+      let details = '';
+      if (m.movementType === 'transfer') {
+        details = (m.fromDepartment || '?') + ' to ' + (m.toDepartment || '?');
+      } else if (m.movementType === 'retirement') {
+        details = m.yearsOfService ? m.yearsOfService + ' years of service' : 'Retirement';
+        if (m.pensionNotes) details += ' - ' + m.pensionNotes;
+      } else if (m.movementType === 'resignation') {
+        details = m.reason || 'Resignation';
+        if (m.lastWorkingDay) details += ' - Last day: ' + fmtDate(m.lastWorkingDay);
+      }
+
+      const typeCls = {
+        transfer: 'badge-approved',
+        retirement: 'badge-ordered',
+        resignation: 'badge-awaiting_quotation',
+      }[m.movementType] || 'badge-pending';
+
+      return '<tr>' +
+        '<td>' + fmtDate(date) + '</td>' +
+        '<td>' + escapeHtml(empName) + '</td>' +
+        '<td><span class="badge ' + typeCls + '">' + String(m.movementType).toUpperCase() + '</span></td>' +
+        '<td>' + escapeHtml(details) + '</td>' +
+        '<td>' + escapeHtml(m.approvedBy || '-') + '</td>' +
+        '</tr>';
+    }).join('') +
+    '</tbody></table>';
+}
+
+// ============================================================
+// PRINT - ESTABLISHMENT MOVEMENTS
+// ============================================================
+function printMovementsReport() {
+  if (!allEstMovements || allEstMovements.length === 0) {
+    alert('No movements to print. Adjust filters.');
+    return;
+  }
+
+  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
+  const phone = systemSettings.contactPhone || '';
+  const address = systemSettings.contactAddress || '';
+  const now = new Date();
+
+  const filterParts = [];
+  const search = document.getElementById('estSearchBox').value.trim();
+  const type = document.getElementById('estFilterType').value;
+  const department = document.getElementById('estFilterDept').value;
+  const from = document.getElementById('estFilterFrom').value;
+  const to = document.getElementById('estFilterTo').value;
+
+  if (search) filterParts.push('Search="' + search + '"');
+  if (type && type !== 'all') filterParts.push('Type=' + type);
+  if (department && department !== 'all') filterParts.push('Department=' + department);
+  if (from) filterParts.push('From=' + from);
+  if (to) filterParts.push('To=' + to);
+
+  const filterLine = filterParts.length > 0
+    ? 'Filters: ' + filterParts.join(', ')
+    : 'Filters: none (all movements)';
+
+  let html = '<div class="print-page a4">';
+  html += '<div class="print-header">';
+  html += '<h1>' + escapeHtml(hospitalName) + '</h1>';
+  html += '<h2>Establishment - Movement Report</h2>';
+  html += '</div>';
+
+  if (phone || address) {
+    html += '<div class="print-contact">';
+    if (address) html += '<p>' + escapeHtml(address) + '</p>';
+    if (phone) html += '<p>Tel: ' + escapeHtml(phone) + '</p>';
+    html += '</div>';
+  }
+
+  html += '<div class="print-meta">';
+  html += '<p><strong>Total Movements:</strong> ' + allEstMovements.length + '</p>';
+  html += '<p><strong>Report Generated:</strong> ' + fmtDateTime(now) + '</p>';
+  html += '<p style="grid-column: span 2;"><strong>' + escapeHtml(filterLine) + '</strong></p>';
+  html += '</div>';
+
+  html += '<table class="print-table">';
+  html += '<thead><tr>';
+  html += '<th>#</th><th>Date</th><th>Employee</th><th>Type</th><th>Details</th><th>Approved By</th>';
+  html += '</tr></thead><tbody>';
+
+  allEstMovements.forEach((m, i) => {
+    const date = m.effectiveDate || m.actualDate || m.lastWorkingDay || m.resignationDate || m.createdAt;
+    const empName = m.employee ? m.employee.name : '-';
+
+    let details = '';
+    if (m.movementType === 'transfer') {
+      details = (m.fromDepartment || '?') + ' to ' + (m.toDepartment || '?');
+    } else if (m.movementType === 'retirement') {
+      details = m.yearsOfService ? m.yearsOfService + ' years of service' : 'Retirement';
+    } else if (m.movementType === 'resignation') {
+      details = m.reason || 'Resignation';
+    }
+
+    html += '<tr>';
+    html += '<td>' + (i + 1) + '</td>';
+    html += '<td>' + fmtDate(date) + '</td>';
+    html += '<td>' + escapeHtml(empName) + '</td>';
+    html += '<td>' + String(m.movementType || '').toUpperCase() + '</td>';
+    html += '<td>' + escapeHtml(details) + '</td>';
+    html += '<td>' + escapeHtml(m.approvedBy || '-') + '</td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  html += '<div class="print-footer">';
+  html += escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now);
+  html += '</div>';
+  html += '</div>';
+
+  document.getElementById('printArea').innerHTML = html;
+  setTimeout(() => window.print(), 200);
+}
+
+// ============================================================
+// ESTABLISHMENT - DROPDOWNS
+// ============================================================
+async function populateEstDropdowns() {
+  try {
+    const res = await fetch('/api/employees', {
+      headers: { Authorization: 'Bearer ' + token() },
+    });
+    if (!res.ok) return;
+    const employees = await res.json();
+
+    const options = employees.map(e =>
+      '<option value="' + e.id + '">' + escapeHtml(e.name) + ' - ' + escapeHtml(e.department) + '</option>'
+    ).join('');
+
+    const transferSel = document.getElementById('estTransferEmployee');
+    if (transferSel) transferSel.innerHTML = '<option value="">-- Choose employee --</option>' + options;
+
+    const retirementSel = document.getElementById('estRetirementEmployee');
+    if (retirementSel) retirementSel.innerHTML = '<option value="">-- Choose employee --</option>' + options;
+
+    const resignationSel = document.getElementById('estResignationEmployee');
+    if (resignationSel) resignationSel.innerHTML = '<option value="">-- Choose employee --</option>' + options;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// ============================================================
+// ESTABLISHMENT - TRANSFER MODAL
+// ============================================================
+function openTransferModal() {
+  document.getElementById('estTransferEmployee').value = '';
+  document.getElementById('estTransferCurrentInfo').textContent = '';
+  document.getElementById('estTransferToDept').value = 'Medical';
+  document.getElementById('estTransferToWard').value = '';
+  document.getElementById('estTransferEffectiveDate').value = toInputDate(new Date());
+  document.getElementById('estTransferReason').value = '';
+  document.getElementById('estTransferNotes').value = '';
+  document.getElementById('estTransferMessage').innerHTML = '';
+
+  document.getElementById('estTransferModal').classList.add('active');
+  document.getElementById('modalBackdrop').classList.add('active');
+}
+
+function closeTransferModal() {
+  document.getElementById('estTransferModal').classList.remove('active');
+  document.getElementById('modalBackdrop').classList.remove('active');
+}
+
+function onTransferEmployeeChange() {
+  const id = parseInt(document.getElementById('estTransferEmployee').value);
+  if (!id) {
+    document.getElementById('estTransferCurrentInfo').textContent = '';
+    return;
+  }
+  const emp = allEmployees.find(e => e.id === id);
+  if (emp) {
+    const ward = emp.ward ? emp.ward.name : '-';
+    document.getElementById('estTransferCurrentInfo').textContent =
+      'Currently: ' + emp.department + ' - ' + (emp.role || '-') + ' - Ward ' + ward;
+  }
+}
+
+async function submitTransfer() {
+  const msg = document.getElementById('estTransferMessage');
+  const employeeId = document.getElementById('estTransferEmployee').value;
+  const toDepartment = document.getElementById('estTransferToDept').value;
+  const toWardId = document.getElementById('estTransferToWard').value;
+  const effectiveDate = document.getElementById('estTransferEffectiveDate').value;
+  const reason = document.getElementById('estTransferReason').value.trim();
+  const notes = document.getElementById('estTransferNotes').value.trim();
+
+  if (!employeeId || !toDepartment || !effectiveDate) {
+    msg.innerHTML = '<div class="error">Employee, department, and effective date are required</div>';
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/establishment/transfer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() },
+      body: JSON.stringify({
+        employeeId: parseInt(employeeId),
+        toDepartment,
+        toWardId: toWardId ? parseInt(toWardId) : null,
+        effectiveDate,
+        reason: reason || 'Transfer',
+        notes,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    msg.innerHTML = '<div class="success">Transfer recorded</div>';
+    setTimeout(() => {
+      closeTransferModal();
+      loadEstablishmentSummary();
+      runEstMovementSearch();
+      runStaffSearch();
+      populateEstDropdowns();
+    }, 900);
+  } catch (e) {
+    msg.innerHTML = '<div class="error">' + e.message + '</div>';
+  }
+}
+
+// ============================================================
+// ESTABLISHMENT - RETIREMENT MODAL
+// ============================================================
+function openRetirementModal() {
+  document.getElementById('estRetirementEmployee').value = '';
+  document.getElementById('estRetirementCurrentInfo').textContent = '';
+  document.getElementById('estRetirementPlannedDate').value = '';
+  document.getElementById('estRetirementActualDate').value = '';
+  document.getElementById('estRetirementPension').value = '';
+  document.getElementById('estRetirementNotes').value = '';
+  document.getElementById('estRetirementConfirm').checked = false;
+  document.getElementById('estRetirementMessage').innerHTML = '';
+
+  document.getElementById('estRetirementModal').classList.add('active');
+  document.getElementById('modalBackdrop').classList.add('active');
+}
+
+function closeRetirementModal() {
+  document.getElementById('estRetirementModal').classList.remove('active');
+  document.getElementById('modalBackdrop').classList.remove('active');
+}
+
+function onRetirementEmployeeChange() {
+  const id = parseInt(document.getElementById('estRetirementEmployee').value);
+  if (!id) {
+    document.getElementById('estRetirementCurrentInfo').textContent = '';
+    return;
+  }
+  const emp = allEmployees.find(e => e.id === id);
+  if (emp) {
+    const hire = emp.hireDate ? fmtDate(emp.hireDate) : '-';
+    const years = emp.hireDate
+      ? Math.floor((new Date() - new Date(emp.hireDate)) / (1000 * 60 * 60 * 24 * 365.25))
+      : 0;
+    document.getElementById('estRetirementCurrentInfo').textContent =
+      emp.department + ' - ' + (emp.role || '-') + ' - Hired ' + hire + ' (' + years + ' years)';
+  }
+}
+
+async function submitRetirement() {
+  const msg = document.getElementById('estRetirementMessage');
+  const employeeId = document.getElementById('estRetirementEmployee').value;
+  const plannedDate = document.getElementById('estRetirementPlannedDate').value;
+  const actualDate = document.getElementById('estRetirementActualDate').value;
+  const pensionNotes = document.getElementById('estRetirementPension').value.trim();
+  const notes = document.getElementById('estRetirementNotes').value.trim();
+  const confirmed = document.getElementById('estRetirementConfirm').checked;
+
+  if (!employeeId) {
+    msg.innerHTML = '<div class="error">Employee is required</div>';
+    return;
+  }
+  if (!confirmed) {
+    msg.innerHTML = '<div class="error">Please confirm the retirement action</div>';
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/establishment/retirement', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() },
+      body: JSON.stringify({
+        employeeId: parseInt(employeeId),
+        plannedDate: plannedDate || null,
+        actualDate: actualDate || null,
+        pensionNotes,
+        notes,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    msg.innerHTML = '<div class="success">Retirement recorded</div>';
+    setTimeout(() => {
+      closeRetirementModal();
+      loadEstablishmentSummary();
+      runEstMovementSearch();
+      runStaffSearch();
+      populateEstDropdowns();
+    }, 900);
+  } catch (e) {
+    msg.innerHTML = '<div class="error">' + e.message + '</div>';
+  }
+}
+
+// ============================================================
+// ESTABLISHMENT - RESIGNATION MODAL
+// ============================================================
+function openResignationModal() {
+  document.getElementById('estResignationEmployee').value = '';
+  document.getElementById('estResignationCurrentInfo').textContent = '';
+  document.getElementById('estResignationDate').value = toInputDate(new Date());
+  document.getElementById('estResignationLastDay').value = '';
+  document.getElementById('estResignationNotice').value = '30';
+  document.getElementById('estResignationReason').value = '';
+  document.getElementById('estResignationExitInterview').checked = false;
+  document.getElementById('estResignationRehire').checked = false;
+  document.getElementById('estResignationNotes').value = '';
+  document.getElementById('estResignationConfirm').checked = false;
+  document.getElementById('estResignationMessage').innerHTML = '';
+
+  document.getElementById('estResignationModal').classList.add('active');
+  document.getElementById('modalBackdrop').classList.add('active');
+}
+
+function closeResignationModal() {
+  document.getElementById('estResignationModal').classList.remove('active');
+  document.getElementById('modalBackdrop').classList.remove('active');
+}
+
+function onResignationEmployeeChange() {
+  const id = parseInt(document.getElementById('estResignationEmployee').value);
+  if (!id) {
+    document.getElementById('estResignationCurrentInfo').textContent = '';
+    return;
+  }
+  const emp = allEmployees.find(e => e.id === id);
+  if (emp) {
+    document.getElementById('estResignationCurrentInfo').textContent =
+      emp.department + ' - ' + (emp.role || '-');
+  }
+}
+
+async function submitResignation() {
+  const msg = document.getElementById('estResignationMessage');
+  const employeeId = document.getElementById('estResignationEmployee').value;
+  const resignationDate = document.getElementById('estResignationDate').value;
+  const lastWorkingDay = document.getElementById('estResignationLastDay').value;
+  const noticePeriodDays = document.getElementById('estResignationNotice').value;
+  const reason = document.getElementById('estResignationReason').value;
+  const exitInterviewDone = document.getElementById('estResignationExitInterview').checked;
+  const eligibleForRehire = document.getElementById('estResignationRehire').checked;
+  const notes = document.getElementById('estResignationNotes').value.trim();
+  const confirmed = document.getElementById('estResignationConfirm').checked;
+
+  if (!employeeId || !resignationDate || !lastWorkingDay) {
+    msg.innerHTML = '<div class="error">Employee, resignation date, and last working day are required</div>';
+    return;
+  }
+  if (!confirmed) {
+    msg.innerHTML = '<div class="error">Please confirm the resignation action</div>';
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/establishment/resignation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() },
+      body: JSON.stringify({
+        employeeId: parseInt(employeeId),
+        resignationDate,
+        lastWorkingDay,
+        noticePeriodDays: noticePeriodDays ? parseInt(noticePeriodDays) : null,
+        reason,
+        exitInterviewDone,
+        eligibleForRehire,
+        notes,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    msg.innerHTML = '<div class="success">Resignation recorded</div>';
+    setTimeout(() => {
+      closeResignationModal();
+      loadEstablishmentSummary();
+      runEstMovementSearch();
+      runStaffSearch();
+      populateEstDropdowns();
+    }, 900);
+  } catch (e) {
+    msg.innerHTML = '<div class="error">' + e.message + '</div>';
+  }
+}
+
+// ============================================================
+// ESTABLISHMENT - HEADCOUNT SETTINGS
+// ============================================================
+async function openHeadcountModal() {
+  document.getElementById('estHeadcountModal').classList.add('active');
+  document.getElementById('modalBackdrop').classList.add('active');
+  await loadHeadcountSettings();
+}
+
+function closeHeadcountModal() {
+  document.getElementById('estHeadcountModal').classList.remove('active');
+  document.getElementById('modalBackdrop').classList.remove('active');
+}
+
+async function loadHeadcountSettings() {
+  const el = document.getElementById('estHeadcountList');
+  if (!el) return;
+
+  try {
+    const targetsRes = await fetch('/api/establishment/targets', { headers: { Authorization: 'Bearer ' + token() } });
+    const headRes = await fetch('/api/establishment/headcount', { headers: { Authorization: 'Bearer ' + token() } });
+
+    const targets = targetsRes.ok ? await targetsRes.json() : [];
+    const headcounts = headRes.ok ? await headRes.json() : [];
+
+    const map = {};
+    headcounts.forEach(h => {
+      map[h.department] = { current: h.current, status: h.status };
+    });
+    targets.forEach(t => {
+      if (!map[t.department]) map[t.department] = { current: 0, status: 'no_target' };
+      map[t.department].min = t.minHeadcount;
+      map[t.department].max = t.maxHeadcount;
+    });
+
+    const allDepts = ['Medical', 'Nurses', 'Pharmacy', 'Laboratory', 'Admin', 'Support', 'Maintenance', 'Security'];
+    allDepts.forEach(d => {
+      if (!map[d]) map[d] = { current: 0, status: 'no_target' };
+    });
+
+    el.innerHTML = '<table class="data-table">' +
+      '<thead><tr><th>Department</th><th>Current</th><th>Min</th><th>Max</th><th>Status</th><th>Action</th></tr></thead><tbody>' +
+      Object.keys(map).sort().map(dept => {
+        const d = map[dept];
+        const statusCls = {
+          understaffed: 'status-critical',
+          overstaffed: 'status-low',
+          adequate: 'status-ok',
+          no_target: 'status-terminated',
+        }[d.status] || 'status-terminated';
+
+        const minVal = d.min !== undefined ? d.min : '';
+        const maxVal = (d.max !== undefined && d.max !== null) ? d.max : '';
+
+        return '<tr>' +
+          '<td>' + escapeHtml(dept) + '</td>' +
+          '<td><strong>' + d.current + '</strong></td>' +
+          '<td><input type="number" id="hc-min-' + dept + '" value="' + minVal + '" style="width:80px; min-height:32px; padding:4px 8px;" min="0"></td>' +
+          '<td><input type="number" id="hc-max-' + dept + '" value="' + maxVal + '" style="width:80px; min-height:32px; padding:4px 8px;" min="0"></td>' +
+          '<td><span class="status-pill ' + statusCls + '">' + escapeHtml(d.status.replace('_', ' ')) + '</span></td>' +
+          '<td><button class="pill-btn" onclick="saveHeadcountTarget(\'' + dept + '\')">Save</button></td>' +
+          '</tr>';
+      }).join('') +
+      '</tbody></table>';
+  } catch (e) {
+    el.innerHTML = '<p class="error">' + e.message + '</p>';
+  }
+}
+
+async function saveHeadcountTarget(department) {
+  const minInput = document.getElementById('hc-min-' + department);
+  const maxInput = document.getElementById('hc-max-' + department);
+
+  const minHeadcount = minInput ? minInput.value : '';
+  const maxHeadcount = maxInput ? maxInput.value : '';
+
+  if (minHeadcount === '' || isNaN(parseInt(minHeadcount))) {
+    alert('Minimum headcount is required');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/establishment/targets/' + encodeURIComponent(department), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() },
+      body: JSON.stringify({
+        minHeadcount: parseInt(minHeadcount),
+        maxHeadcount: maxHeadcount ? parseInt(maxHeadcount) : null,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    await loadHeadcountSettings();
+    await loadEstablishmentSummary();
   } catch (e) {
     alert(e.message);
   }

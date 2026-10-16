@@ -27,28 +27,28 @@
   <div class="toast" id="toast"></div>
 
   <div class="stats">
-    <div class="stat admitted" onclick="openPatientModal('admitted')" title="Click to view patients">
+    <div class="stat admitted" onclick="openDetailModal('patients', 'admitted')" title="Click to view patients">
       <div>
         <span class="n" id="countAdmitted">0</span>
         <span class="pct" id="pctAdmitted">0%</span>
       </div>
       <div class="l">Admitted</div>
     </div>
-    <div class="stat treatment" onclick="openPatientModal('treatment')" title="Click to view patients">
+    <div class="stat treatment" onclick="openDetailModal('patients', 'treatment')" title="Click to view patients">
       <div>
         <span class="n" id="countTreatment">0</span>
         <span class="pct" id="pctTreatment">0%</span>
       </div>
       <div class="l">In Treatment</div>
     </div>
-    <div class="stat discharged" onclick="openPatientModal('discharged')" title="Click to view patients">
+    <div class="stat discharged" onclick="openDetailModal('patients', 'discharged')" title="Click to view patients">
       <div>
         <span class="n" id="countDischarged">0</span>
         <span class="pct" id="pctDischarged">0%</span>
       </div>
       <div class="l">Discharged</div>
     </div>
-    <div class="stat deceased" onclick="openPatientModal('deceased')" title="Click to view patients">
+    <div class="stat deceased" onclick="openDetailModal('patients', 'deceased')" title="Click to view patients">
       <div>
         <span class="n" id="countDeceased">0</span>
         <span class="pct" id="pctDeceased">0%</span>
@@ -70,6 +70,7 @@
 
   <div class="public-widgets">
 
+    <!-- PATIENTS WIDGET -->
     <div class="widget" id="patientsWidget">
       <div class="widget-head">
         <div>
@@ -88,11 +89,11 @@
         <label>To: <input type="date" id="patientsTo" onchange="onCustomDateChange('patients')"></label>
       </div>
       <div class="widget-row">
-        <div class="widget-stat admitted">
+        <div class="widget-stat admitted" onclick="openDetailModal('patients', 'admitted')" title="Click to view">
           <div class="widget-number" id="todayAdmitted">-</div>
           <div class="widget-label">Admitted</div>
         </div>
-        <div class="widget-stat discharged">
+        <div class="widget-stat discharged" onclick="openDetailModal('patients', 'discharged')" title="Click to view">
           <div class="widget-number" id="todayDischarged">-</div>
           <div class="widget-label">Discharged</div>
         </div>
@@ -100,13 +101,14 @@
           <div class="widget-number" id="todayFollowups">-</div>
           <div class="widget-label">Follow-ups Due</div>
         </div>
-        <div class="widget-stat deaths">
+        <div class="widget-stat deaths" onclick="openDetailModal('patients', 'deceased')" title="Click to view">
           <div class="widget-number" id="todayDeaths">-</div>
           <div class="widget-label">Deaths</div>
         </div>
       </div>
     </div>
 
+    <!-- TENDER WIDGET -->
     <div class="widget" id="tenderWidget">
       <div class="widget-head">
         <div>
@@ -125,25 +127,26 @@
         <label>To: <input type="date" id="tenderTo" onchange="onCustomDateChange('tender')"></label>
       </div>
       <div class="widget-row">
-        <div class="widget-stat pending">
+        <div class="widget-stat pending" onclick="openDetailModal('tenders', 'pending')" title="Click to view">
           <div class="widget-number" id="tenderPending">-</div>
           <div class="widget-label">Pending</div>
         </div>
-        <div class="widget-stat awaiting">
+        <div class="widget-stat awaiting" onclick="openDetailModal('tenders', 'awaiting_quotation')" title="Click to view">
           <div class="widget-number" id="tenderAwaiting">-</div>
           <div class="widget-label">Awaiting Quote</div>
         </div>
-        <div class="widget-stat ordered">
+        <div class="widget-stat ordered" onclick="openDetailModal('tenders', 'ordered')" title="Click to view">
           <div class="widget-number" id="tenderOrdered">-</div>
           <div class="widget-label">Ordered</div>
         </div>
-        <div class="widget-stat received">
+        <div class="widget-stat received" onclick="openDetailModal('tenders', 'received')" title="Click to view">
           <div class="widget-number" id="tenderReceived">-</div>
           <div class="widget-label">Received</div>
         </div>
       </div>
     </div>
 
+    <!-- DISCIPLINARY WIDGET -->
     <div class="widget" id="disciplinaryWidget">
       <div class="widget-head">
         <div>
@@ -162,30 +165,120 @@
         <label>To: <input type="date" id="discTo" onchange="onCustomDateChange('disc')"></label>
       </div>
       <div class="widget-row">
-        <div class="widget-stat disc-open">
+        <div class="widget-stat disc-open" onclick="openDetailModal('discipline', 'open')" title="Click to view">
           <div class="widget-number" id="discOpen">-</div>
           <div class="widget-label">Open</div>
         </div>
-        <div class="widget-stat disc-investigation">
+        <div class="widget-stat disc-investigation" onclick="openDetailModal('discipline', 'under_investigation')" title="Click to view">
           <div class="widget-number" id="discInvestigation">-</div>
           <div class="widget-label">Investigating</div>
         </div>
-        <div class="widget-stat disc-resolved">
+        <div class="widget-stat disc-resolved" onclick="openDetailModal('discipline', 'resolved')" title="Click to view">
           <div class="widget-number" id="discResolved">-</div>
           <div class="widget-label">Resolved</div>
         </div>
-        <div class="widget-stat disc-dismissed">
+        <div class="widget-stat disc-dismissed" onclick="openDetailModal('discipline', 'dismissed')" title="Click to view">
           <div class="widget-number" id="discDismissed">-</div>
           <div class="widget-label">Dismissed</div>
         </div>
-        <div class="widget-stat disc-total">
+        <div class="widget-stat disc-total" onclick="openDetailModal('discipline', 'total')" title="Click to view">
           <div class="widget-number" id="discTotal">-</div>
           <div class="widget-label">Total</div>
         </div>
       </div>
-      <div class="widget-recent">
-        <div style="font-size:11px; font-weight:700; text-transform:uppercase; color: var(--board-muted); margin-bottom:8px; letter-spacing:0.5px;">Recent Cases</div>
-        <div id="discRecentList"></div>
+      <div class="widget-recent" id="discRecentSection">
+        <div class="widget-recent-toggle" onclick="toggleWidgetRecent('discRecentSection')">
+          Recent Cases
+        </div>
+        <div class="widget-recent-content" id="discRecentList"></div>
+      </div>
+    </div>
+
+    <!-- ESTABLISHMENT WIDGET -->
+    <div class="widget" id="establishmentWidget">
+      <div class="widget-head">
+        <div>
+          <h3>Establishment</h3>
+          <div class="widget-caption" id="estCaption">-</div>
+        </div>
+      </div>
+      <div class="widget-range" id="estRange">
+        <button class="range-btn active" data-range="today" onclick="setWidgetRange('est', 'today')">Today</button>
+        <button class="range-btn" data-range="week" onclick="setWidgetRange('est', 'week')">This Week</button>
+        <button class="range-btn" data-range="month" onclick="setWidgetRange('est', 'month')">This Month</button>
+        <button class="range-btn" data-range="custom" onclick="setWidgetRange('est', 'custom')">Custom</button>
+      </div>
+      <div class="widget-custom" id="estCustom" style="display:none;">
+        <label>From: <input type="date" id="estFrom" onchange="onCustomDateChange('est')"></label>
+        <label>To: <input type="date" id="estTo" onchange="onCustomDateChange('est')"></label>
+      </div>
+      <div class="widget-row">
+        <div class="widget-stat est-transfer" onclick="openDetailModal('establishment', 'transfer')" title="Click to view">
+          <div class="widget-number" id="estTransfers">-</div>
+          <div class="widget-label">Transfers</div>
+        </div>
+        <div class="widget-stat est-retirement" onclick="openDetailModal('establishment', 'retirement')" title="Click to view">
+          <div class="widget-number" id="estRetirements">-</div>
+          <div class="widget-label">Retirements</div>
+        </div>
+        <div class="widget-stat est-resignation" onclick="openDetailModal('establishment', 'resignation')" title="Click to view">
+          <div class="widget-number" id="estResignations">-</div>
+          <div class="widget-label">Resignations</div>
+        </div>
+        <div class="widget-stat est-under" onclick="openDetailModal('establishment', 'understaffed')" title="Click to view">
+          <div class="widget-number" id="estUnderstaffed">-</div>
+          <div class="widget-label">Understaffed</div>
+        </div>
+        <div class="widget-stat est-over" onclick="openDetailModal('establishment', 'overstaffed')" title="Click to view">
+          <div class="widget-number" id="estOverstaffed">-</div>
+          <div class="widget-label">Overstaffed</div>
+        </div>
+      </div>
+      <div class="widget-recent" id="estDeptListSection">
+        <div class="widget-recent-toggle" onclick="toggleWidgetRecent('estDeptListSection')">
+          Departments at Risk
+        </div>
+        <div class="widget-recent-content" id="estDeptList"></div>
+      </div>
+    </div>
+
+    <!-- PROJECTS WIDGET -->
+    <div class="widget" id="projectsWidget">
+      <div class="widget-head">
+        <div>
+          <h3>Projects</h3>
+          <div class="widget-caption" id="projectsCaption">-</div>
+        </div>
+      </div>
+      <div class="widget-range" id="projectsRange">
+        <button class="range-btn active" data-range="today" onclick="setWidgetRange('projects', 'today')">Today</button>
+        <button class="range-btn" data-range="week" onclick="setWidgetRange('projects', 'week')">This Week</button>
+        <button class="range-btn" data-range="month" onclick="setWidgetRange('projects', 'month')">This Month</button>
+        <button class="range-btn" data-range="custom" onclick="setWidgetRange('projects', 'custom')">Custom</button>
+      </div>
+      <div class="widget-custom" id="projectsCustom" style="display:none;">
+        <label>From: <input type="date" id="projectsFrom" onchange="onCustomDateChange('projects')"></label>
+        <label>To: <input type="date" id="projectsTo" onchange="onCustomDateChange('projects')"></label>
+      </div>
+      <div class="widget-row">
+        <div class="widget-stat proj-ongoing" onclick="openDetailModal('projects', 'ongoing')" title="Click to view">
+          <div class="widget-number" id="projectsOngoing">-</div>
+          <div class="widget-label">Ongoing</div>
+        </div>
+        <div class="widget-stat proj-pending" onclick="openDetailModal('projects', 'pending')" title="Click to view">
+          <div class="widget-number" id="projectsPending">-</div>
+          <div class="widget-label">Pending</div>
+        </div>
+        <div class="widget-stat proj-completed" onclick="openDetailModal('projects', 'completed')" title="Click to view">
+          <div class="widget-number" id="projectsCompleted">-</div>
+          <div class="widget-label">Completed</div>
+        </div>
+      </div>
+      <div class="widget-recent" id="projectsRecentSection">
+        <div class="widget-recent-toggle" onclick="toggleWidgetRecent('projectsRecentSection')">
+          Recent Updates
+        </div>
+        <div class="widget-recent-content" id="projectsRecentList"></div>
       </div>
     </div>
 
@@ -228,20 +321,18 @@
     Live data from database via REST and Socket.io - real-time updates enabled
   </div>
 
-  <!-- ============================================================
-       PATIENT MODAL
-       ============================================================ -->
-  <div id="patientModalBackdrop" class="patient-modal-backdrop" onclick="closePatientModal()"></div>
-  <div id="patientModal" class="patient-modal">
+  <!-- GENERIC DETAIL MODAL -->
+  <div id="detailModalBackdrop" class="patient-modal-backdrop" onclick="closeDetailModal()"></div>
+  <div id="detailModal" class="patient-modal">
     <div class="patient-modal-head">
       <div>
-        <h3 id="patientModalTitle">Patients</h3>
-        <span class="modal-count" id="patientModalCount"></span>
+        <h3 id="detailModalTitle">Details</h3>
+        <span class="modal-count" id="detailModalCount"></span>
       </div>
-      <button class="patient-modal-close" onclick="closePatientModal()" aria-label="Close">x</button>
+      <button class="patient-modal-close" onclick="closeDetailModal()" aria-label="Close">x</button>
     </div>
     <div class="patient-modal-body">
-      <div id="patientModalList" class="patient-modal-list"></div>
+      <div id="detailModalList" class="patient-modal-list"></div>
     </div>
     <div class="patient-modal-footer">Press ESC or click outside to close</div>
   </div>
@@ -250,12 +341,6 @@
 <script>
 const API_BASE = "";
 const AUTH_TOKEN = localStorage.getItem("token") || "";
-
-// ============================================================
-// STATE
-// ============================================================
-let patientBoardCache = [];
-let patientModalStatus = null;
 
 // ============================================================
 // THEME
@@ -325,6 +410,8 @@ const widgetState = {
   patients: { range: "today", from: null, to: null },
   tender: { range: "today", from: null, to: null },
   disc: { range: "today", from: null, to: null },
+  est: { range: "today", from: null, to: null },
+  projects: { range: "today", from: null, to: null },
 };
 
 function computeRange(preset, customFrom, customTo) {
@@ -363,14 +450,10 @@ function computeRange(preset, customFrom, customTo) {
 
 function loadWidgetStateFromStorage() {
   try {
-    const p = localStorage.getItem("mushamumwe_widget_patients");
-    if (p) widgetState.patients = JSON.parse(p);
-
-    const t = localStorage.getItem("mushamumwe_widget_tender");
-    if (t) widgetState.tender = JSON.parse(t);
-
-    const d = localStorage.getItem("mushamumwe_widget_disc");
-    if (d) widgetState.disc = JSON.parse(d);
+    ["patients", "tender", "disc", "est", "projects"].forEach(type => {
+      const raw = localStorage.getItem("mushamumwe_widget_" + type);
+      if (raw) widgetState[type] = JSON.parse(raw);
+    });
   } catch (e) {
     console.error("Failed to load widget state:", e);
   }
@@ -391,7 +474,6 @@ async function loadTodaySummary() {
   try {
     const state = widgetState.patients;
     const { from, to } = computeRange(state.range, state.from, state.to);
-
     const params = new URLSearchParams();
     params.set("from", toInputDate(from));
     params.set("to", toInputDate(to));
@@ -404,9 +486,7 @@ async function loadTodaySummary() {
     document.getElementById("todayDischarged").textContent = data.dischargedToday ?? "-";
     document.getElementById("todayFollowups").textContent = data.followUpsDueToday ?? "-";
     document.getElementById("todayDeaths").textContent = data.deathsToday ?? "-";
-
-    document.getElementById("patientsCaption").textContent =
-      fmtDateShort(from) + " - " + fmtDateShort(to);
+    document.getElementById("patientsCaption").textContent = fmtDateShort(from) + " - " + fmtDateShort(to);
   } catch (e) {
     console.error("Failed to load today summary:", e);
   }
@@ -416,7 +496,6 @@ async function loadTenderActivity() {
   try {
     const state = widgetState.tender;
     const { from, to } = computeRange(state.range, state.from, state.to);
-
     const params = new URLSearchParams();
     params.set("from", toInputDate(from));
     params.set("to", toInputDate(to));
@@ -429,9 +508,7 @@ async function loadTenderActivity() {
     document.getElementById("tenderAwaiting").textContent = data.awaitingQuotation ?? "-";
     document.getElementById("tenderOrdered").textContent = data.ordered ?? "-";
     document.getElementById("tenderReceived").textContent = data.received ?? "-";
-
-    document.getElementById("tenderCaption").textContent =
-      fmtDateShort(from) + " - " + fmtDateShort(to);
+    document.getElementById("tenderCaption").textContent = fmtDateShort(from) + " - " + fmtDateShort(to);
   } catch (e) {
     console.error("Failed to load tender activity:", e);
   }
@@ -441,7 +518,6 @@ async function loadDisciplinarySummary() {
   try {
     const state = widgetState.disc;
     const { from, to } = computeRange(state.range, state.from, state.to);
-
     const params = new URLSearchParams();
     params.set("from", toInputDate(from));
     params.set("to", toInputDate(to));
@@ -455,9 +531,7 @@ async function loadDisciplinarySummary() {
     document.getElementById("discResolved").textContent = data.byStatus.resolved || 0;
     document.getElementById("discDismissed").textContent = data.byStatus.dismissed || 0;
     document.getElementById("discTotal").textContent = data.total || 0;
-
-    document.getElementById("discCaption").textContent =
-      fmtDateShort(from) + " - " + fmtDateShort(to);
+    document.getElementById("discCaption").textContent = fmtDateShort(from) + " - " + fmtDateShort(to);
 
     const list = document.getElementById("discRecentList");
     if (!data.recent || data.recent.length === 0) {
@@ -485,6 +559,105 @@ async function loadDisciplinarySummary() {
   }
 }
 
+async function loadEstablishmentSummary() {
+  try {
+    const state = widgetState.est;
+    const { from, to } = computeRange(state.range, state.from, state.to);
+    const params = new URLSearchParams();
+    params.set("from", toInputDate(from));
+    params.set("to", toInputDate(to));
+
+    const sumRes = await fetch("/api/establishment/summary-public?" + params);
+    const headRes = await fetch("/api/establishment/headcount-public");
+    if (!sumRes.ok) return;
+    const summary = await sumRes.json();
+
+    document.getElementById("estTransfers").textContent = summary.transfers ?? 0;
+    document.getElementById("estRetirements").textContent = summary.retirements ?? 0;
+    document.getElementById("estResignations").textContent = summary.resignations ?? 0;
+    document.getElementById("estUnderstaffed").textContent = summary.understaffed ?? 0;
+    document.getElementById("estOverstaffed").textContent = summary.overstaffed ?? 0;
+    document.getElementById("estCaption").textContent = fmtDateShort(from) + " - " + fmtDateShort(to);
+
+    if (headRes.ok) {
+      const headcount = await headRes.json();
+      const atRisk = headcount.filter(d => d.status === "understaffed" || d.status === "overstaffed");
+      const list = document.getElementById("estDeptList");
+      if (atRisk.length === 0) {
+        list.innerHTML = '<p class="muted" style="font-size:11px; text-align:center; padding:8px;">All departments within target</p>';
+      } else {
+        list.innerHTML = atRisk.slice(0, 5).map(d => {
+          const statusLabel = d.status === "understaffed" ? "UNDER" : "OVER";
+          const statusClass = d.status === "understaffed" ? "badge-rejected" : "badge-awaiting_quotation";
+          const targetText = d.max ? d.current + "/" + d.min + "-" + d.max : d.current + "/min " + d.min;
+          return '<div class="disc-recent-item">' +
+            '<div class="disc-recent-head">' +
+            '<span class="disc-recent-case">' + escapeHtml(d.department) + '</span>' +
+            '<span class="badge ' + statusClass + '" style="font-size:9px; padding:2px 8px;">' + statusLabel + '</span>' +
+            '</div>' +
+            '<div class="disc-recent-body">' +
+            '<span>Current / Target</span>' +
+            '<span class="disc-recent-days">' + targetText + '</span>' +
+            '</div>' +
+            '</div>';
+        }).join("");
+      }
+    }
+  } catch (e) {
+    console.error("Failed to load establishment summary:", e);
+  }
+}
+
+async function loadProjectsSummary() {
+  try {
+    const state = widgetState.projects;
+    const { from, to } = computeRange(state.range, state.from, state.to);
+    const params = new URLSearchParams();
+    params.set("from", toInputDate(from));
+    params.set("to", toInputDate(to));
+
+    const res = await fetch("/api/projects/summary-public?" + params);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    document.getElementById("projectsOngoing").textContent = (data.byStatus && data.byStatus.ongoing) || 0;
+    document.getElementById("projectsPending").textContent = (data.byStatus && data.byStatus.pending) || 0;
+    document.getElementById("projectsCompleted").textContent = (data.byStatus && data.byStatus.completed) || 0;
+    document.getElementById("projectsCaption").textContent = fmtDateShort(from) + " - " + fmtDateShort(to);
+
+    const list = document.getElementById("projectsRecentList");
+    if (!data.recent || data.recent.length === 0) {
+      list.innerHTML = '<p class="muted" style="font-size:11px; text-align:center; padding:8px;">No project activity in this range</p>';
+    } else {
+      list.innerHTML = data.recent.map(p => {
+        const statusClass = p.status === "ongoing" ? "badge-approved" : p.status === "pending" ? "badge-rejected" : "badge-received";
+        const daysAgo = Math.floor((new Date() - new Date(p.updatedAt)) / (1000 * 60 * 60 * 24));
+        const daysLabel = daysAgo === 0 ? "today" : daysAgo === 1 ? "1 day ago" : daysAgo + " days ago";
+        return '<div class="disc-recent-item">' +
+          '<div class="disc-recent-head">' +
+          '<span class="disc-recent-case">' + escapeHtml(p.name) + '</span>' +
+          '<span class="badge ' + statusClass + '" style="font-size:9px; padding:2px 8px;">' + p.status.toUpperCase() + '</span>' +
+          '</div>' +
+          '<div class="disc-recent-body">' +
+          '<span>' + escapeHtml(p.department) + '</span>' +
+          '<span class="disc-recent-days">' + daysLabel + '</span>' +
+          '</div>' +
+          '</div>';
+      }).join("");
+    }
+  } catch (e) {
+    console.error("Failed to load projects summary:", e);
+  }
+}
+
+// ============================================================
+// COLLAPSIBLE RECENT LIST
+// ============================================================
+function toggleWidgetRecent(sectionId) {
+  const el = document.getElementById(sectionId);
+  if (el) el.classList.toggle("expanded");
+}
+
 // ============================================================
 // WIDGET CONTROLS
 // ============================================================
@@ -504,9 +677,7 @@ function setWidgetRange(type, range) {
     customEl.style.display = range === "custom" ? "flex" : "none";
   }
 
-  if (type === "patients") loadTodaySummary();
-  else if (type === "tender") loadTenderActivity();
-  else if (type === "disc") loadDisciplinarySummary();
+  reloadWidget(type);
 }
 
 function onCustomDateChange(type) {
@@ -515,14 +686,19 @@ function onCustomDateChange(type) {
   widgetState[type].from = fromEl?.value || null;
   widgetState[type].to = toEl?.value || null;
   saveWidgetState(type);
+  reloadWidget(type);
+}
 
+function reloadWidget(type) {
   if (type === "patients") loadTodaySummary();
   else if (type === "tender") loadTenderActivity();
   else if (type === "disc") loadDisciplinarySummary();
+  else if (type === "est") loadEstablishmentSummary();
+  else if (type === "projects") loadProjectsSummary();
 }
 
 function restoreWidgetUI() {
-  ["patients", "tender", "disc"].forEach(type => {
+  ["patients", "tender", "disc", "est", "projects"].forEach(type => {
     const state = widgetState[type];
     const rangeEl = document.getElementById(type + "Range");
     if (rangeEl) {
@@ -544,20 +720,13 @@ function restoreWidgetUI() {
 }
 
 // ============================================================
-// PATIENT SUMMARY + BOARD CACHE
+// PATIENT SUMMARY (top stat cards)
 // ============================================================
 async function loadPatientSummary() {
   try {
-    const [summaryRes, boardRes] = await Promise.all([
-      fetch("/api/patients/summary"),
-      fetch("/api/patients/board"),
-    ]);
-    if (!summaryRes.ok) throw new Error("summary fetch failed");
-    const summary = await summaryRes.json();
-
-    if (boardRes.ok) {
-      patientBoardCache = await boardRes.json();
-    }
+    const res = await fetch("/api/patients/summary");
+    if (!res.ok) throw new Error("summary fetch failed");
+    const summary = await res.json();
 
     const c = summary.counts;
     const p = summary.percentages;
@@ -581,8 +750,6 @@ async function loadPatientSummary() {
 
     document.getElementById("syncText").textContent = "SYNCED";
     document.getElementById("apiTarget").textContent = "Connected - " + window.location.host;
-
-    if (patientModalStatus) renderPatientModalList();
   } catch (err) {
     document.getElementById("syncText").textContent = "OFFLINE";
     document.getElementById("apiTarget").textContent = "Could not reach API - check server";
@@ -591,54 +758,190 @@ async function loadPatientSummary() {
 }
 
 // ============================================================
-// PATIENT MODAL
+// GENERIC DETAIL MODAL
 // ============================================================
-function openPatientModal(status) {
-  patientModalStatus = status;
+let currentDetailRequest = null;
 
-  const titles = {
+const MODAL_TITLES = {
+  patients: {
     admitted: "Admitted Patients",
     treatment: "Patients In Treatment",
     discharged: "Discharged Patients",
     deceased: "Deceased Patients",
-  };
+  },
+  tenders: {
+    pending: "Pending Tenders",
+    awaiting_quotation: "Tenders Awaiting Quote",
+    ordered: "Ordered Tenders",
+    received: "Received Tenders",
+  },
+  discipline: {
+    open: "Open Cases",
+    under_investigation: "Cases Under Investigation",
+    resolved: "Resolved Cases",
+    dismissed: "Dismissed Cases",
+    total: "All Cases",
+  },
+  establishment: {
+    transfer: "Recent Transfers",
+    retirement: "Recent Retirements",
+    resignation: "Recent Resignations",
+    understaffed: "Understaffed Departments",
+    overstaffed: "Overstaffed Departments",
+  },
+  projects: {
+    ongoing: "Ongoing Projects",
+    pending: "Blocked Projects",
+    completed: "Completed Projects",
+  },
+};
 
-  document.getElementById("patientModalTitle").textContent = titles[status] || "Patients";
-  renderPatientModalList();
+const DETAIL_ENDPOINTS = {
+  patients: "/api/patients/detail-public",
+  tenders: "/api/orders/detail-public",
+  discipline: "/api/disciplinary/detail-public",
+  establishment: "/api/establishment/detail-public",
+  projects: "/api/projects/detail-public",
+};
 
-  document.getElementById("patientModalBackdrop").classList.add("active");
-  document.getElementById("patientModal").classList.add("active");
+const WIDGET_STATE_KEY = {
+  patients: "patients",
+  tenders: "tender",
+  discipline: "disc",
+  establishment: "est",
+  projects: "projects",
+};
+
+async function openDetailModal(source, category) {
+  currentDetailRequest = { source, category };
+
+  const title = (MODAL_TITLES[source] && MODAL_TITLES[source][category]) || "Details";
+  document.getElementById("detailModalTitle").textContent = title;
+  document.getElementById("detailModalCount").textContent = "";
+  document.getElementById("detailModalList").innerHTML = '<p class="muted" style="text-align:center; padding:16px;">Loading...</p>';
+
+  document.getElementById("detailModalBackdrop").classList.add("active");
+  document.getElementById("detailModal").classList.add("active");
+
+  try {
+    const state = widgetState[WIDGET_STATE_KEY[source]];
+    const { from, to } = computeRange(state.range, state.from, state.to);
+    const params = new URLSearchParams();
+    params.set("category", category);
+    params.set("from", toInputDate(from));
+    params.set("to", toInputDate(to));
+
+    const url = DETAIL_ENDPOINTS[source] + "?" + params.toString();
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Failed to load details");
+    const rows = await res.json();
+
+    renderDetailRows(source, category, rows);
+  } catch (e) {
+    document.getElementById("detailModalList").innerHTML =
+      '<p class="error" style="text-align:center; padding:16px;">' + escapeHtml(e.message) + '</p>';
+  }
 }
 
-function closePatientModal() {
-  patientModalStatus = null;
-  document.getElementById("patientModalBackdrop").classList.remove("active");
-  document.getElementById("patientModal").classList.remove("active");
-}
+function renderDetailRows(source, category, rows) {
+  const list = document.getElementById("detailModalList");
+  const count = document.getElementById("detailModalCount");
+  count.textContent = "(" + rows.length + ")";
 
-function renderPatientModalList() {
-  if (!patientModalStatus) return;
-
-  const list = patientBoardCache.filter(p => p.status === patientModalStatus);
-  const listEl = document.getElementById("patientModalList");
-  const countEl = document.getElementById("patientModalCount");
-
-  countEl.textContent = "(" + list.length + ")";
-
-  if (list.length === 0) {
-    listEl.innerHTML = '<div class="patient-modal-empty">No patients in this category</div>';
+  if (!rows || rows.length === 0) {
+    list.innerHTML = '<div class="patient-modal-empty">No records in this category</div>';
     return;
   }
 
-  listEl.innerHTML = list.map(p => {
-    const wardName = p.ward ? p.ward.name : "-";
-    const time = fmtTime(p.updatedAt);
-    return '<div class="patient-modal-item">' +
-      '<span class="patient-modal-item-case">Case #' + p.id + '</span>' +
-      '<span class="patient-modal-item-ward">' + escapeHtml(wardName) + '</span>' +
-      '<span class="patient-modal-item-time">' + time + '</span>' +
-      '</div>';
-  }).join("");
+  if (source === "patients") {
+    list.innerHTML = rows.map(p => {
+      const wardName = p.ward ? p.ward.name : "-";
+      const time = fmtTime(p.updatedAt);
+      return '<div class="patient-modal-item">' +
+        '<span class="patient-modal-item-case">Case #' + p.id + '</span>' +
+        '<span class="patient-modal-item-ward">' + escapeHtml(wardName) + '</span>' +
+        '<span class="patient-modal-item-time">' + time + '</span>' +
+        '</div>';
+    }).join("");
+    return;
+  }
+
+  if (source === "tenders") {
+    list.innerHTML = rows.map(t => {
+      const dept = t.originatorDepartment || t.requestingDepartment || "-";
+      const time = fmtTime(t.createdAt);
+      return '<div class="patient-modal-item">' +
+        '<span class="patient-modal-item-case">#' + t.id + ' ' + escapeHtml(t.itemName) + ' x' + t.quantity + '</span>' +
+        '<span class="patient-modal-item-ward">' + escapeHtml(dept) + '</span>' +
+        '<span class="patient-modal-item-time">' + time + '</span>' +
+        '</div>';
+    }).join("");
+    return;
+  }
+
+  if (source === "discipline") {
+    list.innerHTML = rows.map(c => {
+      const dept = c.employee ? c.employee.department : "-";
+      const reported = fmtDateShort(new Date(c.reportedDate));
+      return '<div class="patient-modal-item">' +
+        '<span class="patient-modal-item-case">' + escapeHtml(c.caseNumber) + '</span>' +
+        '<span class="patient-modal-item-ward">' + escapeHtml(dept) + '</span>' +
+        '<span class="patient-modal-item-time">' + escapeHtml(c.offenseType) + '</span>' +
+        '<span class="patient-modal-item-time">' + reported + '</span>' +
+        '</div>';
+    }).join("");
+    return;
+  }
+
+  if (source === "establishment") {
+    if (category === "understaffed" || category === "overstaffed") {
+      list.innerHTML = rows.map(d => {
+        const targetText = d.max ? d.current + " / " + d.min + "-" + d.max : d.current + " / min " + d.min;
+        return '<div class="patient-modal-item">' +
+          '<span class="patient-modal-item-case">' + escapeHtml(d.department) + '</span>' +
+          '<span class="patient-modal-item-ward">Current: ' + d.current + '</span>' +
+          '<span class="patient-modal-item-time">Target: ' + escapeHtml(targetText.split(" / ")[1]) + '</span>' +
+          '</div>';
+      }).join("");
+      return;
+    }
+    list.innerHTML = rows.map(m => {
+      const date = m.effectiveDate || m.createdAt;
+      let detail = "";
+      if (m.movementType === "transfer") {
+        detail = (m.fromDepartment || "?") + " to " + (m.toDepartment || "?");
+      } else if (m.reason) {
+        detail = m.reason;
+      }
+      return '<div class="patient-modal-item">' +
+        '<span class="patient-modal-item-case">' + escapeHtml(detail) + '</span>' +
+        '<span class="patient-modal-item-ward">' + escapeHtml(m.employee ? m.employee.department : "-") + '</span>' +
+        '<span class="patient-modal-item-time">' + fmtDateShort(new Date(date)) + '</span>' +
+        '</div>';
+    }).join("");
+    return;
+  }
+
+  if (source === "projects") {
+    list.innerHTML = rows.map(p => {
+      const updated = fmtDateShort(new Date(p.updatedAt));
+      return '<div class="patient-modal-item">' +
+        '<span class="patient-modal-item-case">' + escapeHtml(p.name) + '</span>' +
+        '<span class="patient-modal-item-ward">' + escapeHtml(p.department) + '</span>' +
+        '<span class="patient-modal-item-time">' + escapeHtml(p.projectHead) + '</span>' +
+        '<span class="patient-modal-item-time">' + updated + '</span>' +
+        '</div>';
+    }).join("");
+    return;
+  }
+
+  list.innerHTML = '<div class="patient-modal-empty">Unsupported category</div>';
+}
+
+function closeDetailModal() {
+  currentDetailRequest = null;
+  document.getElementById("detailModalBackdrop").classList.remove("active");
+  document.getElementById("detailModal").classList.remove("active");
 }
 
 // ============================================================
@@ -703,10 +1006,14 @@ loadEmployeeSummary();
 loadTodaySummary();
 loadTenderActivity();
 loadDisciplinarySummary();
+loadEstablishmentSummary();
+loadProjectsSummary();
 
 setInterval(loadTodaySummary, 60000);
 setInterval(loadTenderActivity, 60000);
 setInterval(loadDisciplinarySummary, 60000);
+setInterval(loadEstablishmentSummary, 60000);
+setInterval(loadProjectsSummary, 60000);
 
 // ============================================================
 // SOCKET
@@ -737,11 +1044,16 @@ socket.on("patient:created", (payload) => {
 
 socket.on("employee:updated", () => {
   loadEmployeeSummary();
+  loadEstablishmentSummary();
 });
 
 socket.on("employee:created", (payload) => {
   showToast("New employee added: " + payload.name);
   loadEmployeeSummary();
+});
+
+socket.on("establishment:updated", () => {
+  loadEstablishmentSummary();
 });
 
 socket.on("inventory:updated", () => {
@@ -768,6 +1080,21 @@ socket.on("disciplinary:updated", () => {
   loadDisciplinarySummary();
 });
 
+socket.on("project:created", (payload) => {
+  showToast("New project created");
+  loadProjectsSummary();
+});
+
+socket.on("project:updated", (payload) => {
+  showToast("Project updated");
+  loadProjectsSummary();
+});
+
+socket.on("project:deleted", () => {
+  showToast("Project deleted");
+  loadProjectsSummary();
+});
+
 // ============================================================
 // FALLBACK REFRESH
 // ============================================================
@@ -778,6 +1105,8 @@ setInterval(() => {
     loadTodaySummary();
     loadTenderActivity();
     loadDisciplinarySummary();
+    loadEstablishmentSummary();
+    loadProjectsSummary();
   }
 }, 300000);
 
@@ -786,9 +1115,9 @@ setInterval(() => {
 // ============================================================
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    const modal = document.getElementById("patientModal");
+    const modal = document.getElementById("detailModal");
     if (modal && modal.classList.contains("active")) {
-      closePatientModal();
+      closeDetailModal();
       return;
     }
     document.getElementById("deptBreakdown").classList.remove("active");
@@ -799,6 +1128,8 @@ document.addEventListener("keydown", (e) => {
     loadTodaySummary();
     loadTenderActivity();
     loadDisciplinarySummary();
+    loadEstablishmentSummary();
+    loadProjectsSummary();
     showToast("Manual refresh triggered");
   }
   if (e.key === "t" || e.key === "T") {
@@ -813,6 +1144,8 @@ document.addEventListener("visibilitychange", () => {
     loadTodaySummary();
     loadTenderActivity();
     loadDisciplinarySummary();
+    loadEstablishmentSummary();
+    loadProjectsSummary();
   }
 });
 

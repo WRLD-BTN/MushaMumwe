@@ -72,6 +72,7 @@ model Employee {
   updatedAt         DateTime           @updatedAt
   statusLogs        EmployeeStatusLog[]
   disciplinaryCases DisciplinaryCase[]
+  movements         EmployeeMovement[]
 }
 
 model EmployeeStatusLog {
@@ -82,6 +83,49 @@ model EmployeeStatusLog {
   newStatus  String
   changedBy  String
   timestamp  DateTime @default(now())
+}
+
+model EmployeeMovement {
+  id                 Int      @id @default(autoincrement())
+  employeeId         Int
+  employee           Employee @relation(fields: [employeeId], references: [id])
+
+  movementType       String
+
+  fromDepartment     String?
+  fromWardId         Int?
+  toDepartment       String?
+  toWardId           Int?
+
+  plannedDate        DateTime?
+  actualDate         DateTime?
+  yearsOfService     Int?
+  pensionNotes       String?
+
+  resignationDate    DateTime?
+  lastWorkingDay     DateTime?
+  noticePeriodDays   Int?
+  reason             String?
+  exitInterviewDone  Boolean  @default(false)
+  eligibleForRehire  Boolean?
+
+  effectiveDate      DateTime?
+  notes              String?
+  approvedBy         String?
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model EstablishmentTarget {
+  id            Int      @id @default(autoincrement())
+  department    String   @unique
+  minHeadcount  Int      @default(0)
+  maxHeadcount  Int?
+  notes         String?
+  updatedBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model OrderRequest {
@@ -95,6 +139,8 @@ model OrderRequest {
   status                String                    @default("pending")
   urgency               String?                   @default("normal")
   category              String?
+  attachmentPath        String?
+  attachmentName        String?
   createdAt             DateTime                  @default(now())
   updatedAt             DateTime                  @updatedAt
   statusLogs            OrderRequestStatusLog[]
@@ -225,4 +271,39 @@ model DisciplinaryAttachment {
   sizeBytes    Int
   uploadedBy   String
   uploadedAt   DateTime         @default(now())
+}
+
+model Project {
+  id              Int             @id @default(autoincrement())
+  name            String
+  description     String
+  department      String
+  projectHead     String
+  status          String          @default("ongoing")
+  startDate       DateTime?
+  targetDate      DateTime?
+  obstacleReason  String?
+  createdBy       String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  updates         ProjectUpdate[]
+
+  @@index([department])
+  @@index([status])
+  @@index([updatedAt])
+}
+
+model ProjectUpdate {
+  id               Int      @id @default(autoincrement())
+  projectId        Int
+  project          Project  @relation(fields: [projectId], references: [id])
+  note             String
+  statusAtUpdate   String
+  obstacleReason   String?
+  actionTaken      String?
+  updatedBy        String
+  timestamp        DateTime @default(now())
+
+  @@index([projectId])
+  @@index([timestamp])
 }
