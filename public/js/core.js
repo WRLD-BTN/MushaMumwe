@@ -1,7 +1,4 @@
-// ============================================================
-// Sally Mugabe Central Hospital - Core shared module
-// Authentication, routing, socket, modals, helpers, settings
-// ============================================================
+// Core shared module. Auth, routing, socket, modals, helpers, settings.
 
 const socket = io();
 let currentUser = null;
@@ -25,7 +22,6 @@ const DEPT_MAP = {
   SuperAdmin:  { key: 'super',  fragment: 'portals/superadmin.html',  script: 'js/superadmin.js',  url: '/admin' },
 };
 
-// Map URL paths -> dept names (for auto-load on refresh)
 const URL_TO_DEPT = {
   '/dashboard': null,
   '/portal': null,
@@ -147,6 +143,7 @@ async function loadPortal(deptName) {
     document.getElementById('portalContainer').innerHTML = html;
 
     await loadScript(dept.script);
+    await loadScript('js/projects.js');
 
     document.getElementById('login').style.display = 'none';
     document.getElementById('headerUser').style.display = 'flex';
@@ -163,11 +160,12 @@ async function loadPortal(deptName) {
       btnBackHome.style.display = 'none';
     }
 
-    // Update URL
     setURL(dept.url);
 
     const initFn = window['init_' + dept.key];
-    if (typeof initFn === 'function') initFn();
+    if (typeof initFn === 'function') await initFn();
+
+    if (typeof init_projects === 'function') await init_projects();
   } catch (e) {
     showLoginError(e.message);
   }
@@ -369,19 +367,8 @@ function toInputDate(d) {
   return yyyy + '-' + mm + '-' + dd;
 }
 
-function downloadCSV(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
 // ============================================================
-// GENERIC PRINT HELPER
+// PRINT HELPERS
 // ============================================================
 function printContent(html) {
   const area = document.getElementById('printArea');
@@ -392,40 +379,8 @@ function printContent(html) {
   area.innerHTML = html;
   setTimeout(() => {
     window.print();
-    // Clear print area after the dialog closes
     setTimeout(() => { area.innerHTML = ''; }, 500);
   }, 200);
-}
-
-function buildPrintHeader(title, filterLine, totalLabel) {
-  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
-  const phone = systemSettings.contactPhone || '';
-  const address = systemSettings.contactAddress || '';
-
-  let html = '<div class="print-header">';
-  html += '<h1>' + escapeHtml(hospitalName) + '</h1>';
-  html += '<h2>' + escapeHtml(title) + '</h2>';
-  html += '</div>';
-
-  if (phone || address) {
-    html += '<div class="print-contact">';
-    if (address) html += '<p>' + escapeHtml(address) + '</p>';
-    if (phone) html += '<p>Tel: ' + escapeHtml(phone) + '</p>';
-    html += '</div>';
-  }
-
-  html += '<div class="print-meta">';
-  if (totalLabel) html += '<p><strong>' + escapeHtml(totalLabel) + '</strong></p>';
-  html += '<p><strong>Generated:</strong> ' + fmtDateTime(new Date()) + '</p>';
-  if (filterLine) html += '<p style="grid-column: span 2;"><strong>' + escapeHtml(filterLine) + '</strong></p>';
-  html += '</div>';
-
-  return html;
-}
-
-function buildPrintFooter() {
-  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
-  return '<div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(new Date()) + '</div>';
 }
 
 // ============================================================
@@ -439,6 +394,9 @@ socket.on('inventory:updated', (p) => window.onInventoryUpdated?.(p));
 socket.on('employee:updated', (p) => window.onEmployeeUpdated?.(p));
 socket.on('disciplinary:created', (p) => window.onDisciplinaryUpdated?.(p));
 socket.on('disciplinary:updated', (p) => window.onDisciplinaryUpdated?.(p));
+socket.on('project:created', (p) => window.onProjectUpdated?.(p));
+socket.on('project:updated', (p) => window.onProjectUpdated?.(p));
+socket.on('project:deleted', (p) => window.onProjectUpdated?.(p));
 
 // ============================================================
 // AUTO-LOGIN FROM URL
@@ -479,12 +437,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // If logged in, auto-load the portal (based on URL or last used dept)
   const urlDept = getDeptFromURL();
   if (urlDept) {
     const ok = await tryAutoLogin();
     if (ok) {
-      // If URL says /hr but user is HR, load HR. If mismatch, load user's actual dept.
       const targetDept = (urlDept === currentUser.department || currentUser.department === 'SuperAdmin')
         ? urlDept
         : currentUser.department;

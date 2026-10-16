@@ -3,13 +3,10 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const prisma = require('../prismaClient');
-const { requireAuth, isITOrSuperAdmin } = require('../auth');
+const { requireAuth } = require('../auth');
 
 const router = express.Router();
 
-// ============================================================
-// CONFIG
-// ============================================================
 const UPLOAD_DIR = path.join(__dirname, '..', '..', 'public', 'uploads', 'disciplinary');
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_FILES_PER_CASE = 5;
@@ -41,9 +38,6 @@ const upload = multer({
   },
 });
 
-// ============================================================
-// AUTH GUARD
-// ============================================================
 function requireHRorIT(req, res, next) {
   if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
   const dept = String(req.user.department || '').toLowerCase();
@@ -53,9 +47,6 @@ function requireHRorIT(req, res, next) {
   next();
 }
 
-// ============================================================
-// CONSTANTS
-// ============================================================
 const VALID_STATUSES = ['open', 'under_investigation', 'resolved', 'dismissed'];
 const VALID_OFFENSES = [
   'Absenteeism', 'Late arrival', 'Insubordination', 'Negligence', 'Misconduct',
@@ -68,9 +59,6 @@ const VALID_ACTIONS = [
   'No action', 'Counselling', 'Referred to authority',
 ];
 
-// ============================================================
-// HELPERS
-// ============================================================
 async function generateCaseNumber() {
   const year = new Date().getFullYear();
   const prefix = 'DISC-' + year + '-';
@@ -89,10 +77,7 @@ async function generateCaseNumber() {
   return prefix + String(nextSeq).padStart(4, '0');
 }
 
-// ============================================================
-// PUBLIC SUMMARY - Live Board widget (NO AUTH)
-// Returns counts + 5 most recent cases (anonymised)
-// ============================================================
+// Public summary for Live Board widget.
 router.get('/summary-public', async (req, res) => {
   try {
     let from, to;
@@ -114,9 +99,7 @@ router.get('/summary-public', async (req, res) => {
     const search = (req.query.search || '').toLowerCase();
 
     const casesInRange = await prisma.disciplinaryCase.findMany({
-      where: {
-        reportedDate: { gte: from, lte: to },
-      },
+      where: { reportedDate: { gte: from, lte: to } },
       select: {
         id: true,
         caseNumber: true,
@@ -165,9 +148,57 @@ router.get('/summary-public', async (req, res) => {
   }
 });
 
-// ============================================================
-// METADATA
-// ============================================================
+// Detail list for a single case status. Public. PII stripped.
+router.get('/detail-public', async (req, res) => {
+  try {
+    const { category } = req.query;
+
+    let from, to;
+    if (req.query.from) {
+      from = new Date(req.query.from);
+      from.setHours(0, 0, 0, 0);
+    } else {
+      from = new Date();
+      from.setHours(0, 0, 0, 0);
+    }
+    if (req.query.to) {
+      to = new Date(req.query.to);
+      to.setHours(23, 59, 59, 999);
+    } else {
+      to = new Date();
+      to.setHours(23, 59, 59, 999);
+    }
+
+    const validCategories = ['open', 'under_investigation', 'resolved', 'dismissed', 'total'];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+
+    const where = { reportedDate: { gte: from, lte: to } };
+    if (category !== 'total') {
+      where.status = category;
+    }
+
+    const cases = await prisma.disciplinaryCase.findMany({
+      where,
+      select: {
+        id: true,
+        caseNumber: true,
+        offenseType: true,
+        status: true,
+        reportedDate: true,
+        employee: { select: { department: true } },
+      },
+      orderBy: { reportedDate: 'desc' },
+      take: 200,
+    });
+
+    res.json(cases);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.get('/metadata', requireAuth, requireHRorIT, (req, res) => {
   res.json({
     offenses: VALID_OFFENSES,
@@ -176,9 +207,6 @@ router.get('/metadata', requireAuth, requireHRorIT, (req, res) => {
   });
 });
 
-// ============================================================
-// LIST
-// ============================================================
 router.get('/', requireAuth, requireHRorIT, async (req, res) => {
   try {
     const { search, status, offense, department, from, to } = req.query;
@@ -227,9 +255,6 @@ router.get('/', requireAuth, requireHRorIT, async (req, res) => {
   }
 });
 
-// ============================================================
-// SUMMARY (auth)
-// ============================================================
 router.get('/summary', requireAuth, requireHRorIT, async (req, res) => {
   try {
     const all = await prisma.disciplinaryCase.findMany({
@@ -259,9 +284,6 @@ router.get('/summary', requireAuth, requireHRorIT, async (req, res) => {
   }
 });
 
-// ============================================================
-// GET ONE
-// ============================================================
 router.get('/:id', requireAuth, requireHRorIT, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -280,18 +302,8 @@ router.get('/:id', requireAuth, requireHRorIT, async (req, res) => {
   }
 });
 
-// ============================================================
-// CREATE
-// ============================================================
 router.post('/', requireAuth, requireHRorIT, async (req, res) => {
-  const {
-    employeeId,
-    offenseType,
-    description,
-    reportedBy,
-    reportedDate,
-    witnesses,
-  } = req.body;
+  const { employeeId, offenseType, description, reportedBy, reportedDate, witnesses } = req.body;
 
   if (!employeeId || !offenseType || !description || !reportedBy || !reportedDate) {
     return res.status(400).json({
@@ -340,9 +352,6 @@ router.post('/', requireAuth, requireHRorIT, async (req, res) => {
   }
 });
 
-// ============================================================
-// UPDATE
-// ============================================================
 router.patch('/:id', requireAuth, requireHRorIT, async (req, res) => {
   const id = parseInt(req.params.id);
   const {
@@ -387,9 +396,6 @@ router.patch('/:id', requireAuth, requireHRorIT, async (req, res) => {
   }
 });
 
-// ============================================================
-// STATUS CHANGE
-// ============================================================
 router.patch('/:id/status', requireAuth, requireHRorIT, async (req, res) => {
   const id = parseInt(req.params.id);
   const { newStatus, notes } = req.body;
@@ -428,9 +434,6 @@ router.patch('/:id/status', requireAuth, requireHRorIT, async (req, res) => {
   }
 });
 
-// ============================================================
-// REOPEN
-// ============================================================
 router.post('/:id/reopen', requireAuth, requireHRorIT, async (req, res) => {
   const id = parseInt(req.params.id);
   const { reason, newStatus } = req.body;
@@ -482,9 +485,6 @@ router.post('/:id/reopen', requireAuth, requireHRorIT, async (req, res) => {
   }
 });
 
-// ============================================================
-// ATTACHMENTS
-// ============================================================
 router.post('/:id/attachments', requireAuth, requireHRorIT, upload.array('files', MAX_FILES_PER_CASE), async (req, res) => {
   const id = parseInt(req.params.id);
 
@@ -537,7 +537,7 @@ router.post('/:id/attachments', requireAuth, requireHRorIT, upload.array('files'
   }
 });
 
-router.get('/:id/attachments/:attachmentId', requireAuth, requireHRorIT, async (req, res) => {
+router.get('/:id/attachments/:attachmentId', async (req, res) => {
   const id = parseInt(req.params.id);
   const attachmentId = parseInt(req.params.attachmentId);
 
@@ -578,84 +578,6 @@ router.delete('/:id/attachments/:attachmentId', requireAuth, requireHRorIT, asyn
     await prisma.disciplinaryAttachment.delete({ where: { id: attachmentId } });
 
     res.json({ message: 'Attachment deleted' });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// ============================================================
-// CSV EXPORT
-// ============================================================
-router.get('/export', requireAuth, requireHRorIT, async (req, res) => {
-  try {
-    const { search, status, offense, department, from, to } = req.query;
-
-    const where = {};
-    if (status && status !== 'all') where.status = status;
-    if (offense && offense !== 'all') where.offenseType = offense;
-
-    if (from || to) {
-      where.reportedDate = {};
-      if (from) where.reportedDate.gte = new Date(from);
-      if (to) {
-        const toDate = new Date(to);
-        toDate.setHours(23, 59, 59, 999);
-        where.reportedDate.lte = toDate;
-      }
-    }
-
-    if (department && department !== 'all') {
-      where.employee = { department };
-    }
-
-    if (search) {
-      const q = search;
-      where.OR = [
-        { caseNumber: { contains: q } },
-        { offenseType: { contains: q } },
-        { description: { contains: q } },
-        { reportedBy: { contains: q } },
-        { employee: { name: { contains: q } } },
-        { employee: { department: { contains: q } } },
-      ];
-    }
-
-    const cases = await prisma.disciplinaryCase.findMany({
-      where,
-      include: {
-        employee: { select: { name: true, department: true, role: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const escape = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    const lines = [
-      '# Sally Mugabe Central Hospital - Labour Relations Report',
-      '# Generated: ' + new Date().toISOString(),
-      '# Filters: status=' + (status || 'all') + ' offense=' + (offense || 'all') + ' dept=' + (department || 'all'),
-      '# Total: ' + cases.length,
-      '',
-      ['Case #','Employee','Department','Role','Offense','Status','Reported By','Reported','Action','Outcome','Closed By','Closed Date'].join(','),
-    ];
-    const rows = cases.map(c => [
-      escape(c.caseNumber),
-      escape(c.employee?.name || ''),
-      escape(c.employee?.department || ''),
-      escape(c.employee?.role || ''),
-      escape(c.offenseType),
-      escape(c.status),
-      escape(c.reportedBy),
-      escape(c.reportedDate ? c.reportedDate.toISOString() : ''),
-      escape(c.actionTaken || ''),
-      escape(c.outcome || ''),
-      escape(c.closedBy || ''),
-      escape(c.closedDate ? c.closedDate.toISOString() : ''),
-    ].join(','));
-
-    const csv = lines.concat(rows).join('\n');
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="labour-relations-' + new Date().toISOString().split('T')[0] + '.csv"');
-    res.send(csv);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

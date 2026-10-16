@@ -1,8 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-/* ============================================================
-   DESIGN TOKENS
-   ============================================================ */
 :root {
   --primary: #4f46e5;
   --primary-hover: #4338ca;
@@ -66,9 +63,6 @@
   --board-muted: #8D97AF;
 }
 
-/* ============================================================
-   RESET
-   ============================================================ */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
@@ -86,9 +80,6 @@ body {
   padding: 24px;
 }
 
-/* ============================================================
-   HEADER
-   ============================================================ */
 .app-header {
   background: linear-gradient(135deg, #4f46e5, #7c3aed);
   color: #fff;
@@ -107,9 +98,6 @@ body {
 .header-user { display: flex; align-items: center; gap: 10px; font-size: 13px; }
 .header-user span { font-weight: 500; opacity: 0.95; }
 
-/* ============================================================
-   LOGIN
-   ============================================================ */
 .login-section {
   background: var(--surface);
   padding: 32px;
@@ -127,9 +115,6 @@ body {
   font-weight: 700;
 }
 
-/* ============================================================
-   FORM ELEMENTS
-   ============================================================ */
 .form-group { margin-bottom: 16px; }
 .form-row { display: flex; gap: 12px; }
 .form-row .form-group { flex: 1; }
@@ -227,9 +212,6 @@ select[size] {
   height: auto;
 }
 
-/* ============================================================
-   BUTTONS
-   ============================================================ */
 button, .primary-btn, .ghost-btn, .pill-btn, .logout-btn {
   font-family: inherit;
   cursor: pointer;
@@ -276,9 +258,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .block { display: block; width: 100%; }
 .small { padding: 7px 14px; font-size: 12px; }
 
-/* ============================================================
-   PORTAL
-   ============================================================ */
 .portal { display: none; }
 .portal.active { display: block; animation: fadeIn 0.3s; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
@@ -292,9 +271,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .portal-header h2 { font-size: 20px; font-weight: 700; color: var(--text-strong); letter-spacing: -0.2px; }
 
-/* ============================================================
-   GRID + CARDS
-   ============================================================ */
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
 
 .card {
@@ -311,9 +287,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .card-head h3 { margin: 0; }
 .card-head-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
-/* ============================================================
-   SEARCH INPUT
-   ============================================================ */
 .search-input {
   padding: 8px 14px;
   border: 1.5px solid var(--border);
@@ -331,9 +304,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   background: var(--surface);
 }
 
-/* ============================================================
-   ALERTS + BADGES
-   ============================================================ */
 .error, .success, .info {
   padding: 11px 14px;
   border-radius: var(--radius-sm);
@@ -388,9 +358,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .status-critical { background: #fee2e2; color: #991b1b; }
 .status-terminated { background: #e2e8f0; color: #334155; }
 
-/* ============================================================
-   TABS
-   ============================================================ */
 .dept-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid var(--border-soft); }
 .dept-tab {
   background: transparent;
@@ -409,9 +376,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .proc-tab-panel { display: none; }
 .proc-tab-panel.active { display: block; animation: fadeIn 0.25s; }
 
-/* ============================================================
-   ADVANCED FILTERS
-   ============================================================ */
 .advanced-filters {
   background: var(--surface-alt);
   border: 1.5px solid var(--border-soft);
@@ -420,9 +384,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   margin-bottom: 12px;
 }
 
-/* ============================================================
-   FILTERS
-   ============================================================ */
 .tender-filters {
   display: flex;
   flex-wrap: wrap;
@@ -445,9 +406,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .filter-btn:hover { background: #e2e8f0; color: var(--text-strong); }
 .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-/* ============================================================
-   TENDER CARDS
-   ============================================================ */
 .tender-tracker { display: flex; flex-direction: column; gap: 12px; }
 .tender-card {
   border: 1.5px solid var(--border-soft);
@@ -479,9 +437,6 @@ details summary::before { content: '> '; font-weight: 700; }
 details[open] summary::before { content: 'v '; font-weight: 700; }
 details summary:hover { color: var(--primary); }
 
-/* ============================================================
-   ORDER CARDS
-   ============================================================ */
 .order-card {
   border: 1.5px solid var(--border-soft);
   border-radius: var(--radius-sm);
@@ -505,9 +460,6 @@ details summary:hover { color: var(--primary); }
 }
 .order-card-mini .pill-btn { align-self: flex-start; margin-top: 4px; }
 
-/* ============================================================
-   EMPTY STATE
-   ============================================================ */
 .empty-state {
   text-align: center;
   padding: 36px 16px;
@@ -519,9 +471,6 @@ details summary:hover { color: var(--primary); }
   font-weight: 500;
 }
 
-/* ============================================================
-   TABLES
-   ============================================================ */
 .table-wrap { overflow-x: auto; border-radius: var(--radius-sm); border: 1.5px solid var(--border-soft); }
 .data-table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--surface); }
 .data-table th {
@@ -545,9 +494,6 @@ details summary:hover { color: var(--primary); }
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tr:hover { background: var(--surface-alt); }
 
-/* ============================================================
-   HISTORY
-   ============================================================ */
 .history-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 20px; }
 .hstat {
   background: var(--surface);
@@ -564,9 +510,6 @@ details summary:hover { color: var(--primary); }
 @media (max-width: 1100px) { .history-filters { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 640px)  { .history-filters { grid-template-columns: 1fr; } }
 
-/* ============================================================
-   PILLS + MINI + SCROLL
-   ============================================================ */
 .dept-pill {
   display: inline-block;
   font-size: 10px;
@@ -598,9 +541,6 @@ code {
 }
 .req { color: var(--error); }
 
-/* ============================================================
-   MODALS
-   ============================================================ */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -637,9 +577,6 @@ code {
 .radio-row label { display: flex; align-items: center; gap: 6px; font-weight: 500; color: var(--text); }
 .radio-row input[type="radio"] { width: auto; min-height: 0; }
 
-/* ============================================================
-   SUPER ADMIN LAUNCHER
-   ============================================================ */
 .launcher-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
 .launcher-btn {
   display: block;
@@ -660,9 +597,6 @@ code {
 .launcher-title { font-size: 15px; font-weight: 700; color: var(--text-strong); margin-bottom: 4px; }
 .launcher-desc { font-size: 12px; color: var(--text-muted); font-weight: 400; }
 
-/* ============================================================
-   HR PORTAL
-   ============================================================ */
 .roster-scroll {
   max-height: 400px;
   overflow-y: auto;
@@ -778,60 +712,11 @@ code {
   background: var(--surface-alt);
 }
 
-/* ============================================================
-   PRINT LAYOUT
-   ============================================================ */
-.print-area { display: none; }
-
-@page {
-  size: A4;
-  margin: 15mm;
-}
-
-@media print {
-  html, body {
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-  }
-
-  body * { visibility: hidden; }
-  .print-area, .print-area * { visibility: visible; }
-  .print-area {
-    display: block;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-  }
-
-  .modal,
-  .modal-backdrop,
-  .topbar,
-  .footer-note,
-  .toast,
-  .public-widgets,
-  .stats,
-  .distbar,
-  .distbar-labels,
-  .employee-summary,
-  .app-header,
-  .login-section {
-    display: none !important;
-  }
-
-  .print-page,
-  .print-page.a4,
-  .print-page.a5 {
-    min-height: 0 !important;
-    page-break-after: auto !important;
-  }
-  .print-page:last-child { page-break-after: avoid !important; }
-  .print-page + .print-page { page-break-before: always; }
-
-  .print-table { page-break-inside: auto; }
-  .print-table tr { page-break-inside: avoid; page-break-after: auto; }
-  .print-table thead { display: table-header-group; }
+.print-area {
+  display: none;
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
 }
 
 .print-page { background: #fff; color: #000; font-family: 'Inter', sans-serif; padding: 0; margin: 0 auto; page-break-after: auto; }
@@ -877,9 +762,58 @@ code {
 .print-table td { padding: 5px 8px; border: 1px solid #ccc; vertical-align: top; }
 .print-table tr:nth-child(even) td { background: #fafafa; }
 
-/* ============================================================
-   LIVE BOARD
-   ============================================================ */
+@page {
+  size: A4;
+  margin: 15mm;
+}
+
+@media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  body > * {
+    display: none !important;
+  }
+
+  body > .print-area {
+    display: block !important;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .print-area * {
+    visibility: visible !important;
+    color: #000 !important;
+    background: transparent !important;
+  }
+
+  .print-table { page-break-inside: auto; width: 100%; }
+  .print-table tr { page-break-inside: avoid; page-break-after: auto; }
+  .print-table thead { display: table-header-group; }
+  .print-table tfoot { display: table-footer-group; }
+
+  .print-page + .print-page { page-break-before: always; }
+  .page-break { page-break-after: always; height: 0; }
+
+  .modal,
+  .modal-backdrop,
+  .toast {
+    display: none !important;
+  }
+}
+
 body.live-board {
   background: var(--board-bg);
   color: var(--board-text);
@@ -961,9 +895,6 @@ body.live-board {
 }
 .toast.show { opacity: 1; transform: translateY(0); }
 
-/* ============================================================
-   LIVE BOARD - STAT CARDS + DISTRIBUTION
-   ============================================================ */
 .stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1001,9 +932,6 @@ body.live-board {
   font-weight: 600;
 }
 
-/* ============================================================
-   PUBLIC WIDGETS
-   ============================================================ */
 .public-widgets {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1082,7 +1010,17 @@ body.live-board {
   border-top: 1px solid var(--board-line);
   margin-top: 2px;
 }
-.widget-stat { text-align: center; padding: 6px 4px; }
+.widget-stat {
+  text-align: center;
+  padding: 6px 4px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.widget-stat:hover {
+  background: var(--board-surface-2);
+  transform: translateY(-1px);
+}
 .widget-number { font-size: 24px; font-weight: 800; color: var(--board-text); letter-spacing: -0.5px; line-height: 1; margin-bottom: 4px; }
 .widget-label { font-size: 10px; color: var(--board-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
 
@@ -1100,11 +1038,55 @@ body.live-board {
 .widget-stat.disc-dismissed .widget-number { color: #64748b; }
 .widget-stat.disc-total .widget-number { color: var(--primary); }
 
+.widget-stat.est-transfer .widget-number { color: #2563eb; }
+.widget-stat.est-retirement .widget-number { color: #7c3aed; }
+.widget-stat.est-resignation .widget-number { color: #d97706; }
+.widget-stat.est-under .widget-number { color: #dc2626; }
+.widget-stat.est-over .widget-number { color: #ea580c; }
+.widget-stat.proj-ongoing .widget-number { color: #2563eb; }
+.widget-stat.proj-pending .widget-number { color: #dc2626; }
+.widget-stat.proj-completed .widget-number { color: #16a34a; }
+
 .widget-recent {
   margin-top: 12px !important;
   padding-top: 12px !important;
   border-top: 1px solid var(--board-line);
 }
+
+.widget-recent-toggle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--board-muted);
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  user-select: none;
+}
+.widget-recent-toggle:hover { color: var(--board-text); }
+.widget-recent-toggle::before {
+  content: '>';
+  display: inline-block;
+  font-weight: 700;
+  transition: transform 0.2s;
+}
+.widget-recent.expanded .widget-recent-toggle::before {
+  transform: rotate(90deg);
+}
+.widget-recent-content {
+  display: none;
+  margin-top: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.widget-recent.expanded .widget-recent-content {
+  display: block;
+}
+.widget-recent-content::-webkit-scrollbar { width: 6px; }
+.widget-recent-content::-webkit-scrollbar-thumb { background: var(--board-line); border-radius: 3px; }
 
 .disc-recent-item {
   background: var(--board-surface-2);
@@ -1119,9 +1101,6 @@ body.live-board {
 .disc-recent-body { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--board-muted); margin-top: 2px; }
 .disc-recent-days { font-family: var(--font-mono); font-size: 9.5px; }
 
-/* ============================================================
-   EMPLOYEE SUMMARY
-   ============================================================ */
 .employee-summary {
   margin: 24px 28px 0 28px;
   padding: 20px 22px;
@@ -1167,9 +1146,6 @@ body.live-board {
   margin-top: 8px;
 }
 
-/* ============================================================
-   PATIENT MODAL (Live Board click-to-view)
-   ============================================================ */
 .patient-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1283,9 +1259,6 @@ body.live-board {
   flex-shrink: 0;
 }
 
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
 @media (min-width: 1200px) {
   .public-widgets { grid-template-columns: repeat(3, 1fr); }
 }
@@ -1319,65 +1292,28 @@ body.live-board {
   .stats { grid-template-columns: 1fr; }
   .employee-stats { grid-template-columns: 1fr; }
 }
-/* ============================================================
-   LIVE BOARD - TWO-COLUMN WIDGET LAYOUT
-   Left: Today's Numbers (top) + Tender Activity (bottom)
-   Right: Labour Relations (spans both rows, stretches to fill)
-   ============================================================ */
 
+/* Live Board widget layout with 5 widgets - projects spans full width row 3 */
 @media (min-width: 900px) {
   body.live-board .public-widgets {
     display: grid;
-    grid-template-columns: 5fr 7fr;
+    grid-template-columns: 1fr 1fr;
     grid-template-areas:
-      "patients  disc"
-      "tender    disc";
+      "patients disc"
+      "tender   est"
+      "projects projects";
     gap: 16px;
     padding: 24px 28px 0 28px;
     align-items: stretch;
   }
 
-  body.live-board #patientsWidget {
-    grid-area: patients;
-  }
-
-  body.live-board #tenderWidget {
-    grid-area: tender;
-  }
-
-  body.live-board #disciplinaryWidget {
-    grid-area: disc;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Make the disc widget's recent cases area expand to fill any leftover space */
-  body.live-board #disciplinaryWidget .widget-recent {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--board-line);
-  }
-
-  body.live-board #disciplinaryWidget .widget-recent > div:last-child {
-    flex: 1 1 auto;
-    overflow-y: auto;
-    max-height: 400px;
-  }
-
-  /* Compact scrollbar for the recent cases area */
-  body.live-board #disciplinaryWidget .widget-recent > div:last-child::-webkit-scrollbar {
-    width: 6px;
-  }
-  body.live-board #disciplinaryWidget .widget-recent > div:last-child::-webkit-scrollbar-thumb {
-    background: var(--board-line);
-    border-radius: 3px;
-  }
+  body.live-board #patientsWidget      { grid-area: patients; }
+  body.live-board #tenderWidget        { grid-area: tender; }
+  body.live-board #disciplinaryWidget  { grid-area: disc; }
+  body.live-board #establishmentWidget { grid-area: est; }
+  body.live-board #projectsWidget      { grid-area: projects; }
 }
 
-/* Below 900px — stacked layout with comfortable spacing */
 @media (max-width: 899px) {
   body.live-board .public-widgets {
     display: grid;

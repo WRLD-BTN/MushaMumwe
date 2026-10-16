@@ -14,9 +14,6 @@ const io = socketIo(server, { cors: { origin: '*' } });
 app.use(express.json());
 app.use(express.static('public'));
 
-// ============================================================
-// CLEAN URL ROUTES - serve entry.html for these friendly paths
-// ============================================================
 const CLEAN_ROUTES = [
   '/dashboard',
   '/portal',
@@ -35,14 +32,10 @@ CLEAN_ROUTES.forEach(route => {
   });
 });
 
-// Root -> dashboard
 app.get('/', (req, res) => {
   res.redirect('/dashboard');
 });
 
-// ============================================================
-// API ROUTES
-// ============================================================
 const authRoutes          = require('./routes/auth');
 const patientRoutes       = require('./routes/patients');
 const employeeRoutes      = require('./routes/employees');
@@ -51,6 +44,8 @@ const inventoryRoutes     = require('./routes/inventory');
 const wardRoutes          = require('./routes/wards');
 const settingsRoutes      = require('./routes/settings');
 const disciplinaryRoutes  = require('./routes/disciplinary');
+const establishmentRoutes = require('./routes/establishment');
+const projectRoutes       = require('./routes/projects');
 
 app.use('/api/auth',           authRoutes);
 app.use('/api/patients',       patientRoutes);
@@ -60,6 +55,8 @@ app.use('/api/inventory',      inventoryRoutes);
 app.use('/api/wards',          wardRoutes);
 app.use('/api/settings',       settingsRoutes);
 app.use('/api/disciplinary',   disciplinaryRoutes);
+app.use('/api/establishment',  establishmentRoutes);
+app.use('/api/projects',       projectRoutes);
 
 app.locals.io = io;
 app.locals.emit = (event, payload) => io.emit(event, payload);

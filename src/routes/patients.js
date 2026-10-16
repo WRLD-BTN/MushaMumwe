@@ -102,9 +102,7 @@ router.get('/summary', async (req, res) => {
   }
 });
 
-// ============================================================
-// TODAY SUMMARY - PUBLIC - accepts ?from= and ?to=
-// ============================================================
+// Today summary for Live Board widget. Public.
 router.get('/today-summary', async (req, res) => {
   try {
     const { from, to } = parseRange(req.query);
@@ -133,6 +131,52 @@ router.get('/today-summary', async (req, res) => {
       followUpsDueToday: followUpsCount,
       deathsToday: deathsCount,
     });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Detail list for a single status. Public. PII stripped.
+router.get('/detail-public', async (req, res) => {
+  try {
+    const { category } = req.query;
+    const { from, to } = parseRange(req.query);
+
+    const validCategories = ['admitted', 'treatment', 'discharged', 'deceased'];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+
+    let where = {};
+    if (category === 'admitted') {
+      where = { status: 'admitted' };
+    } else if (category === 'treatment') {
+      where = { status: 'treatment' };
+    } else if (category === 'discharged') {
+      where = {
+        status: 'discharged',
+        dischargeDate: { gte: from, lte: to },
+      };
+    } else if (category === 'deceased') {
+      where = {
+        status: 'deceased',
+        updatedAt: { gte: from, lte: to },
+      };
+    }
+
+    const patients = await prisma.patient.findMany({
+      where,
+      select: {
+        id: true,
+        status: true,
+        updatedAt: true,
+        ward: { select: { name: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 200,
+    });
+
+    res.json(patients);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
