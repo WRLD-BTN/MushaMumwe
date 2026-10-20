@@ -83,6 +83,13 @@ function getDeptFromURL() {
 }
 
 // ============================================================
+// NAVIGATION
+// ============================================================
+function goToDashboard() {
+  window.location.href = '/index.html';
+}
+
+// ============================================================
 // AUTH
 // ============================================================
 async function login() {
@@ -146,18 +153,25 @@ async function loadPortal(deptName) {
     await loadScript('js/projects.js');
 
     document.getElementById('login').style.display = 'none';
-    document.getElementById('headerUser').style.display = 'flex';
+
+    // Show the user's name and buttons
+    const userWrap = document.getElementById('headerUser');
+    userWrap.style.display = 'inline-flex';
     document.getElementById('headerUserLabel').textContent =
       currentUser.fullName + ' (' + currentDeptName + ')';
 
     const btnOwnPwd = document.getElementById('btnOwnPwd');
     const btnBackHome = document.getElementById('btnBackHome');
+    const btnDashboard = document.getElementById('btnDashboard');
+
     if (currentDeptName === 'SuperAdmin') {
       btnOwnPwd.style.display = 'none';
       btnBackHome.style.display = 'inline-block';
+      if (btnDashboard) btnDashboard.style.display = 'none';
     } else {
       btnOwnPwd.style.display = 'inline-block';
       btnBackHome.style.display = 'none';
+      if (btnDashboard) btnDashboard.style.display = 'inline-block';
     }
 
     setURL(dept.url);
@@ -201,9 +215,7 @@ async function openPortalAsSuperAdmin(deptName) {
 }
 
 function backToSuperAdminHome() {
-  currentDeptName = 'SuperAdmin';
-  currentDeptKey = 'super';
-  loadPortal('SuperAdmin');
+  window.location.href = '/';
 }
 
 // ============================================================

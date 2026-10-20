@@ -70,7 +70,7 @@ async function loadAudit(page = 1) {
   const el = document.getElementById('auditTableWrap');
   const countEl = document.getElementById('auditCount');
   if (!el) return;
-  el.innerHTML = '<p class="muted">Loading...</p>';
+  el.innerHTML = '<p class="muted" style="padding:16px;">Loading...</p>';
 
   const params = new URLSearchParams();
   const search = document.getElementById('auditSearch').value.trim();
@@ -101,13 +101,14 @@ async function loadAudit(page = 1) {
     countEl.textContent = data.total + ' entries — page ' + data.page + ' of ' + data.pages;
 
     if (data.rows.length === 0) {
-      el.innerHTML = '<p class="empty-state">No audit entries match filters</p>';
+      el.innerHTML = '<p class="empty-state" style="padding:16px;">No audit entries match filters</p>';
       document.getElementById('auditPager').innerHTML = '';
       return;
     }
 
-    el.innerHTML = '<table class="data-table">' +
-      '<thead><tr>' +
+    el.innerHTML = '<table class="data-table" style="margin:0; border:none;">' +
+      '<thead style="position:sticky; top:0; background:var(--bg-color); z-index:1;">' +
+      '<tr>' +
       '<th>Time</th><th>User</th><th>Dept</th><th>Action</th><th>Entity</th><th>Summary</th><th>Device</th>' +
       '</tr></thead><tbody>' +
       data.rows.map(r => {
@@ -138,7 +139,7 @@ async function loadAudit(page = 1) {
       '<span class="muted">Page ' + data.page + ' / ' + data.pages + '</span>' +
       '<button class="ghost-btn" ' + (data.page >= data.pages ? 'disabled' : '') + ' onclick="loadAudit(' + (data.page + 1) + ')">Next ›</button>';
   } catch (e) {
-    el.innerHTML = '<p class="error">' + e.message + '</p>';
+    el.innerHTML = '<p class="error" style="padding:16px;">' + e.message + '</p>';
   }
 }
 
@@ -153,37 +154,52 @@ function clearAuditFilters() {
   loadAudit(1);
 }
 
-async function exportAuditCSV() {
-  const params = new URLSearchParams();
+async function printAuditLog() {
+  const tableWrap = document.getElementById('auditTableWrap');
+  if (!tableWrap || !tableWrap.innerHTML.trim()) return;
+
+  // Extract the table HTML from the wrapper
+  const tableHtml = tableWrap.innerHTML;
+  
+  // Extract current filters for the header
   const search = document.getElementById('auditSearch').value.trim();
   const action = document.getElementById('auditFilterAction').value;
-  const entity = document.getElementById('auditFilterEntity').value;
-  const username = document.getElementById('auditFilterUser').value;
   const department = document.getElementById('auditFilterDept').value;
-  const from = document.getElementById('auditFrom').value;
-  const to = document.getElementById('auditTo').value;
+  
+  let filterParts = [];
+  if (search) filterParts.push('Search="' + search + '"');
+  if (action) filterParts.push('Action=' + action);
+  if (department) filterParts.push('Dept=' + department);
+  const filterLine = filterParts.length > 0 ? 'Filters: ' + filterParts.join(', ') : 'Filters: none (all entries)';
 
-  if (search) params.set('search', search);
-  if (action) params.set('action', action);
-  if (entity) params.set('entity', entity);
-  if (username) params.set('username', username);
-  if (department) params.set('department', department);
-  if (from) params.set('from', from);
-  if (to) params.set('to', to);
+  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
+  const now = new Date();
 
-  try {
-    const res = await fetch('/api/audit/export?' + params, {
-      headers: { Authorization: 'Bearer ' + token() },
-    });
-    if (!res.ok) throw new Error('Export failed');
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'audit-' + new Date().toISOString().split('T')[0] + '.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  } catch (e) {
-    alert(e.message);
-  }
+  let html = '<div class="print-page a4">';
+  html += '<div class="print-header">';
+  html += '<h1>' + escapeHtml(hospitalName) + '</h1>';
+  html += '<h2>System Audit Log</h2>';
+  html += '</div>';
+
+  html += '<div class="print-meta">';
+  html += '<p><strong>Report Generated:</strong> ' + fmtDateTime(now) + '</p>';
+  html += '<p style="grid-column: span 2;"><strong>' + escapeHtml(filterLine) + '</strong></p>';
+  html += '</div>';
+
+  // We wrap the table in the print-table class to style it for paper
+  html += '<div style="margin-top:20px;" class="print-table-wrapper">';
+  html += tableHtml;
+  html += '</div>';
+
+  html += '<div class="print-footer">';
+  html += escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now);
+  html += '</div>';
+  html += '</div>';
+
+  // Trigger the print
+  document.getElementById('printArea').innerHTML = html;
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { document.getElementById('printArea').innerHTML = ''; }, 500);
+  }, 200);
 }
