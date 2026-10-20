@@ -4,13 +4,12 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const prisma = require('../prismaClient');
 const { requireAuth, isITOrSuperAdmin } = require('../auth');
+const { audit, auditLogin } = require('../audit');
 
 const router = express.Router();
 
 // ============================================================
 // LOGIN
-// Super Admin password is stored as a bcrypt HASH in .env.
-// Regular users authenticate against the User table.
 // ============================================================
 router.post('/login', async (req, res) => {
   const { username, password, department } = req.body;
@@ -19,7 +18,6 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ error: 'Username and password required' });
   }
 
-  // --- Super Admin check first ---
   const saUser = process.env.SUPER_ADMIN_USERNAME || 'Admin';
   const saHash = process.env.SUPER_ADMIN_PASSWORD_HASH || '';
 
@@ -28,42 +26,27 @@ router.post('/login', async (req, res) => {
     try {
       superAdminValid = await bcrypt.compare(password, saHash);
     } catch (e) {
-      // Malformed hash in .env — fail silently to "invalid credentials"
       superAdminValid = false;
     }
 
     if (superAdminValid) {
-      const token = jwt.sign(
-        {
-          id: 0,
-          username: saUser,
-          fullName: 'Super Admin',
-          department: 'SuperAdmin',
-          role: 'superadmin',
-          wardId: null,
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: '12h' }
-      );
-
-      return res.json({
-        token,
-        user: {
-          id: 0,
-          username: saUser,
-          fullName: 'Super Admin',
-          department: 'SuperAdmin',
-          role: 'superadmin',
-          wardId: null,
-        },
-      });
+      const userObj = {
+        id: 0,
+        username: saUser,
+        fullName: 'Super Admin',
+        department: 'SuperAdmin',
+        role: 'superadmin',
+        wardId: null,
+      };
+      const token = jwt.sign(userObj, process.env.JWT_SECRET, { expiresIn: '12h' });
+      auditLogin(req, userObj, true);
+      return res.json({ token, user: userObj });
     }
 
-    // Wrong password for Super Admin — fall through to generic error
+    auditLogin(req, { username, fullName: 'Unknown', department: 'unknown', role: 'unknown' }, false);
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
-  // --- Regular user login: department is REQUIRED ---
   if (!department || !department.trim()) {
     return res.status(400).json({ error: 'Please select a department' });
   }
@@ -74,10 +57,15 @@ router.post('/login', async (req, res) => {
     const anyUser = await prisma.user.findUnique({ where: { username } });
 
     if (!anyUser) {
+      auditLogin(req, { username, fullName: 'Unknown', department: deptNormalized, role: 'unknown' }, false);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     if (String(anyUser.department).trim().toLowerCase() !== deptNormalized.toLowerCase()) {
+      auditLogin(req, {
+        id: anyUser.id, username: anyUser.username,
+        fullName: anyUser.fullName, department: anyUser.department, role: anyUser.role,
+      }, false);
       return res.status(401).json({
         error: 'This username belongs to the ' + anyUser.department +
                ' department. Please select the correct department.'
@@ -86,6 +74,10 @@ router.post('/login', async (req, res) => {
 
     const valid = await bcrypt.compare(password, anyUser.passwordHash);
     if (!valid) {
+      auditLogin(req, {
+        id: anyUser.id, username: anyUser.username,
+        fullName: anyUser.fullName, department: anyUser.department, role: anyUser.role,
+      }, false);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -101,6 +93,11 @@ router.post('/login', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '12h' }
     );
+
+    auditLogin(req, {
+      id: anyUser.id, username: anyUser.username,
+      fullName: anyUser.fullName, department: anyUser.department, role: anyUser.role,
+    }, true);
 
     res.json({
       token,
@@ -147,13 +144,10 @@ router.get('/me', requireAuth, async (req, res) => {
 
 // ============================================================
 // CHANGE OWN PASSWORD
-// Super Admin password is managed via .env — cannot be changed here.
 // ============================================================
 router.post('/change-password', requireAuth, async (req, res) => {
   if (req.user.department === 'SuperAdmin') {
-    return res.status(403).json({
-      error: 'Super Admin password is managed in server configuration',
-    });
+    return res.status(403).json({ error: 'Super Admin password is managed in server configuration' });
   }
 
   const { currentPassword, newPassword } = req.body;
@@ -174,6 +168,13 @@ router.post('/change-password', requireAuth, async (req, res) => {
     const hash = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({ where: { id: user.id }, data: { passwordHash: hash } });
 
+    audit(req, {
+      action: 'update',
+      entity: 'user',
+      entityId: user.id,
+      summary: 'Changed own password',
+    });
+
     res.json({ message: 'Password updated successfully' });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -181,7 +182,7 @@ router.post('/change-password', requireAuth, async (req, res) => {
 });
 
 // ============================================================
-// IT or Super Admin only - Create user
+// CREATE USER (IT or Super Admin only)
 // ============================================================
 router.post('/admin/create-user', requireAuth, async (req, res) => {
   if (!isITOrSuperAdmin(req)) {
@@ -203,6 +204,13 @@ router.post('/admin/create-user', requireAuth, async (req, res) => {
       data: { username, passwordHash: hash, fullName, department, role: role || 'staff' },
     });
 
+    audit(req, {
+      action: 'create',
+      entity: 'user',
+      entityId: user.id,
+      summary: 'Created user ' + user.username + ' (' + user.department + ')',
+    });
+
     res.status(201).json({
       message: 'User created',
       user: {
@@ -217,7 +225,7 @@ router.post('/admin/create-user', requireAuth, async (req, res) => {
 });
 
 // ============================================================
-// IT or Super Admin only - Reset any user's password
+// RESET PASSWORD (IT or Super Admin only)
 // ============================================================
 router.post('/admin/reset-password', requireAuth, async (req, res) => {
   if (!isITOrSuperAdmin(req)) {
@@ -239,6 +247,13 @@ router.post('/admin/reset-password', requireAuth, async (req, res) => {
     const hash = await bcrypt.hash(tempPassword, 10);
     await prisma.user.update({ where: { id: user.id }, data: { passwordHash: hash } });
 
+    audit(req, {
+      action: 'update',
+      entity: 'user',
+      entityId: user.id,
+      summary: 'Reset password for ' + user.username,
+    });
+
     res.json({
       message: 'Password reset for ' + user.username,
       user: { id: user.id, username: user.username, fullName: user.fullName },
@@ -250,7 +265,7 @@ router.post('/admin/reset-password', requireAuth, async (req, res) => {
 });
 
 // ============================================================
-// IT or Super Admin only - List all users
+// LIST USERS (IT or Super Admin only)
 // ============================================================
 router.get('/admin/users', requireAuth, async (req, res) => {
   if (!isITOrSuperAdmin(req)) {
@@ -269,7 +284,7 @@ router.get('/admin/users', requireAuth, async (req, res) => {
 });
 
 // ============================================================
-// IT or Super Admin only - System status
+// SYSTEM STATUS (IT or Super Admin only)
 // ============================================================
 router.get('/system-status', requireAuth, async (req, res) => {
   if (!isITOrSuperAdmin(req)) {

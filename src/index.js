@@ -12,6 +12,15 @@ const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: '*' } });
 
 app.use(express.json());
+
+// API responses must never be cached.
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+
 app.use(express.static('public'));
 
 const CLEAN_ROUTES = [
@@ -46,6 +55,7 @@ const settingsRoutes      = require('./routes/settings');
 const disciplinaryRoutes  = require('./routes/disciplinary');
 const establishmentRoutes = require('./routes/establishment');
 const projectRoutes       = require('./routes/projects');
+const auditRoutes         = require('./routes/audit');
 
 app.use('/api/auth',           authRoutes);
 app.use('/api/patients',       patientRoutes);
@@ -57,6 +67,7 @@ app.use('/api/settings',       settingsRoutes);
 app.use('/api/disciplinary',   disciplinaryRoutes);
 app.use('/api/establishment',  establishmentRoutes);
 app.use('/api/projects',       projectRoutes);
+app.use('/api/audit',          auditRoutes);
 
 app.locals.io = io;
 app.locals.emit = (event, payload) => io.emit(event, payload);

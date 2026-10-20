@@ -1,8 +1,6 @@
-// Full seed script.
-// Creates: wards, users, patients, employees, inventory, tenders,
-//          disciplinary cases, establishment targets, movements,
-//          and sample projects with updates.
+// Full seed script — diversified + today-loaded.
 // Run with: npm run seed
+// WARNING: destructive. Wipes all data first.
 
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
@@ -10,82 +8,80 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 // ============================================================
-// DATA POOLS
+// NAME / DIAGNOSIS POOLS
 // ============================================================
 
 const FIRST_NAMES_M = [
-  'Tendai', 'Farai', 'Tapiwa', 'Munashe', 'Blessing', 'Tatenda', 'Simba',
-  'Kudakwashe', 'Panashe', 'Takudzwa', 'Nyasha', 'Tinashe', 'Rufaro', 'Tafara',
-  'Prosper', 'Knowledge', 'Prince', 'Wellington', 'Tichaona', 'Marshall',
-  'Brighton', 'Lovemore', 'Never', 'Gift', 'Praise', 'Wisdom', 'Takunda',
-  'Tanaka', 'Tanatswa', 'Tawananyasha', 'Tirivashe', 'Tonderai',
-  'Tongai', 'Tungamirai', 'Vusumuzi', 'Zvikomborero', 'Simbarashe',
-  'Shingirai', 'Shadreck', 'Ropafadzo', 'Nokutenda', 'Ngonidzashe',
-  'Munyaradzi', 'Mthokozisi', 'Mqondisi', 'Luckson', 'Kudzanai',
+  'Tendai','Farai','Tapiwa','Munashe','Blessing','Tatenda','Simba',
+  'Kudakwashe','Panashe','Takudzwa','Nyasha','Tinashe','Rufaro','Tafara',
+  'Prosper','Knowledge','Prince','Wellington','Tichaona','Marshall',
+  'Brighton','Lovemore','Never','Gift','Praise','Wisdom','Takunda',
+  'Tanaka','Tanatswa','Tawananyasha','Tirivashe','Tonderai',
+  'Tongai','Tungamirai','Vusumuzi','Zvikomborero','Simbarashe',
+  'Shingirai','Shadreck','Ropafadzo','Nokutenda','Ngonidzashe',
+  'Munyaradzi','Mthokozisi','Mqondisi','Luckson','Kudzanai',
 ];
 
 const FIRST_NAMES_F = [
-  'Rudo', 'Chipo', 'Nyasha', 'Tariro', 'Rumbidzai', 'Vimbai', 'Rutendo',
-  'Fadzai', 'Nyaradzo', 'Tanyaradzwa', 'Anesu', 'Chiedza', 'Danai', 'Kudzai',
-  'Precious', 'Memory', 'Grace', 'Faith', 'Hope', 'Patience', 'Mercy',
-  'Charity', 'Beauty', 'Praise', 'Joy', 'Tafadzwa',
-  'Tendai', 'Thandiwe', 'Thandeka', 'Sibongile', 'Sithembile',
-  'Priscilla', 'Nyari', 'Nyarai',
-  'Nomatter', 'Nomsa', 'Nokuthula', 'Nobuhle', 'Melody', 'Loveness',
-  'Kundai', 'Gamuchirai', 'Fungai', 'Constance',
+  'Rudo','Chipo','Nyasha','Tariro','Rumbidzai','Vimbai','Rutendo',
+  'Fadzai','Nyaradzo','Tanyaradzwa','Anesu','Chiedza','Danai','Kudzai',
+  'Precious','Memory','Grace','Faith','Hope','Patience','Mercy',
+  'Charity','Beauty','Praise','Joy','Tafadzwa',
+  'Tendai','Thandiwe','Thandeka','Sibongile','Sithembile',
+  'Priscilla','Nyari','Nyarai',
+  'Nomatter','Nomsa','Nokuthula','Nobuhle','Melody','Loveness',
+  'Kundai','Gamuchirai','Fungai','Constance',
 ];
 
 const SURNAMES = [
-  'Moyo', 'Ncube', 'Dube', 'Sibanda', 'Mhlanga', 'Ndlovu', 'Chikafu', 'Mutasa',
-  'Zhou', 'Gumbo', 'Mhaka', 'Chitongo', 'Nkomo', 'Muzenda', 'Mugabe', 'Chinamasa',
-  'Makoni', 'Nyoni', 'Tsvangirai', 'Chamisa', 'Mwonzora', 'Khupe', 'Biti',
-  'Chiwenga', 'Mnangagwa', 'Mavima', 'Marapira', 'Muswere', 'Mangwana',
-  'Chigumba', 'Rusere', 'Sanyatwe', 'Kazembe', 'Murambinda', 'Nyathi',
-  'Chikwanha', 'Mutinhiri', 'Mabuwa', 'Muronzi', 'Chimene', 'Madziva',
-  'Mudzuri', 'Chibaya', 'Mliswa', 'Matemadanda', 'Ndebele',
-  'Dlodlo', 'Mabuza', 'Ziyambi', 'Musabayana', 'Mhona',
+  'Moyo','Ncube','Dube','Sibanda','Mhlanga','Ndlovu','Chikafu','Mutasa',
+  'Zhou','Gumbo','Mhaka','Chitongo','Nkomo','Muzenda','Mugabe','Chinamasa',
+  'Makoni','Nyoni','Tsvangirai','Chamisa','Mwonzora','Khupe','Biti',
+  'Chiwenga','Mnangagwa','Mavima','Marapira','Muswere','Mangwana',
+  'Chigumba','Rusere','Sanyatwe','Kazembe','Murambinda','Nyathi',
+  'Chikwanha','Mutinhiri','Mabuwa','Muronzi','Chimene','Madziva',
+  'Mudzuri','Chibaya','Mliswa','Matemadanda','Ndebele',
+  'Dlodlo','Mabuza','Ziyambi','Musabayana','Mhona',
 ];
 
 const DIAGNOSES = [
-  'Malaria', 'Severe malaria', 'Cerebral malaria', 'Typhoid fever',
-  'Pneumonia', 'Bronchopneumonia', 'Tuberculosis', 'HIV-related illness',
-  'Gastroenteritis', 'Cholera', 'Diarrhoea', 'Dehydration',
-  'Hypertension', 'Diabetes mellitus type 2', 'Diabetic ketoacidosis',
-  'Anaemia', 'Severe anaemia', 'Meningitis', 'Sepsis', 'Puerperal sepsis',
-  'Pre-eclampsia', 'Eclampsia', 'Postpartum haemorrhage',
-  'Obstructed labour', 'Malnutrition', 'Kwashiorkor', 'Marasmus',
-  'Appendicitis', 'Intestinal obstruction', 'Fracture femur', 'Head injury',
-  'Road traffic accident', 'Snake bite', 'Poisoning', 'Burns',
-  'Asthma exacerbation', 'Heart failure', 'Stroke', 'Epilepsy', 'Renal failure',
+  'Malaria','Severe malaria','Cerebral malaria','Typhoid fever',
+  'Pneumonia','Bronchopneumonia','Tuberculosis','HIV-related illness',
+  'Gastroenteritis','Cholera','Diarrhoea','Dehydration',
+  'Hypertension','Diabetes mellitus type 2','Diabetic ketoacidosis',
+  'Anaemia','Severe anaemia','Meningitis','Sepsis','Puerperal sepsis',
+  'Pre-eclampsia','Eclampsia','Postpartum haemorrhage',
+  'Obstructed labour','Malnutrition','Kwashiorkor','Marasmus',
+  'Appendicitis','Intestinal obstruction','Fracture femur','Head injury',
+  'Road traffic accident','Snake bite','Poisoning','Burns',
+  'Asthma exacerbation','Heart failure','Stroke','Epilepsy','Renal failure',
 ];
 
 const SYMPTOMS = [
-  'Fever, chills, headache', 'Cough, difficulty breathing', 'Chest pain',
-  'Abdominal pain, vomiting', 'Diarrhoea, dehydration', 'Weakness, fatigue',
-  'Dizziness, fainting', 'Severe headache, neck stiffness', 'Convulsions',
-  'Bleeding', 'Unconscious', 'Jaundice', 'Rash', 'Swelling',
+  'Fever, chills, headache','Cough, difficulty breathing','Chest pain',
+  'Abdominal pain, vomiting','Diarrhoea, dehydration','Weakness, fatigue',
+  'Dizziness, fainting','Severe headache, neck stiffness','Convulsions',
+  'Bleeding','Unconscious','Jaundice','Rash','Swelling',
 ];
 
-const OUTCOMES = ['Recovered', 'Improved', 'Referred', 'Absconded'];
-
-const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-
-const REVIEW_DEPARTMENTS = ['Outpatient', 'Nurses', 'Medical', 'Pharmacy', 'Laboratory'];
+const OUTCOMES = ['Recovered','Improved','Referred','Absconded'];
+const BLOOD_GROUPS = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
+const REVIEW_DEPARTMENTS = ['Outpatient','Nurses','Medical','Pharmacy','Laboratory'];
 
 const EMPLOYEE_DEPARTMENTS = [
-  'Medical', 'Nurses', 'Pharmacy', 'Laboratory', 'Admin',
-  'Support', 'Maintenance', 'Security',
+  'Medical','Nurses','Pharmacy','Laboratory','Admin',
+  'Support','Maintenance','Security',
 ];
 
 const ROLES_BY_DEPT = {
-  Medical: ['Doctor', 'Consultant', 'Medical Officer', 'Intern'],
-  Nurses: ['Registered Nurse', 'Enrolled Nurse', 'Nurse Aide', 'Sister', 'Matron'],
-  Pharmacy: ['Pharmacist', 'Pharmacy Technician', 'Pharmacy Assistant'],
-  Laboratory: ['Lab Scientist', 'Lab Technician', 'Lab Assistant'],
-  Admin: ['Clerk', 'Administrator', 'Receptionist', 'Data Entry Officer'],
-  Support: ['Cleaner', 'Porter', 'Laundry Staff', 'Catering'],
-  Maintenance: ['Technician', 'Electrician', 'Plumber', 'Handyman'],
-  Security: ['Guard', 'Security Officer', 'Gate Officer'],
+  Medical:     ['Doctor','Consultant','Medical Officer','Intern'],
+  Nurses:      ['Registered Nurse','Enrolled Nurse','Nurse Aide','Sister','Matron'],
+  Pharmacy:    ['Pharmacist','Pharmacy Technician','Pharmacy Assistant'],
+  Laboratory:  ['Lab Scientist','Lab Technician','Lab Assistant'],
+  Admin:       ['Clerk','Administrator','Receptionist','Data Entry Officer'],
+  Support:     ['Cleaner','Porter','Laundry Staff','Catering'],
+  Maintenance: ['Technician','Electrician','Plumber','Handyman'],
+  Security:    ['Guard','Security Officer','Gate Officer'],
 };
 
 function pickEmployeeStatus() {
@@ -101,9 +97,9 @@ function pickEmployeeStatus() {
 // ============================================================
 
 const DISCIPLINARY_OFFENSES = [
-  'Absenteeism', 'Late arrival', 'Insubordination', 'Negligence', 'Misconduct',
-  'Theft', 'Substance abuse', 'Harassment', 'Patient mistreatment',
-  'Breach of confidentiality', 'Falsification of records', 'Other',
+  'Absenteeism','Late arrival','Insubordination','Negligence','Misconduct',
+  'Theft','Substance abuse','Harassment','Patient mistreatment',
+  'Breach of confidentiality','Falsification of records','Other',
 ];
 
 const DISCIPLINARY_DESCRIPTIONS = {
@@ -206,16 +202,16 @@ function pickDisciplinaryStatus(dayAge) {
 
 function pickDisciplinaryAction(status) {
   if (status === 'resolved') {
-    return pick(['Verbal warning', 'Written warning', 'Final written warning', 'Suspension', 'Demotion', 'Termination', 'Counselling']);
+    return pick(['Verbal warning','Written warning','Final written warning','Suspension','Demotion','Termination','Counselling']);
   }
   if (status === 'dismissed') {
-    return pick(['No action', 'Counselling']);
+    return pick(['No action','Counselling']);
   }
   return null;
 }
 
 // ============================================================
-// PROJECT SAMPLES
+// PROJECT SAMPLES — diversified with phase progression
 // ============================================================
 
 const PROJECT_SAMPLES = [
@@ -224,14 +220,15 @@ const PROJECT_SAMPLES = [
     description: 'Install 12 new CCTV cameras covering the main corridor, pharmacy entrance, and maternity ward waiting area.',
     department: 'IT',
     projectHead: 'IT Manager',
-    status: 'ongoing',
-    startOffsetDays: 30,
-    targetOffsetDays: 45,
+    startOffsetDays: 45,
+    targetOffsetDays: 15,
     createdBy: 'IT Manager',
-    updates: [
-      { note: 'Procurement approved. Supplier selected: SecureVision Pvt Ltd.', status: 'ongoing', actionTaken: 'Tender submitted to Procurement', offsetDays: 30 },
-      { note: 'Cabling complete in main corridor. Cameras delivered. Installation in progress.', status: 'ongoing', actionTaken: '3 of 12 cameras installed', offsetDays: 14 },
-      { note: 'Installation 60% complete. Power supply to pharmacy entrance pending.', status: 'ongoing', actionTaken: '8 of 12 cameras installed', offsetDays: 5 },
+    phases: [
+      { offsetDays: 45, status: 'ongoing',  note: 'Project initiated at IT committee. Scope defined for 12 cameras across 3 zones.', actionTaken: 'Scope document approved' },
+      { offsetDays: 32, status: 'pending',  note: 'Waiting on supplier quote from SecureVision Pvt Ltd.', obstacleReason: 'Awaiting formal quotation from SecureVision', actionTaken: 'RFQ sent to 3 suppliers' },
+      { offsetDays: 20, status: 'ongoing',  note: 'Supplier selected (SecureVision). Cabling underway in main corridor.', actionTaken: 'Signed supply agreement' },
+      { offsetDays: 8,  status: 'ongoing',  note: 'Cabling complete in main corridor. Cameras delivered. Installation in progress.', actionTaken: '3 of 12 cameras installed' },
+      { offsetDays: 2,  status: 'ongoing',  note: 'Installation 60% complete. Power supply to pharmacy entrance pending.', actionTaken: '8 of 12 cameras installed' },
     ],
   },
   {
@@ -239,14 +236,14 @@ const PROJECT_SAMPLES = [
     description: 'Roll out new patient ID card system with barcodes for faster admission and file retrieval.',
     department: 'Nurses',
     projectHead: 'Sister Mutsa',
-    status: 'pending',
-    startOffsetDays: 20,
-    targetOffsetDays: 60,
-    obstacleReason: 'Waiting for IT to configure the barcode scanner firmware',
+    startOffsetDays: 40,
+    targetOffsetDays: 25,
     createdBy: 'Sister Mutsa',
-    updates: [
-      { note: 'Project initiated at nurses meeting.', status: 'ongoing', offsetDays: 20 },
-      { note: 'Scanners ordered and delivered. Setup blocked.', status: 'pending', obstacleReason: 'Waiting for IT to configure the barcode scanner firmware', actionTaken: 'Escalated to IT Manager', offsetDays: 8 },
+    phases: [
+      { offsetDays: 40, status: 'ongoing', note: 'Project initiated at nurses meeting. Budget approved by hospital board.', actionTaken: 'Board approval received' },
+      { offsetDays: 25, status: 'ongoing', note: 'Scanners ordered and delivered to IT.', actionTaken: 'Hardware delivered' },
+      { offsetDays: 10, status: 'pending', note: 'Scanners delivered but firmware not configured. Blocked on IT.', obstacleReason: 'Waiting for IT to configure barcode scanner firmware', actionTaken: 'Escalated to IT Manager' },
+      { offsetDays: 3,  status: 'pending', note: 'Firmware still pending. IT committed to delivery by end of week.', obstacleReason: 'IT firmware configuration delayed - scheduled for Friday', actionTaken: 'Followed up with IT twice this week' },
     ],
   },
   {
@@ -254,13 +251,13 @@ const PROJECT_SAMPLES = [
     description: 'Repaint Ward A walls, replace 4 broken beds, and fix leaking ceiling in the west corner.',
     department: 'Maintenance',
     projectHead: 'Maintenance Supervisor',
-    status: 'ongoing',
-    startOffsetDays: 15,
-    targetOffsetDays: 30,
+    startOffsetDays: 35,
+    targetOffsetDays: 5,
     createdBy: 'HR Manager',
-    updates: [
-      { note: 'Started painting east wing. Beds ordered.', status: 'ongoing', actionTaken: 'Painting supplies procured', offsetDays: 15 },
-      { note: 'Painting 50% done. Beds delivered but awaiting assembly.', status: 'ongoing', offsetDays: 3 },
+    phases: [
+      { offsetDays: 35, status: 'ongoing', note: 'Project started. Painting east wing. Beds ordered.', actionTaken: 'Painting supplies procured' },
+      { offsetDays: 15, status: 'ongoing', note: 'Painting 50% done. Beds delivered but awaiting assembly.', actionTaken: 'Half of east wing painted' },
+      { offsetDays: 4,  status: 'ongoing', note: 'Painting 85% done. Three of four beds assembled. Ceiling leak scheduled for repair this week.', actionTaken: '3 of 4 beds assembled' },
     ],
   },
   {
@@ -268,13 +265,14 @@ const PROJECT_SAMPLES = [
     description: 'Introduce quarterly wellness check-ups and counselling service for all staff members.',
     department: 'HR',
     projectHead: 'HR Manager',
-    status: 'ongoing',
-    startOffsetDays: 45,
-    targetOffsetDays: 120,
+    startOffsetDays: 60,
+    targetOffsetDays: 60,
     createdBy: 'HR Manager',
-    updates: [
-      { note: 'Programme approved by hospital board.', status: 'ongoing', offsetDays: 45 },
-      { note: 'Counsellor contracted. First wellness day scheduled.', status: 'ongoing', actionTaken: 'Signed MOU with counsellor', offsetDays: 20 },
+    phases: [
+      { offsetDays: 60, status: 'ongoing', note: 'Programme approved by hospital board. Budget allocated.', actionTaken: 'Board approval' },
+      { offsetDays: 40, status: 'ongoing', note: 'Counsellor contracted. First wellness day scheduled.', actionTaken: 'Signed MOU with counsellor' },
+      { offsetDays: 12, status: 'ongoing', note: 'First wellness day held. 47 staff screened, 8 referrals made.', actionTaken: '47 staff attended' },
+      { offsetDays: 3,  status: 'ongoing', note: 'Second wellness day scheduled for next month. Counselling sessions booked.', actionTaken: 'Next session: 15 Nov' },
     ],
   },
   {
@@ -282,13 +280,13 @@ const PROJECT_SAMPLES = [
     description: 'Full physical inventory count and reconciliation against system records for pharmacy.',
     department: 'Pharmacy',
     projectHead: 'Pharmacist Lisa',
-    status: 'completed',
-    startOffsetDays: 25,
-    targetOffsetDays: 10,
+    startOffsetDays: 30,
+    targetOffsetDays: 0,
     createdBy: 'Store Manager',
-    updates: [
-      { note: 'Count started. Two-person team assigned.', status: 'ongoing', offsetDays: 25 },
-      { note: 'Reconciliation complete. Discrepancies logged and corrected.', status: 'completed', actionTaken: 'Report submitted to Stores', offsetDays: 10 },
+    phases: [
+      { offsetDays: 30, status: 'ongoing', note: 'Count started. Two-person team assigned.', actionTaken: 'Team briefed' },
+      { offsetDays: 15, status: 'ongoing', note: 'Count complete. Reconciling discrepancies in controlled substances.', actionTaken: 'Physical count done' },
+      { offsetDays: 1,  status: 'completed', note: 'Reconciliation complete. Discrepancies logged and corrected. Final report submitted.', actionTaken: 'Report submitted to Stores' },
     ],
   },
   {
@@ -296,13 +294,13 @@ const PROJECT_SAMPLES = [
     description: 'Annual servicing of all laboratory analyzers and microscopes, plus calibration.',
     department: 'Laboratory',
     projectHead: 'Lab Tech Tom',
-    status: 'ongoing',
-    startOffsetDays: 12,
-    targetOffsetDays: 20,
+    startOffsetDays: 25,
+    targetOffsetDays: 10,
     createdBy: 'Lab Tech Tom',
-    updates: [
-      { note: 'Servicing contract signed with BioMed Services.', status: 'ongoing', offsetDays: 12 },
-      { note: 'Two analyzers serviced. Microscope calibration scheduled.', status: 'ongoing', actionTaken: 'Partial servicing done', offsetDays: 4 },
+    phases: [
+      { offsetDays: 25, status: 'ongoing', note: 'Servicing contract signed with BioMed Services.', actionTaken: 'Contract signed' },
+      { offsetDays: 14, status: 'ongoing', note: 'Two analyzers serviced. Microscope calibration scheduled.', actionTaken: 'Partial servicing done' },
+      { offsetDays: 5,  status: 'ongoing', note: 'Four of five instruments serviced. Final instrument in use, service pending.', actionTaken: '4 of 5 serviced' },
     ],
   },
   {
@@ -310,15 +308,14 @@ const PROJECT_SAMPLES = [
     description: 'Scan and digitise 5 years of paper patient records for electronic access.',
     department: 'Admin',
     projectHead: 'Admin Clerk Jane',
-    status: 'pending',
-    startOffsetDays: 60,
-    targetOffsetDays: 180,
-    obstacleReason: 'Scanner hardware not yet delivered by supplier',
+    startOffsetDays: 90,
+    targetOffsetDays: 90,
     createdBy: 'Admin Clerk Jane',
-    updates: [
-      { note: 'Project approved. Supplier contacted.', status: 'ongoing', offsetDays: 60 },
-      { note: 'Purchase order raised. Waiting for delivery.', status: 'ongoing', offsetDays: 30 },
-      { note: 'Delivery delayed. Warehouse backlog at supplier.', status: 'pending', obstacleReason: 'Scanner hardware not yet delivered by supplier', actionTaken: 'Followed up with supplier twice', offsetDays: 7 },
+    phases: [
+      { offsetDays: 90, status: 'ongoing', note: 'Project approved. Supplier contacted.', actionTaken: 'Approval received' },
+      { offsetDays: 60, status: 'ongoing', note: 'Purchase order raised. Waiting for delivery of scanning hardware.', actionTaken: 'PO issued to supplier' },
+      { offsetDays: 30, status: 'pending', note: 'Delivery delayed. Warehouse backlog at supplier.', obstacleReason: 'Scanner hardware not yet delivered by supplier', actionTaken: 'Followed up with supplier twice' },
+      { offsetDays: 10, status: 'pending', note: 'Supplier confirmed dispatch next Monday. ETA 2 weeks.', obstacleReason: 'Awaiting final delivery from supplier (ETA 2 weeks)', actionTaken: 'Confirmed dispatch date with supplier' },
     ],
   },
   {
@@ -326,13 +323,13 @@ const PROJECT_SAMPLES = [
     description: 'Replace manual gate logs with electronic access control system at staff entrance.',
     department: 'Security',
     projectHead: 'Security Guard Sam',
-    status: 'ongoing',
-    startOffsetDays: 20,
-    targetOffsetDays: 40,
+    startOffsetDays: 50,
+    targetOffsetDays: 10,
     createdBy: 'Security Guard Sam',
-    updates: [
-      { note: 'System selected. Supplier is AccessTech Pvt Ltd.', status: 'ongoing', offsetDays: 20 },
-      { note: 'Hardware installed. Staff card issuance in progress.', status: 'ongoing', actionTaken: '150 of 300 cards issued', offsetDays: 6 },
+    phases: [
+      { offsetDays: 50, status: 'ongoing', note: 'System selected. Supplier is AccessTech Pvt Ltd.', actionTaken: 'Vendor selected' },
+      { offsetDays: 30, status: 'ongoing', note: 'Hardware installed. Staff card issuance in progress.', actionTaken: '150 of 300 cards issued' },
+      { offsetDays: 6,  status: 'ongoing', note: '250 of 300 cards issued. Remaining staff scheduled this week.', actionTaken: '250 of 300 cards issued' },
     ],
   },
   {
@@ -340,13 +337,13 @@ const PROJECT_SAMPLES = [
     description: 'Replace 200 sets of worn bed linen across Ward B.',
     department: 'Support',
     projectHead: 'Support Supervisor',
-    status: 'completed',
-    startOffsetDays: 30,
-    targetOffsetDays: 15,
+    startOffsetDays: 45,
+    targetOffsetDays: 0,
     createdBy: 'Sister Mutsa',
-    updates: [
-      { note: 'Order placed with linen supplier.', status: 'ongoing', offsetDays: 30 },
-      { note: 'Linen received and distributed to Ward B.', status: 'completed', actionTaken: '200 sets deployed', offsetDays: 15 },
+    phases: [
+      { offsetDays: 45, status: 'ongoing', note: 'Order placed with linen supplier.', actionTaken: 'PO issued' },
+      { offsetDays: 20, status: 'ongoing', note: 'Linen received and being distributed to Ward B.', actionTaken: '50% distributed' },
+      { offsetDays: 2,  status: 'completed', note: 'All 200 sets deployed to Ward B. Old linen removed and disposed.', actionTaken: '200 sets deployed' },
     ],
   },
   {
@@ -354,13 +351,13 @@ const PROJECT_SAMPLES = [
     description: 'Preventive maintenance and calibration of all ICU ventilators.',
     department: 'Medical',
     projectHead: 'Dr. James Mwale',
-    status: 'ongoing',
-    startOffsetDays: 10,
-    targetOffsetDays: 15,
+    startOffsetDays: 22,
+    targetOffsetDays: 8,
     createdBy: 'Dr. James Mwale',
-    updates: [
-      { note: 'Biomedical engineer scheduled. Ventilators marked for service.', status: 'ongoing', offsetDays: 10 },
-      { note: '4 of 6 ventilators serviced. Remaining 2 in use, service pending.', status: 'ongoing', actionTaken: 'Partial service complete', offsetDays: 2 },
+    phases: [
+      { offsetDays: 22, status: 'ongoing', note: 'Biomedical engineer scheduled. Ventilators marked for service.', actionTaken: 'Engineer booked' },
+      { offsetDays: 10, status: 'ongoing', note: 'First ventilator serviced and returned to service.', actionTaken: '1 of 6 serviced' },
+      { offsetDays: 4,  status: 'ongoing', note: '4 of 6 ventilators serviced. Remaining 2 in use, service pending.', actionTaken: 'Partial service complete' },
     ],
   },
   {
@@ -368,13 +365,13 @@ const PROJECT_SAMPLES = [
     description: 'Refresher training for all nurses on infection control protocols.',
     department: 'Nurses',
     projectHead: 'Nurse Tatenda',
-    status: 'ongoing',
-    startOffsetDays: 25,
-    targetOffsetDays: 60,
+    startOffsetDays: 40,
+    targetOffsetDays: 30,
     createdBy: 'Nurse Tatenda',
-    updates: [
-      { note: 'Training curriculum finalised. Sessions scheduled.', status: 'ongoing', offsetDays: 25 },
-      { note: 'First batch of 20 nurses trained.', status: 'ongoing', actionTaken: '20 of 80 nurses trained', offsetDays: 8 },
+    phases: [
+      { offsetDays: 40, status: 'ongoing', note: 'Training curriculum finalised. Sessions scheduled.', actionTaken: 'Curriculum approved' },
+      { offsetDays: 25, status: 'ongoing', note: 'First batch of 20 nurses trained.', actionTaken: '20 of 80 nurses trained' },
+      { offsetDays: 8,  status: 'ongoing', note: '45 of 80 nurses trained. Second batch underway.', actionTaken: '45 of 80 trained' },
     ],
   },
   {
@@ -382,13 +379,112 @@ const PROJECT_SAMPLES = [
     description: 'Full service of backup generators including fuel system and electrical panel check.',
     department: 'Maintenance',
     projectHead: 'Maintenance Bob',
-    status: 'completed',
-    startOffsetDays: 40,
-    targetOffsetDays: 20,
+    startOffsetDays: 55,
+    targetOffsetDays: -5,
     createdBy: 'Maintenance Bob',
-    updates: [
-      { note: 'Generator 1 and 2 scheduled for service.', status: 'ongoing', offsetDays: 40 },
-      { note: 'Both generators serviced, tested under load. Certificates issued.', status: 'completed', actionTaken: 'Full service complete', offsetDays: 20 },
+    phases: [
+      { offsetDays: 55, status: 'ongoing', note: 'Generator 1 and 2 scheduled for service.', actionTaken: 'Contractor booked' },
+      { offsetDays: 30, status: 'ongoing', note: 'Generator 1 serviced, tested under load.', actionTaken: 'Generator 1 complete' },
+      { offsetDays: 5,  status: 'completed', note: 'Both generators serviced, tested under load. Certificates issued.', actionTaken: 'Full service complete' },
+    ],
+  },
+  {
+    name: 'Ward C furniture procurement',
+    description: 'Procure and install 30 hospital beds and 15 bedside cabinets for Ward C.',
+    department: 'Procurement',
+    projectHead: 'Procurement Officer',
+    startOffsetDays: 25,
+    targetOffsetDays: 45,
+    createdBy: 'Procurement Officer',
+    phases: [
+      { offsetDays: 25, status: 'ongoing',  note: 'Tender published. 4 suppliers invited.', actionTaken: 'Tender issued' },
+      { offsetDays: 15, status: 'pending',  note: 'Awaiting quotation from 2 suppliers.', obstacleReason: 'Two suppliers have not yet submitted quotes', actionTaken: 'Reminder sent' },
+      { offsetDays: 6,  status: 'ongoing',  note: 'Quotations received. Evaluation committee meeting scheduled.', actionTaken: 'All quotes received' },
+    ],
+  },
+  {
+    name: 'Pharmacy refrigeration upgrade',
+    description: 'Upgrade vaccine refrigeration units to meet new cold-chain standards.',
+    department: 'Pharmacy',
+    projectHead: 'Pharmacist Lisa',
+    startOffsetDays: 60,
+    targetOffsetDays: 30,
+    createdBy: 'Pharmacist Lisa',
+    phases: [
+      { offsetDays: 60, status: 'ongoing', note: 'Cold-chain audit identified 2 units needing replacement.', actionTaken: 'Audit complete' },
+      { offsetDays: 40, status: 'ongoing', note: 'Supplier selected. Order placed for 2 pharmaceutical-grade fridges.', actionTaken: 'Order placed' },
+      { offsetDays: 15, status: 'ongoing', note: 'Units delivered. Installation and temperature validation scheduled.', actionTaken: 'Units delivered' },
+      { offsetDays: 3,  status: 'ongoing', note: 'Both units installed and running. Validation tests in progress.', actionTaken: 'Installation complete' },
+    ],
+  },
+  {
+    name: 'IT network switch replacement',
+    description: 'Replace aging network switches in admin block to resolve intermittent connectivity.',
+    department: 'IT',
+    projectHead: 'IT Manager',
+    startOffsetDays: 20,
+    targetOffsetDays: 15,
+    createdBy: 'IT Manager',
+    phases: [
+      { offsetDays: 20, status: 'ongoing',  note: 'Network audit identified 3 switches past end-of-life.', actionTaken: 'Audit complete' },
+      { offsetDays: 8,  status: 'pending',  note: 'Awaiting procurement approval for 3 Cisco switches.', obstacleReason: 'Procurement approval pending - submitted 8 days ago', actionTaken: 'Escalated to Procurement' },
+      { offsetDays: 2,  status: 'ongoing',  note: 'Approval received. Purchase order issued. Delivery expected next week.', actionTaken: 'PO issued to supplier' },
+    ],
+  },
+  {
+    name: 'Maternity ward breastfeeding support',
+    description: 'Establish peer breastfeeding support programme with trained counsellors.',
+    department: 'Nurses',
+    projectHead: 'Sister Mutsa',
+    startOffsetDays: 50,
+    targetOffsetDays: 40,
+    createdBy: 'Sister Mutsa',
+    phases: [
+      { offsetDays: 50, status: 'ongoing', note: 'Programme approved. 4 peer counsellors recruited.', actionTaken: 'Counsellors selected' },
+      { offsetDays: 30, status: 'ongoing', note: 'Counsellor training complete. Programme launch set for next month.', actionTaken: 'Training complete' },
+      { offsetDays: 5,  status: 'ongoing', note: 'Programme launched. 12 mothers enrolled in first week.', actionTaken: '12 mothers enrolled' },
+    ],
+  },
+  {
+    name: 'Laboratory information system integration',
+    description: 'Integrate lab results with patient records for faster clinical decisions.',
+    department: 'Laboratory',
+    projectHead: 'Lab Tech Tom',
+    startOffsetDays: 35,
+    targetOffsetDays: 55,
+    createdBy: 'Lab Tech Tom',
+    phases: [
+      { offsetDays: 35, status: 'ongoing',  note: 'Requirements gathering with IT and clinical staff.', actionTaken: 'Requirements documented' },
+      { offsetDays: 20, status: 'pending',  note: 'Waiting for IT to confirm API integration timeline.', obstacleReason: 'IT API integration timeline pending', actionTaken: 'Follow-up sent to IT' },
+      { offsetDays: 7,  status: 'ongoing',  note: 'IT confirmed API integration will begin next sprint.', actionTaken: 'Timeline confirmed' },
+    ],
+  },
+  {
+    name: 'Ward C staffing plan',
+    description: 'Review and update staffing levels for Ward C to match patient load.',
+    department: 'HR',
+    projectHead: 'HR Manager',
+    startOffsetDays: 30,
+    targetOffsetDays: 20,
+    createdBy: 'HR Manager',
+    phases: [
+      { offsetDays: 30, status: 'ongoing', note: 'Patient load analysis completed. Staffing gaps identified.', actionTaken: 'Data analysis complete' },
+      { offsetDays: 15, status: 'ongoing', note: 'Draft staffing plan submitted to hospital management.', actionTaken: 'Draft plan submitted' },
+      { offsetDays: 4,  status: 'ongoing', note: 'Plan approved. Recruitment for 3 new positions starting next week.', actionTaken: 'Plan approved by board' },
+    ],
+  },
+  {
+    name: 'Hospital waste management upgrade',
+    description: 'Upgrade waste segregation and disposal protocols across all wards.',
+    department: 'Support',
+    projectHead: 'Support Supervisor',
+    startOffsetDays: 45,
+    targetOffsetDays: 30,
+    createdBy: 'Support Supervisor',
+    phases: [
+      { offsetDays: 45, status: 'ongoing', note: 'Waste audit completed. New segregation bins ordered.', actionTaken: 'Audit complete' },
+      { offsetDays: 25, status: 'ongoing', note: 'Bins delivered. Staff training on new protocols underway.', actionTaken: 'Bins delivered' },
+      { offsetDays: 6,  status: 'ongoing', note: 'Training 80% complete. First weekly compliance check performed.', actionTaken: 'Training ongoing' },
     ],
   },
 ];
@@ -404,6 +500,16 @@ function pick(arr) {
 function randomDateWithinDays(daysAgo, hourStart = 6, hourEnd = 22) {
   const d = new Date();
   d.setDate(d.getDate() - daysAgo);
+  const hours = hourStart + Math.floor(Math.random() * (hourEnd - hourStart));
+  const minutes = Math.floor(Math.random() * 60);
+  const seconds = Math.floor(Math.random() * 60);
+  d.setHours(hours, minutes, seconds, 0);
+  return d;
+}
+
+// For "loaded today" records — clamp to today at a random hour between 8am-6pm.
+function todayAtHour(hourStart = 8, hourEnd = 18) {
+  const d = new Date();
   const hours = hourStart + Math.floor(Math.random() * (hourEnd - hourStart));
   const minutes = Math.floor(Math.random() * 60);
   const seconds = Math.floor(Math.random() * 60);
@@ -493,16 +599,16 @@ async function main() {
     // Users.
     console.log('Creating users...');
     const users = [
-      { username: 'nurse1', password: 'nurse123', fullName: 'Sister Mutsa', department: 'Nurses', role: 'staff', wardId: wards[0].id },
-      { username: 'nurse2', password: 'nurse123', fullName: 'Nurse Tatenda', department: 'Nurses', role: 'staff', wardId: wards[1].id },
-      { username: 'it1', password: 'it123', fullName: 'IT Manager', department: 'IT', role: 'admin', wardId: null },
-      { username: 'it2', password: 'it123', fullName: 'IT Support Officer', department: 'IT', role: 'staff', wardId: null },
-      { username: 'procurement1', password: 'proc123', fullName: 'Procurement Officer', department: 'Procurement', role: 'staff', wardId: null },
-      { username: 'procurement2', password: 'proc123', fullName: 'Procurement Assistant', department: 'Procurement', role: 'staff', wardId: null },
-      { username: 'stores1', password: 'store123', fullName: 'Store Manager', department: 'Stores', role: 'staff', wardId: null },
-      { username: 'stores2', password: 'store123', fullName: 'Store Clerk', department: 'Stores', role: 'staff', wardId: null },
-      { username: 'hr1', password: 'hr123', fullName: 'HR Manager', department: 'HR', role: 'staff', wardId: null },
-      { username: 'hr2', password: 'hr123', fullName: 'HR Officer', department: 'HR', role: 'staff', wardId: null },
+      { username: 'nurse1',       password: 'nurse123',  fullName: 'Sister Mutsa',          department: 'Nurses',      role: 'staff', wardId: wards[0].id },
+      { username: 'nurse2',       password: 'nurse123',  fullName: 'Nurse Tatenda',         department: 'Nurses',      role: 'staff', wardId: wards[1].id },
+      { username: 'it1',          password: 'it123',     fullName: 'IT Manager',            department: 'IT',          role: 'admin', wardId: null },
+      { username: 'it2',          password: 'it123',     fullName: 'IT Support Officer',    department: 'IT',          role: 'staff', wardId: null },
+      { username: 'procurement1', password: 'proc123',   fullName: 'Procurement Officer',   department: 'Procurement', role: 'staff', wardId: null },
+      { username: 'procurement2', password: 'proc123',   fullName: 'Procurement Assistant', department: 'Procurement', role: 'staff', wardId: null },
+      { username: 'stores1',      password: 'store123',  fullName: 'Store Manager',         department: 'Stores',      role: 'staff', wardId: null },
+      { username: 'stores2',      password: 'store123',  fullName: 'Store Clerk',           department: 'Stores',      role: 'staff', wardId: null },
+      { username: 'hr1',          password: 'hr123',     fullName: 'HR Manager',            department: 'HR',          role: 'staff', wardId: null },
+      { username: 'hr2',          password: 'hr123',     fullName: 'HR Officer',            department: 'HR',          role: 'staff', wardId: null },
     ];
 
     for (const u of users) {
@@ -556,12 +662,7 @@ async function main() {
         });
 
         await prisma.employeeStatusLog.create({
-          data: {
-            employeeId: employee.id,
-            oldStatus: 'new',
-            newStatus: status,
-            changedBy: 'Seed Script',
-          },
+          data: { employeeId: employee.id, oldStatus: 'new', newStatus: status, changedBy: 'Seed Script' },
         });
 
         empCreated++;
@@ -572,7 +673,7 @@ async function main() {
     }
     console.log('  Employees created: ' + empCreated);
 
-    // Patients.
+    // Patients — first 20 force "today" admission, first 5 discharged force today discharge.
     console.log('Creating 1000 patients...');
     const TOTAL_PATIENTS = 1000;
     const PATIENT_DAYS_SPAN = 90;
@@ -584,8 +685,9 @@ async function main() {
       const surname = pick(SURNAMES);
       const name = firstName + ' ' + surname;
 
-      const daysAgo = Math.floor(Math.random() * PATIENT_DAYS_SPAN);
-      const admissionDate = randomDateWithinDays(daysAgo);
+      const forceToday = i < 20;
+      const daysAgo = forceToday ? 0 : Math.floor(Math.random() * PATIENT_DAYS_SPAN);
+      const admissionDate = forceToday ? todayAtHour(8, 18) : randomDateWithinDays(daysAgo);
       const status = pickPatientStatus(daysAgo);
 
       const ward = pick(wards);
@@ -615,7 +717,13 @@ async function main() {
         const dischargeCandidate = new Date(admissionDate);
         dischargeCandidate.setDate(dischargeCandidate.getDate() + stayDays);
 
-        dischargeDate = dischargeCandidate <= new Date() ? dischargeCandidate : new Date();
+        // First 5 discharged → force today's discharge
+        if (i < 5) {
+          dischargeDate = todayAtHour(8, 18);
+        } else {
+          dischargeDate = dischargeCandidate <= new Date() ? dischargeCandidate : new Date();
+        }
+
         finalDiagnosis = diagnosis;
         treatmentSummary = 'Standard treatment protocol administered. Patient stabilised.';
         outcome = pick(OUTCOMES);
@@ -648,12 +756,7 @@ async function main() {
         });
 
         await prisma.statusLog.create({
-          data: {
-            patientId: patient.id,
-            oldStatus: 'new',
-            newStatus: status,
-            changedBy: 'Seed Script',
-          },
+          data: { patientId: patient.id, oldStatus: 'new', newStatus: status, changedBy: 'Seed Script' },
         });
 
         patCreated++;
@@ -667,18 +770,18 @@ async function main() {
     // Inventory.
     console.log('Creating inventory items...');
     const inventoryItems = [
-      { name: 'Medical Gloves (Box)', quantity: 150, unit: 'boxes', category: 'PPE' },
-      { name: 'Surgical Masks (Box)', quantity: 200, unit: 'boxes', category: 'PPE' },
-      { name: 'N95 Respirators (Box)', quantity: 45, unit: 'boxes', category: 'PPE' },
-      { name: 'Face Shields', quantity: 30, unit: 'pieces', category: 'PPE' },
-      { name: 'Syringes 5ml (Pack)', quantity: 80, unit: 'packs', category: 'Consumables' },
-      { name: 'Bandages (Roll)', quantity: 45, unit: 'rolls', category: 'Consumables' },
-      { name: 'IV Drip Sets', quantity: 60, unit: 'sets', category: 'Consumables' },
-      { name: 'Antiseptic Solution (L)', quantity: 25, unit: 'liters', category: 'Consumables' },
-      { name: 'Paracetamol 500mg (Box)', quantity: 120, unit: 'boxes', category: 'Pharmaceuticals' },
-      { name: 'Antibiotics (Box)', quantity: 35, unit: 'boxes', category: 'Pharmaceuticals' },
-      { name: 'Thermometers', quantity: 8, unit: 'pieces', category: 'Equipment' },
-      { name: 'Wheelchairs', quantity: 5, unit: 'pieces', category: 'Equipment' },
+      { name: 'Medical Gloves (Box)',    quantity: 150, unit: 'boxes',  category: 'PPE' },
+      { name: 'Surgical Masks (Box)',    quantity: 200, unit: 'boxes',  category: 'PPE' },
+      { name: 'N95 Respirators (Box)',   quantity: 45,  unit: 'boxes',  category: 'PPE' },
+      { name: 'Face Shields',            quantity: 30,  unit: 'pieces', category: 'PPE' },
+      { name: 'Syringes 5ml (Pack)',     quantity: 80,  unit: 'packs',  category: 'Consumables' },
+      { name: 'Bandages (Roll)',         quantity: 45,  unit: 'rolls',  category: 'Consumables' },
+      { name: 'IV Drip Sets',            quantity: 60,  unit: 'sets',   category: 'Consumables' },
+      { name: 'Antiseptic Solution (L)', quantity: 25,  unit: 'liters', category: 'Consumables' },
+      { name: 'Paracetamol 500mg (Box)', quantity: 120, unit: 'boxes',  category: 'Pharmaceuticals' },
+      { name: 'Antibiotics (Box)',       quantity: 35,  unit: 'boxes',  category: 'Pharmaceuticals' },
+      { name: 'Thermometers',            quantity: 8,   unit: 'pieces', category: 'Equipment' },
+      { name: 'Wheelchairs',             quantity: 5,   unit: 'pieces', category: 'Equipment' },
     ];
 
     for (const item of inventoryItems) {
@@ -694,63 +797,21 @@ async function main() {
     }
     console.log('  Created ' + inventoryItems.length + ' inventory items');
 
-    // Sample tenders.
+    // Tenders — first 3 forced today.
     console.log('Creating sample tender requests...');
     const orderRequests = [
-      {
-        requestingDepartment: 'Nurses',
-        originatorDepartment: 'Nurses',
-        requestingBy: 'Sister Mutsa',
-        itemName: 'Medical Gloves (Box)',
-        quantity: 50,
-        reason: 'Running low on stock',
-        status: 'pending',
-      },
-      {
-        requestingDepartment: 'IT',
-        originatorDepartment: 'Nurses',
-        requestingBy: 'IT Manager',
-        itemName: 'Nurse Tablets',
-        quantity: 20,
-        reason: 'Computerised nurse registry - requested on behalf of Nurses',
-        status: 'pending',
-      },
-      {
-        requestingDepartment: 'Nurses',
-        originatorDepartment: 'Nurses',
-        requestingBy: 'Nurse Tatenda',
-        itemName: 'Surgical Masks (Box)',
-        quantity: 100,
-        reason: 'Monthly restock',
-        status: 'ordered',
-      },
-      {
-        requestingDepartment: 'Procurement',
-        originatorDepartment: 'Procurement',
-        requestingBy: 'Procurement Officer',
-        itemName: 'Office Chairs',
-        quantity: 10,
-        reason: 'Replacing broken furniture',
-        status: 'awaiting_quotation',
-      },
-      {
-        requestingDepartment: 'HR',
-        originatorDepartment: 'HR',
-        requestingBy: 'HR Manager',
-        itemName: 'Filing Cabinets',
-        quantity: 5,
-        reason: 'New staff records require additional storage',
-        status: 'received',
-      },
-      {
-        requestingDepartment: 'Stores',
-        originatorDepartment: 'Stores',
-        requestingBy: 'Store Manager',
-        itemName: 'Shelf Labels',
-        quantity: 200,
-        reason: 'Reorganising inventory shelves',
-        status: 'completed',
-      },
+      // Forced-today tenders
+      { requestingDepartment: 'Nurses',      originatorDepartment: 'Nurses',      requestingBy: 'Sister Mutsa',        itemName: 'Surgical Gloves (Box)',  quantity: 40,  reason: 'Ward stock depleted after weekend admissions', status: 'pending',            createdAt: todayAtHour(9, 15) },
+      { requestingDepartment: 'IT',          originatorDepartment: 'IT',          requestingBy: 'IT Manager',          itemName: 'Network Cables',          quantity: 30,  reason: 'Replacing damaged cables in admin block',      status: 'ordered',            createdAt: todayAtHour(8, 14) },
+      { requestingDepartment: 'HR',          originatorDepartment: 'HR',          requestingBy: 'HR Manager',          itemName: 'Recruitment Pack',        quantity: 25,  reason: 'Interview materials for new hires',           status: 'awaiting_quotation', createdAt: todayAtHour(10, 16) },
+
+      // Older tenders (varied status)
+      { requestingDepartment: 'Nurses',      originatorDepartment: 'Nurses',      requestingBy: 'Sister Mutsa',        itemName: 'Medical Gloves (Box)',   quantity: 50,  reason: 'Running low on stock',                                       status: 'pending' },
+      { requestingDepartment: 'IT',          originatorDepartment: 'Nurses',      requestingBy: 'IT Manager',          itemName: 'Nurse Tablets',          quantity: 20,  reason: 'Computerised nurse registry - requested on behalf of Nurses', status: 'pending' },
+      { requestingDepartment: 'Nurses',      originatorDepartment: 'Nurses',      requestingBy: 'Nurse Tatenda',       itemName: 'Surgical Masks (Box)',   quantity: 100, reason: 'Monthly restock',                                            status: 'ordered' },
+      { requestingDepartment: 'Procurement', originatorDepartment: 'Procurement', requestingBy: 'Procurement Officer', itemName: 'Office Chairs',          quantity: 10,  reason: 'Replacing broken furniture',                                 status: 'awaiting_quotation' },
+      { requestingDepartment: 'HR',          originatorDepartment: 'HR',          requestingBy: 'HR Manager',          itemName: 'Filing Cabinets',        quantity: 5,   reason: 'New staff records require additional storage',              status: 'received' },
+      { requestingDepartment: 'Stores',      originatorDepartment: 'Stores',      requestingBy: 'Store Manager',       itemName: 'Shelf Labels',           quantity: 200, reason: 'Reorganising inventory shelves',                             status: 'completed' },
     ];
 
     for (const order of orderRequests) {
@@ -758,7 +819,7 @@ async function main() {
     }
     console.log('  Created ' + orderRequests.length + ' sample tenders');
 
-    // Disciplinary cases.
+    // Disciplinary cases — first 4 forced today with mixed statuses.
     console.log('Creating disciplinary cases...');
     const sampleEmployees = await prisma.employee.findMany({
       select: { id: true },
@@ -776,9 +837,21 @@ async function main() {
         const offenseType = pick(DISCIPLINARY_OFFENSES);
         const description = pick(DISCIPLINARY_DESCRIPTIONS[offenseType] || DISCIPLINARY_DESCRIPTIONS.Other);
 
-        const daysAgo = Math.floor(Math.random() * DISC_DAYS_SPAN);
-        const reportedDate = randomDateWithinDays(daysAgo, 8, 17);
-        const status = pickDisciplinaryStatus(daysAgo);
+        // First 4 cases forced to today with mixed statuses
+        let daysAgo;
+        let status;
+        if (i < 4) {
+          daysAgo = 0;
+          status = i === 0 ? 'open'
+                 : i === 1 ? 'under_investigation'
+                 : i === 2 ? 'resolved'
+                 : 'open';
+        } else {
+          daysAgo = Math.floor(Math.random() * DISC_DAYS_SPAN);
+          status = pickDisciplinaryStatus(daysAgo);
+        }
+        const reportedDate = daysAgo === 0 ? todayAtHour(8, 17) : randomDateWithinDays(daysAgo, 8, 17);
+
         const actionTaken = pickDisciplinaryAction(status);
         const witnesses = pick(DISCIPLINARY_WITNESSES);
 
@@ -818,7 +891,7 @@ async function main() {
               employeeId: employee.id,
               offenseType,
               description,
-              reportedBy: pick(['Ward Supervisor', 'Senior Nurse', 'Department Head', 'Shift Coordinator', 'Colleague']),
+              reportedBy: pick(['Ward Supervisor','Senior Nurse','Department Head','Shift Coordinator','Colleague']),
               reportedDate,
               witnesses,
               status,
@@ -835,24 +908,12 @@ async function main() {
           });
 
           await prisma.disciplinaryStatusLog.create({
-            data: {
-              caseId: record.id,
-              oldStatus: 'new',
-              newStatus: 'open',
-              changedBy: 'System',
-              notes: 'Case filed',
-            },
+            data: { caseId: record.id, oldStatus: 'new', newStatus: 'open', changedBy: 'System', notes: 'Case filed' },
           });
 
           if (status !== 'open') {
             await prisma.disciplinaryStatusLog.create({
-              data: {
-                caseId: record.id,
-                oldStatus: 'open',
-                newStatus: status,
-                changedBy: 'HR Manager',
-                notes: 'Status updated to ' + status,
-              },
+              data: { caseId: record.id, oldStatus: 'open', newStatus: status, changedBy: 'HR Manager', notes: 'Status updated to ' + status },
             });
           }
         } catch (e) {
@@ -867,21 +928,21 @@ async function main() {
     // Establishment targets.
     console.log('Creating establishment targets...');
     const establishmentTargets = [
-      { department: 'Medical', minHeadcount: 10, maxHeadcount: 50 },
-      { department: 'Nurses', minHeadcount: 150, maxHeadcount: 250 },
-      { department: 'Pharmacy', minHeadcount: 5, maxHeadcount: 15 },
-      { department: 'Laboratory', minHeadcount: 5, maxHeadcount: 20 },
-      { department: 'Admin', minHeadcount: 10, maxHeadcount: 30 },
-      { department: 'Support', minHeadcount: 20, maxHeadcount: 60 },
-      { department: 'Maintenance', minHeadcount: 3, maxHeadcount: 10 },
-      { department: 'Security', minHeadcount: 5, maxHeadcount: 15 },
+      { department: 'Medical',     minHeadcount: 10,  maxHeadcount: 50  },
+      { department: 'Nurses',      minHeadcount: 150, maxHeadcount: 250 },
+      { department: 'Pharmacy',    minHeadcount: 5,   maxHeadcount: 15  },
+      { department: 'Laboratory',  minHeadcount: 5,   maxHeadcount: 20  },
+      { department: 'Admin',       minHeadcount: 10,  maxHeadcount: 30  },
+      { department: 'Support',     minHeadcount: 20,  maxHeadcount: 60  },
+      { department: 'Maintenance', minHeadcount: 3,   maxHeadcount: 10  },
+      { department: 'Security',    minHeadcount: 5,   maxHeadcount: 15  },
     ];
     for (const t of establishmentTargets) {
       await prisma.establishmentTarget.create({ data: t });
     }
     console.log('  Created ' + establishmentTargets.length + ' establishment targets');
 
-    // Movements.
+    // Movements — first 5 forced today with type variety.
     console.log('Creating sample employee movements...');
     const sampleEmployeesForMovement = await prisma.employee.findMany({
       select: { id: true, name: true, department: true, wardId: true, hireDate: true },
@@ -890,24 +951,27 @@ async function main() {
 
     if (sampleEmployeesForMovement.length > 0) {
       const TOTAL_MOVEMENTS = 30;
-      const DEPARTMENTS = ['Medical', 'Nurses', 'Pharmacy', 'Laboratory', 'Admin', 'Support', 'Maintenance', 'Security'];
+      const DEPARTMENTS = ['Medical','Nurses','Pharmacy','Laboratory','Admin','Support','Maintenance','Security'];
       const RESIGNATION_REASONS = [
-        'Better opportunity elsewhere',
-        'Relocation',
-        'Health reasons',
-        'Family reasons',
-        'Further studies',
-        'Salary dissatisfaction',
+        'Better opportunity elsewhere','Relocation','Health reasons',
+        'Family reasons','Further studies','Salary dissatisfaction',
       ];
       let movementCount = 0;
 
       for (let i = 0; i < TOTAL_MOVEMENTS; i++) {
         const emp = sampleEmployeesForMovement[Math.floor(Math.random() * sampleEmployeesForMovement.length)];
-        const daysAgo = Math.floor(Math.random() * 90);
-        const date = new Date();
-        date.setDate(date.getDate() - daysAgo);
 
-        const typeRoll = Math.random();
+        const forceTodayMovement = i < 5;
+        const daysAgo = forceTodayMovement ? 0 : Math.floor(Math.random() * 90);
+
+        let date;
+        if (forceTodayMovement) {
+          date = todayAtHour(8, 17);
+        } else {
+          date = new Date();
+          date.setDate(date.getDate() - daysAgo);
+        }
+
         let movementData = {
           employeeId: emp.id,
           approvedBy: 'HR Manager',
@@ -915,29 +979,34 @@ async function main() {
           createdAt: date,
         };
 
+        // First 5 movements → force type to guarantee variety today
+        let typeRoll = Math.random();
+        if (forceTodayMovement) {
+          typeRoll = i < 2 ? 0.1   // transfer
+                   : i < 4 ? 0.6   // retirement
+                   : 0.9;          // resignation
+        }
+
         if (typeRoll < 0.5) {
-          const toDept = DEPARTMENTS[Math.floor(Math.random() * DEPARTMENTS.length)];
           movementData.movementType = 'transfer';
           movementData.fromDepartment = emp.department;
           movementData.fromWardId = emp.wardId;
-          movementData.toDepartment = toDept;
+          movementData.toDepartment = DEPARTMENTS[Math.floor(Math.random() * DEPARTMENTS.length)];
           movementData.reason = 'Operational requirement';
         } else if (typeRoll < 0.75) {
-          const years = Math.floor(5 + Math.random() * 30);
           movementData.movementType = 'retirement';
           movementData.plannedDate = date;
           movementData.actualDate = date;
-          movementData.yearsOfService = years;
+          movementData.yearsOfService = Math.floor(5 + Math.random() * 30);
           movementData.pensionNotes = 'Standard pension arrangement';
         } else {
-          const reason = RESIGNATION_REASONS[Math.floor(Math.random() * RESIGNATION_REASONS.length)];
           movementData.movementType = 'resignation';
           movementData.resignationDate = date;
           const lastDay = new Date(date);
           lastDay.setDate(lastDay.getDate() + 30);
           movementData.lastWorkingDay = lastDay;
           movementData.noticePeriodDays = 30;
-          movementData.reason = reason;
+          movementData.reason = RESIGNATION_REASONS[Math.floor(Math.random() * RESIGNATION_REASONS.length)];
           movementData.exitInterviewDone = Math.random() < 0.6;
           movementData.eligibleForRehire = Math.random() < 0.7;
         }
@@ -952,42 +1021,43 @@ async function main() {
       console.log('  Created ' + movementCount + ' sample movements');
     }
 
-    // Projects with updates.
-    console.log('Creating sample projects...');
+    // Projects.
+    console.log('Creating projects with phase history...');
     let projectCount = 0;
     let updateCount = 0;
 
     for (const sample of PROJECT_SAMPLES) {
       try {
+        const lastPhase = sample.phases[sample.phases.length - 1];
+        const currentStatus = lastPhase.status;
+
         const project = await prisma.project.create({
           data: {
             name: sample.name,
             description: sample.description,
             department: sample.department,
             projectHead: sample.projectHead,
-            status: sample.status,
-            startDate: sample.startOffsetDays ? dateOffsetDays(-sample.startOffsetDays) : null,
-            targetDate: sample.targetOffsetDays ? dateOffsetDays(sample.targetOffsetDays) : null,
-            obstacleReason: sample.status === 'pending' ? sample.obstacleReason : null,
+            status: currentStatus,
+            startDate: dateOffsetDays(-sample.startOffsetDays),
+            targetDate: dateOffsetDays(sample.targetOffsetDays),
+            obstacleReason: currentStatus === 'pending' ? lastPhase.obstacleReason : null,
             createdBy: sample.createdBy,
-            createdAt: sample.startOffsetDays ? dateOffsetDays(-sample.startOffsetDays) : new Date(),
-            updatedAt: sample.updates && sample.updates.length > 0
-              ? dateOffsetDays(-sample.updates[sample.updates.length - 1].offsetDays)
-              : new Date(),
+            createdAt: dateOffsetDays(-sample.startOffsetDays),
+            updatedAt: dateOffsetDays(-lastPhase.offsetDays),
           },
         });
         projectCount++;
 
-        for (const update of sample.updates) {
+        for (const phase of sample.phases) {
           await prisma.projectUpdate.create({
             data: {
               projectId: project.id,
-              note: update.note,
-              statusAtUpdate: update.status,
-              obstacleReason: update.status === 'pending' ? update.obstacleReason : null,
-              actionTaken: update.actionTaken || null,
-              updatedBy: sample.createdBy,
-              timestamp: dateOffsetDays(-update.offsetDays),
+              note: phase.note,
+              statusAtUpdate: phase.status,
+              obstacleReason: phase.status === 'pending' ? phase.obstacleReason : null,
+              actionTaken: phase.actionTaken || null,
+              updatedBy: sample.projectHead,
+              timestamp: dateOffsetDays(-phase.offsetDays),
             },
           });
           updateCount++;
@@ -996,31 +1066,60 @@ async function main() {
         console.error('  Skipped one project:', e.message);
       }
     }
-    console.log('  Created ' + projectCount + ' projects with ' + updateCount + ' updates');
+
+    // Post-pass: force a "today" update on the first 3 ongoing projects
+    // so the Live Board "projects this week" widget is always populated.
+    const ongoingProjects = await prisma.project.findMany({
+      where: { status: 'ongoing' },
+      take: 3,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    for (const proj of ongoingProjects) {
+      const todayStamp = todayAtHour(8, 12);
+      await prisma.projectUpdate.create({
+        data: {
+          projectId: proj.id,
+          note: 'Daily progress update: work continues as scheduled.',
+          statusAtUpdate: 'ongoing',
+          obstacleReason: null,
+          actionTaken: 'Routine progress logged today',
+          updatedBy: proj.projectHead,
+          timestamp: todayStamp,
+        },
+      });
+      await prisma.project.update({
+        where: { id: proj.id },
+        data: { updatedAt: todayStamp },
+      });
+      updateCount++;
+    }
+    console.log('  Added today updates to ' + ongoingProjects.length + ' ongoing projects');
+    console.log('  Created ' + projectCount + ' projects with ' + updateCount + ' phase updates');
 
     // Summary.
     console.log('');
     console.log('Database seeded successfully.');
     console.log('');
 
-    const totalPatients = await prisma.patient.count();
-    const totalEmployees = await prisma.employee.count();
-    const totalUsers = await prisma.user.count();
-    const totalCases = await prisma.disciplinaryCase.count();
-    const totalMovements = await prisma.employeeMovement.count();
-    const totalTargets = await prisma.establishmentTarget.count();
-    const totalProjects = await prisma.project.count();
+    const totalPatients       = await prisma.patient.count();
+    const totalEmployees      = await prisma.employee.count();
+    const totalUsers          = await prisma.user.count();
+    const totalCases          = await prisma.disciplinaryCase.count();
+    const totalMovements      = await prisma.employeeMovement.count();
+    const totalTargets        = await prisma.establishmentTarget.count();
+    const totalProjects       = await prisma.project.count();
     const totalProjectUpdates = await prisma.projectUpdate.count();
 
     console.log('Totals:');
-    console.log('  Patients: ' + totalPatients);
-    console.log('  Employees: ' + totalEmployees);
-    console.log('  Users: ' + totalUsers);
-    console.log('  Disciplinary cases: ' + totalCases);
-    console.log('  Movements: ' + totalMovements);
+    console.log('  Patients: '              + totalPatients);
+    console.log('  Employees: '             + totalEmployees);
+    console.log('  Users: '                 + totalUsers);
+    console.log('  Disciplinary cases: '    + totalCases);
+    console.log('  Movements: '             + totalMovements);
     console.log('  Establishment targets: ' + totalTargets);
-    console.log('  Projects: ' + totalProjects);
-    console.log('  Project updates: ' + totalProjectUpdates);
+    console.log('  Projects: '              + totalProjects);
+    console.log('  Project updates: '       + totalProjectUpdates);
     console.log('');
 
     const patientStatuses = ['admitted', 'treatment', 'discharged', 'deceased'];
@@ -1053,6 +1152,16 @@ async function main() {
       const count = await prisma.project.count({ where: { status: s } });
       console.log('  ' + s + ': ' + count);
     }
+    console.log('');
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentUpdates = await prisma.projectUpdate.findMany({
+      where: { timestamp: { gte: sevenDaysAgo } },
+      select: { projectId: true },
+      distinct: ['projectId'],
+    });
+    console.log('Projects with activity in last 7 days: ' + recentUpdates.length + ' / ' + totalProjects);
     console.log('');
 
     console.log('Test credentials:');
