@@ -13,6 +13,13 @@ let discSearchTimer = null;
 let estSearchTimer = null;
 let selectedEmployeeId = null;
 
+// Atomic establishment summary state — single object, single render.
+let estSummaryState = {
+  total: 0, transfers: 0, retirements: 0, resignations: 0,
+  understaffed: 0, overstaffed: 0,
+};
+let estSummaryInFlight = null;
+
 // ============================================================
 // INIT
 // ============================================================
@@ -89,7 +96,6 @@ function toggleAdvancedStaffFilters() {
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
-// Fetch staff matching current filters, render roster.
 async function runStaffSearch() {
   const params = new URLSearchParams();
   const search = document.getElementById('hr-empSearchBox').value.trim();
@@ -1115,32 +1121,51 @@ async function loadEstablishmentMetadata() {
   }
 }
 
+// ============================================================
+// ESTABLISHMENT - ATOMIC SUMMARY
+// Single state object, parallel fetch, in-flight dedupe, one render.
+// ============================================================
+function renderEstSummary() {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('estSummaryTotal',        estSummaryState.total);
+  set('estSummaryTransfers',    estSummaryState.transfers);
+  set('estSummaryRetirements',  estSummaryState.retirements);
+  set('estSummaryResignations', estSummaryState.resignations);
+  set('estSummaryUnder',        estSummaryState.understaffed);
+  set('estSummaryOver',         estSummaryState.overstaffed);
+}
+
 async function loadEstablishmentSummary() {
-  try {
-    const res = await fetch('/api/establishment/summary', {
-      headers: { Authorization: 'Bearer ' + token() },
-    });
-    if (!res.ok) return;
-    const s = await res.json();
+  if (estSummaryInFlight) return estSummaryInFlight;
 
-    document.getElementById('estSummaryTotal').textContent = s.last30Days || 0;
-    document.getElementById('estSummaryTransfers').textContent = (s.byType && s.byType.transfer) || 0;
-    document.getElementById('estSummaryRetirements').textContent = (s.byType && s.byType.retirement) || 0;
-    document.getElementById('estSummaryResignations').textContent = (s.byType && s.byType.resignation) || 0;
+  estSummaryInFlight = (async () => {
+    try {
+      const [sumRes, headRes] = await Promise.all([
+        fetch('/api/establishment/summary',   { headers: { Authorization: 'Bearer ' + token() } }),
+        fetch('/api/establishment/headcount', { headers: { Authorization: 'Bearer ' + token() } }),
+      ]);
 
-    const headRes = await fetch('/api/establishment/headcount', {
-      headers: { Authorization: 'Bearer ' + token() },
-    });
-    if (headRes.ok) {
-      const hc = await headRes.json();
-      const under = hc.filter(d => d.status === 'understaffed').length;
-      const over = hc.filter(d => d.status === 'overstaffed').length;
-      document.getElementById('estSummaryUnder').textContent = under;
-      document.getElementById('estSummaryOver').textContent = over;
+      const sum  = sumRes.ok  ? await sumRes.json()  : {};
+      const head = headRes.ok ? await headRes.json() : [];
+
+      estSummaryState = {
+        total:        sum.last30Days || 0,
+        transfers:    (sum.byType && sum.byType.transfer)    || 0,
+        retirements:  (sum.byType && sum.byType.retirement)  || 0,
+        resignations: (sum.byType && sum.byType.resignation) || 0,
+        understaffed: head.filter(d => d.status === 'understaffed').length,
+        overstaffed:  head.filter(d => d.status === 'overstaffed').length,
+      };
+
+      renderEstSummary();
+    } catch (e) {
+      console.error('loadEstablishmentSummary failed:', e);
+    } finally {
+      estSummaryInFlight = null;
     }
-  } catch (e) {
-    console.error(e);
-  }
+  })();
+
+  return estSummaryInFlight;
 }
 
 // ============================================================
@@ -1619,8 +1644,10 @@ async function loadHeadcountSettings() {
   if (!el) return;
 
   try {
-    const targetsRes = await fetch('/api/establishment/targets', { headers: { Authorization: 'Bearer ' + token() } });
-    const headRes = await fetch('/api/establishment/headcount', { headers: { Authorization: 'Bearer ' + token() } });
+    const [targetsRes, headRes] = await Promise.all([
+      fetch('/api/establishment/targets',   { headers: { Authorization: 'Bearer ' + token() } }),
+      fetch('/api/establishment/headcount', { headers: { Authorization: 'Bearer ' + token() } }),
+    ]);
 
     const targets = targetsRes.ok ? await targetsRes.json() : [];
     const headcounts = headRes.ok ? await headRes.json() : [];

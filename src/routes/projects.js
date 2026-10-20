@@ -23,7 +23,6 @@ function validateStatusUpdate(status, note, obstacleReason) {
   return null;
 }
 
-// List projects with filters.
 router.get('/', requireAuth, async (req, res) => {
   try {
     const { search, status, department, scope } = req.query;
@@ -61,7 +60,6 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-// Summary counts. Auth required for portal header.
 router.get('/summary', requireAuth, async (req, res) => {
   try {
     const all = await prisma.project.findMany({
@@ -92,8 +90,8 @@ router.get('/summary', requireAuth, async (req, res) => {
 });
 
 // Public summary for Live Board widget. No auth.
-// byStatus is global (all projects, not date-filtered).
-// recent returns the 10 most recently updated projects, not date-filtered.
+// byStatus is global. recent returns 10 most recently updated with obstacle reasons.
+// blocked returns all pending projects with their obstacle reasons.
 router.get('/summary-public', async (req, res) => {
   try {
     let from, to;
@@ -112,16 +110,31 @@ router.get('/summary-public', async (req, res) => {
       to.setHours(23, 59, 59, 999);
     }
 
-    const projects = await prisma.project.findMany({
+    const recentProjects = await prisma.project.findMany({
       select: {
         id: true,
         name: true,
         status: true,
         department: true,
+        projectHead: true,
+        obstacleReason: true,
         updatedAt: true,
       },
       orderBy: { updatedAt: 'desc' },
       take: 10,
+    });
+
+    const blockedProjects = await prisma.project.findMany({
+      where: { status: 'pending' },
+      select: {
+        id: true,
+        name: true,
+        department: true,
+        projectHead: true,
+        obstacleReason: true,
+        updatedAt: true,
+      },
+      orderBy: { updatedAt: 'desc' },
     });
 
     const all = await prisma.project.findMany({
@@ -131,20 +144,13 @@ router.get('/summary-public', async (req, res) => {
     const byStatus = { ongoing: 0, pending: 0, completed: 0 };
     all.forEach(p => { byStatus[p.status] = (byStatus[p.status] || 0) + 1; });
 
-    const recent = projects.map(p => ({
-      id: p.id,
-      name: p.name,
-      status: p.status,
-      department: p.department,
-      updatedAt: p.updatedAt,
-    }));
-
     res.json({
       from: from.toISOString(),
       to: to.toISOString(),
-      total: recent.length,
+      total: recentProjects.length,
       byStatus,
-      recent,
+      recent: recentProjects,
+      blocked: blockedProjects,
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -152,8 +158,7 @@ router.get('/summary-public', async (req, res) => {
 });
 
 // Detail list for a single project status. Public. PII stripped.
-// No date filter - projects span long periods and the range selector
-// does not apply meaningfully. Always returns all projects of that status.
+// Includes obstacleReason and projectHead. No date filter.
 router.get('/detail-public', async (req, res) => {
   try {
     const { category } = req.query;
@@ -171,6 +176,7 @@ router.get('/detail-public', async (req, res) => {
         department: true,
         projectHead: true,
         status: true,
+        obstacleReason: true,
         updatedAt: true,
       },
       orderBy: { updatedAt: 'desc' },
@@ -183,7 +189,6 @@ router.get('/detail-public', async (req, res) => {
   }
 });
 
-// Get one project with full update history.
 router.get('/:id', requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -200,7 +205,6 @@ router.get('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Create project.
 router.post('/', requireAuth, async (req, res) => {
   const {
     name,
@@ -260,7 +264,6 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-// Add update note to a project. Only owning department can update.
 router.post('/:id/updates', requireAuth, async (req, res) => {
   const id = parseInt(req.params.id);
   const { note, status, obstacleReason, actionTaken } = req.body;
@@ -310,7 +313,6 @@ router.post('/:id/updates', requireAuth, async (req, res) => {
   }
 });
 
-// Delete project. IT and Super Admin only.
 router.delete('/:id', requireAuth, async (req, res) => {
   if (!isITOrSuperAdmin(req)) {
     return res.status(403).json({ error: 'Only IT can delete projects' });
