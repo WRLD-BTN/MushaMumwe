@@ -14,11 +14,19 @@
         <h1 id="appTitle">Sally Mugabe Central Hospital</h1>
         <p id="appSubtitle">Department Dashboard</p>
       </div>
-      <div id="headerUser" class="header-user" style="display:none;">
-        <span id="headerUserLabel"></span>
-        <button id="btnOwnPwd" class="ghost-btn small" onclick="openOwnPasswordModal()">Change Password</button>
-        <button id="btnBackHome" class="ghost-btn small" style="display:none;" onclick="backToSuperAdminHome()">Back to Home</button>
-        <button class="logout-btn small" onclick="logout()">Logout</button>
+      
+      <!-- HEADER CONTROLS (Visible on login AND inside the portal) -->
+      <div id="headerControls" class="header-user" style="display:flex; align-items:center;">
+        <!-- Dashboard button: always visible -->
+        <button id="btnDashboard" class="ghost-btn small" onclick="goToDashboard()" style="margin-right:8px;">Dashboard</button>
+        
+        <!-- User specific controls: hidden until login -->
+        <div id="headerUser" style="display:none; align-items:center; gap:8px;">
+          <span id="headerUserLabel"></span>
+          <button id="btnOwnPwd" class="ghost-btn small" onclick="openOwnPasswordModal()">Change Password</button>
+          <button id="btnBackHome" class="ghost-btn small" style="display:none;" onclick="backToSuperAdminHome()">Back to Home</button>
+          <button class="logout-btn small" onclick="logout()">Logout</button>
+        </div>
       </div>
     </header>
 

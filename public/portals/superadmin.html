@@ -23,7 +23,10 @@
 
   <div class="action-row" style="display:flex; gap:8px; flex-wrap:wrap; margin:12px 0;">
     <button class="pill-btn" onclick="openSettingsModal()">System Settings</button>
-    <button class="pill-btn" onclick="showAuditLog()">Audit Log</button>
+    
+    <!-- Embedded logic prevents 'function not defined' cache errors -->
+    <button class="pill-btn" onclick="var el = document.getElementById('auditSection'); if (el) { el.style.display = 'block'; el.scrollIntoView({ behavior: 'smooth' }); if (typeof initAudit === 'function') initAudit(); }">Audit Log</button>
+    
     <button class="pill-btn" onclick="openPortalAsSuperAdmin('Nurses')">Open Nurses Portal</button>
     <button class="pill-btn" onclick="openPortalAsSuperAdmin('IT')">Open IT Portal</button>
     <button class="pill-btn" onclick="openPortalAsSuperAdmin('Procurement')">Open Procurement Portal</button>
@@ -45,22 +48,16 @@
       <input type="date" id="auditTo">
       <button class="pill-btn" onclick="loadAudit(1)">Filter</button>
       <button class="ghost-btn" onclick="clearAuditFilters()">Clear</button>
-      <button class="ghost-btn" onclick="exportAuditCSV()">Export CSV</button>
+      <button class="ghost-btn" onclick="printAuditLog()">Print</button>
     </div>
 
     <div id="auditCount" class="muted" style="margin-bottom:8px;"></div>
-    <div id="auditTableWrap" style="overflow-x:auto;"></div>
+    
+    <!-- Max height limits it to 9 rows (~55px each) + header (~40px) = ~535px -->
+    <div id="auditTableWrap" style="max-height: 535px; overflow-y: auto; border: 1px solid var(--border); border-radius: 4px;">
+      <!-- Table rendered here -->
+    </div>
+    
     <div id="auditPager" style="margin-top:12px; display:flex; gap:8px; align-items:center;"></div>
   </div>
 </section>
-
-<script>
-  function showAuditLog() {
-    var el = document.getElementById('auditSection');
-    if (el) {
-      el.style.display = 'block';
-      el.scrollIntoView({ behavior: 'smooth' });
-      if (typeof initAudit === 'function') initAudit();
-    }
-  }
-</script>
