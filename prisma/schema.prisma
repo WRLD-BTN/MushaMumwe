@@ -307,3 +307,28 @@ model ProjectUpdate {
   @@index([projectId])
   @@index([timestamp])
 }
+
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  timestamp    DateTime @default(now())
+  userId       Int?
+  username     String
+  fullName     String
+  department   String
+  role         String
+  action       String
+  entity       String
+  entityId     String?
+  summary      String
+  before       String?
+  after        String?
+  ipAddress    String?
+  userAgent    String?
+  deviceTag    String?
+
+  @@index([timestamp])
+  @@index([username])
+  @@index([entity])
+  @@index([action])
+  @@index([department])
+}

@@ -70,7 +70,6 @@
 
   <div class="public-widgets">
 
-    <!-- PATIENTS WIDGET -->
     <div class="widget" id="patientsWidget">
       <div class="widget-head">
         <div>
@@ -108,7 +107,6 @@
       </div>
     </div>
 
-    <!-- TENDER WIDGET -->
     <div class="widget" id="tenderWidget">
       <div class="widget-head">
         <div>
@@ -146,7 +144,6 @@
       </div>
     </div>
 
-    <!-- DISCIPLINARY WIDGET -->
     <div class="widget" id="disciplinaryWidget">
       <div class="widget-head">
         <div>
@@ -194,7 +191,6 @@
       </div>
     </div>
 
-    <!-- ESTABLISHMENT WIDGET -->
     <div class="widget" id="establishmentWidget">
       <div class="widget-head">
         <div>
@@ -242,7 +238,6 @@
       </div>
     </div>
 
-    <!-- PROJECTS WIDGET -->
     <div class="widget" id="projectsWidget">
       <div class="widget-head">
         <div>
@@ -273,6 +268,12 @@
           <div class="widget-number" id="projectsCompleted">-</div>
           <div class="widget-label">Completed</div>
         </div>
+      </div>
+      <div class="widget-recent" id="projectsBlockedSection">
+        <div class="widget-recent-toggle" onclick="toggleWidgetRecent('projectsBlockedSection')">
+          Blocked Projects <span id="projectsBlockedCount" style="margin-left:6px; font-family:var(--font-mono); color:#dc2626;">0</span>
+        </div>
+        <div class="widget-recent-content" id="projectsBlockedList"></div>
       </div>
       <div class="widget-recent" id="projectsRecentSection">
         <div class="widget-recent-toggle" onclick="toggleWidgetRecent('projectsRecentSection')">
@@ -321,7 +322,6 @@
     Live data from database via REST and Socket.io - real-time updates enabled
   </div>
 
-  <!-- GENERIC DETAIL MODAL -->
   <div id="detailModalBackdrop" class="patient-modal-backdrop" onclick="closeDetailModal()"></div>
   <div id="detailModal" class="patient-modal">
     <div class="patient-modal-head">
@@ -341,6 +341,18 @@
 <script>
 const API_BASE = "";
 const AUTH_TOKEN = localStorage.getItem("token") || "";
+
+// Refresh every widget in one call.
+// Used on first socket connect and on reconnect only.
+function refreshAllWidgets() {
+  loadPatientSummary();
+  loadEmployeeSummary();
+  loadTodaySummary();
+  loadTenderActivity();
+  loadDisciplinarySummary();
+  loadEstablishmentSummary();
+  loadProjectsSummary();
+}
 
 // ============================================================
 // THEME
@@ -625,14 +637,43 @@ async function loadProjectsSummary() {
     document.getElementById("projectsCompleted").textContent = (data.byStatus && data.byStatus.completed) || 0;
     document.getElementById("projectsCaption").textContent = fmtDateShort(from) + " - " + fmtDateShort(to);
 
+    const blockedList = document.getElementById("projectsBlockedList");
+    const blockedCount = document.getElementById("projectsBlockedCount");
+    const blocked = data.blocked || [];
+
+    blockedCount.textContent = blocked.length;
+
+    if (blocked.length === 0) {
+      blockedList.innerHTML = '<p class="muted" style="font-size:11px; text-align:center; padding:8px;">No blocked projects</p>';
+    } else {
+      blockedList.innerHTML = blocked.map(p => {
+        return '<div class="disc-recent-item" style="border-left:3px solid #dc2626;">' +
+          '<div class="disc-recent-head">' +
+          '<span class="disc-recent-case">' + escapeHtml(p.name) + '</span>' +
+          '<span class="badge badge-rejected" style="font-size:9px; padding:2px 8px;">BLOCKED</span>' +
+          '</div>' +
+          '<div class="disc-recent-body">' +
+          '<span>' + escapeHtml(p.department) + '</span>' +
+          '<span class="disc-recent-days">Head: ' + escapeHtml(p.projectHead || '-') + '</span>' +
+          '</div>' +
+          '<div style="margin-top:6px; font-size:11px; color:#991b1b;">' +
+          '<strong>Reason:</strong> ' + escapeHtml(p.obstacleReason || 'Not stated') +
+          '</div>' +
+          '</div>';
+      }).join("");
+    }
+
     const list = document.getElementById("projectsRecentList");
     if (!data.recent || data.recent.length === 0) {
-      list.innerHTML = '<p class="muted" style="font-size:11px; text-align:center; padding:8px;">No project activity in this range</p>';
+      list.innerHTML = '<p class="muted" style="font-size:11px; text-align:center; padding:8px;">No project activity</p>';
     } else {
       list.innerHTML = data.recent.map(p => {
         const statusClass = p.status === "ongoing" ? "badge-approved" : p.status === "pending" ? "badge-rejected" : "badge-received";
         const daysAgo = Math.floor((new Date() - new Date(p.updatedAt)) / (1000 * 60 * 60 * 24));
         const daysLabel = daysAgo === 0 ? "today" : daysAgo === 1 ? "1 day ago" : daysAgo + " days ago";
+        const obstacleLine = (p.status === "pending" && p.obstacleReason)
+          ? '<div class="disc-recent-body" style="color:#dc2626; margin-top:4px;"><span>Reason:</span><span class="disc-recent-days">' + escapeHtml(p.obstacleReason) + '</span></div>'
+          : '';
         return '<div class="disc-recent-item">' +
           '<div class="disc-recent-head">' +
           '<span class="disc-recent-case">' + escapeHtml(p.name) + '</span>' +
@@ -642,6 +683,7 @@ async function loadProjectsSummary() {
           '<span>' + escapeHtml(p.department) + '</span>' +
           '<span class="disc-recent-days">' + daysLabel + '</span>' +
           '</div>' +
+          obstacleLine +
           '</div>';
       }).join("");
     }
@@ -720,7 +762,7 @@ function restoreWidgetUI() {
 }
 
 // ============================================================
-// PATIENT SUMMARY (top stat cards)
+// PATIENT SUMMARY
 // ============================================================
 async function loadPatientSummary() {
   try {
@@ -896,11 +938,11 @@ function renderDetailRows(source, category, rows) {
   if (source === "establishment") {
     if (category === "understaffed" || category === "overstaffed") {
       list.innerHTML = rows.map(d => {
-        const targetText = d.max ? d.current + " / " + d.min + "-" + d.max : d.current + " / min " + d.min;
+        const targetText = d.max ? d.min + "-" + d.max : "min " + d.min;
         return '<div class="patient-modal-item">' +
           '<span class="patient-modal-item-case">' + escapeHtml(d.department) + '</span>' +
           '<span class="patient-modal-item-ward">Current: ' + d.current + '</span>' +
-          '<span class="patient-modal-item-time">Target: ' + escapeHtml(targetText.split(" / ")[1]) + '</span>' +
+          '<span class="patient-modal-item-time">Target: ' + escapeHtml(targetText) + '</span>' +
           '</div>';
       }).join("");
       return;
@@ -925,11 +967,22 @@ function renderDetailRows(source, category, rows) {
   if (source === "projects") {
     list.innerHTML = rows.map(p => {
       const updated = fmtDateShort(new Date(p.updatedAt));
-      return '<div class="patient-modal-item">' +
+      const obstacleLine = (p.status === "pending" && p.obstacleReason)
+        ? '<div style="margin-top:8px; padding:8px 12px; background:#fef2f2; border-left:3px solid #dc2626; border-radius:4px; font-size:12px; color:#991b1b;">' +
+          '<strong>Blocked reason:</strong> ' + escapeHtml(p.obstacleReason) +
+          '</div>'
+        : '';
+
+      return '<div class="patient-modal-item" style="flex-direction:column; align-items:stretch; padding:14px;">' +
+        '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px;">' +
         '<span class="patient-modal-item-case">' + escapeHtml(p.name) + '</span>' +
-        '<span class="patient-modal-item-ward">' + escapeHtml(p.department) + '</span>' +
-        '<span class="patient-modal-item-time">' + escapeHtml(p.projectHead) + '</span>' +
         '<span class="patient-modal-item-time">' + updated + '</span>' +
+        '</div>' +
+        '<div style="display:flex; gap:10px; margin-top:6px; align-items:center; flex-wrap:wrap;">' +
+        '<span class="patient-modal-item-ward">' + escapeHtml(p.department) + '</span>' +
+        '<span class="patient-modal-item-time">Head: ' + escapeHtml(p.projectHead || '-') + '</span>' +
+        '</div>' +
+        obstacleLine +
         '</div>';
     }).join("");
     return;
@@ -1001,33 +1054,41 @@ restoreWidgetUI();
 tickClock();
 setInterval(tickClock, 1000);
 
-loadPatientSummary();
-loadEmployeeSummary();
-loadTodaySummary();
-loadTenderActivity();
-loadDisciplinarySummary();
-loadEstablishmentSummary();
-loadProjectsSummary();
-
-setInterval(loadTodaySummary, 60000);
-setInterval(loadTenderActivity, 60000);
-setInterval(loadDisciplinarySummary, 60000);
-setInterval(loadEstablishmentSummary, 60000);
-setInterval(loadProjectsSummary, 60000);
+// Data loads once when socket connects (see socket.on("connect")).
 
 // ============================================================
 // SOCKET
 // ============================================================
-const socket = io();
+const socket = io({
+  transports: ["websocket", "polling"],
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 10000,
+  randomizationFactor: 0.5,
+  timeout: 20000,
+});
 
 socket.on("connect", () => {
   console.log("Socket connected");
   document.getElementById("syncText").textContent = "CONNECTED";
+
+  // Delay initial load 800ms so the WebSocket handshake completes
+  // before the fetch burst competes for bandwidth.
+  setTimeout(refreshAllWidgets, 800);
 });
 
-socket.on("disconnect", () => {
-  console.log("Socket disconnected");
+socket.on("disconnect", (reason) => {
+  console.log("Socket disconnected:", reason);
   document.getElementById("syncText").textContent = "DISCONNECTED";
+});
+
+socket.on("reconnect_attempt", (attempt) => {
+  document.getElementById("syncText").textContent = "RECONNECTING " + attempt;
+});
+
+socket.on("reconnect_failed", () => {
+  document.getElementById("syncText").textContent = "OFFLINE";
 });
 
 socket.on("patient:updated", (payload) => {
@@ -1080,12 +1141,12 @@ socket.on("disciplinary:updated", () => {
   loadDisciplinarySummary();
 });
 
-socket.on("project:created", (payload) => {
+socket.on("project:created", () => {
   showToast("New project created");
   loadProjectsSummary();
 });
 
-socket.on("project:updated", (payload) => {
+socket.on("project:updated", () => {
   showToast("Project updated");
   loadProjectsSummary();
 });
@@ -1096,19 +1157,14 @@ socket.on("project:deleted", () => {
 });
 
 // ============================================================
-// FALLBACK REFRESH
+// FALLBACK REFRESH — only when socket is dead
 // ============================================================
 setInterval(() => {
-  if (document.getElementById("syncText").textContent === "OFFLINE") {
-    loadPatientSummary();
-    loadEmployeeSummary();
-    loadTodaySummary();
-    loadTenderActivity();
-    loadDisciplinarySummary();
-    loadEstablishmentSummary();
-    loadProjectsSummary();
+  const state = document.getElementById("syncText").textContent;
+  if (state === "OFFLINE" || state === "DISCONNECTED" || state.startsWith("RECONNECTING")) {
+    refreshAllWidgets();
   }
-}, 300000);
+}, 60000);
 
 // ============================================================
 // KEYBOARD SHORTCUTS
@@ -1123,13 +1179,7 @@ document.addEventListener("keydown", (e) => {
     document.getElementById("deptBreakdown").classList.remove("active");
   }
   if (e.key === "r" || e.key === "R") {
-    loadPatientSummary();
-    loadEmployeeSummary();
-    loadTodaySummary();
-    loadTenderActivity();
-    loadDisciplinarySummary();
-    loadEstablishmentSummary();
-    loadProjectsSummary();
+    refreshAllWidgets();
     showToast("Manual refresh triggered");
   }
   if (e.key === "t" || e.key === "T") {
@@ -1139,13 +1189,7 @@ document.addEventListener("keydown", (e) => {
 
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
-    loadPatientSummary();
-    loadEmployeeSummary();
-    loadTodaySummary();
-    loadTenderActivity();
-    loadDisciplinarySummary();
-    loadEstablishmentSummary();
-    loadProjectsSummary();
+    refreshAllWidgets();
   }
 });
 

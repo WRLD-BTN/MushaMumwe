@@ -384,19 +384,27 @@ function printContent(html) {
 }
 
 // ============================================================
-// SOCKET DISPATCH
+// SOCKET DISPATCH — gated on auth so login page does no work
 // ============================================================
-socket.on('patient:updated', (p) => window.onPatientUpdated?.(p));
-socket.on('patient:created', (p) => window.onPatientCreated?.(p));
-socket.on('order:updated', (p) => window.onOrderUpdated?.(p));
-socket.on('order:created', (p) => window.onOrderCreated?.(p));
-socket.on('inventory:updated', (p) => window.onInventoryUpdated?.(p));
-socket.on('employee:updated', (p) => window.onEmployeeUpdated?.(p));
-socket.on('disciplinary:created', (p) => window.onDisciplinaryUpdated?.(p));
-socket.on('disciplinary:updated', (p) => window.onDisciplinaryUpdated?.(p));
-socket.on('project:created', (p) => window.onProjectUpdated?.(p));
-socket.on('project:updated', (p) => window.onProjectUpdated?.(p));
-socket.on('project:deleted', (p) => window.onProjectUpdated?.(p));
+function _dispatch(event, handler) {
+  socket.on(event, (p) => {
+    if (!token()) return;
+    handler(p);
+  });
+}
+
+_dispatch('patient:updated',       (p) => window.onPatientUpdated?.(p));
+_dispatch('patient:created',       (p) => window.onPatientCreated?.(p));
+_dispatch('order:updated',         (p) => window.onOrderUpdated?.(p));
+_dispatch('order:created',         (p) => window.onOrderCreated?.(p));
+_dispatch('inventory:updated',     (p) => window.onInventoryUpdated?.(p));
+_dispatch('employee:updated',      (p) => window.onEmployeeUpdated?.(p));
+_dispatch('establishment:updated', (p) => window.onEstablishmentUpdated?.(p));
+_dispatch('disciplinary:created',  (p) => window.onDisciplinaryUpdated?.(p));
+_dispatch('disciplinary:updated',  (p) => window.onDisciplinaryUpdated?.(p));
+_dispatch('project:created',       (p) => window.onProjectUpdated?.(p));
+_dispatch('project:updated',       (p) => window.onProjectUpdated?.(p));
+_dispatch('project:deleted',       (p) => window.onProjectUpdated?.(p));
 
 // ============================================================
 // AUTO-LOGIN FROM URL
