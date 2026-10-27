@@ -4,7 +4,70 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sally Mugabe Central Hospital - Live Board</title>
+
+<!-- PWA Manifest and Icon -->
+<link rel="icon" href="/logo.jpg" type="image/jpeg" alt="HOSPITAL LOGO">
+<link rel="manifest" href="/manifest.json">
+
 <link rel="stylesheet" href="style.css">
+
+<!-- Glowing Edge Effect & Custom Install Modal -->
+<style>
+  @keyframes redGoldGlow {
+    0% { box-shadow: 0 0 2px #dc2626, 0 0 2px #d97706; border-color: #dc2626; }
+    50% { box-shadow: 0 0 12px #dc2626, 0 0 20px #d97706; border-color: #d97706; }
+    100% { box-shadow: 0 0 2px #dc2626, 0 0 2px #d97706; border-color: #dc2626; }
+  }
+  
+  .glow-btn {
+    animation: redGoldGlow 2s infinite ease-in-out;
+    border: 1px solid #dc2626;
+    background: transparent !important;
+    color: inherit !important;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  [data-theme="light"] .glow-btn {
+    color: #991b1b !important;
+    background: #fef2f2 !important;
+  }
+
+  [data-theme="dark"] .glow-btn {
+    color: #fca5a5 !important;
+    background: #450a0a !important;
+  }
+
+  /* Custom Install Modal */
+  #installModal {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6); z-index: 9999;
+    align-items: center; justify-content: center;
+  }
+  #installModal.active { display: flex; }
+  .install-box {
+    background: white; color: #333; padding: 24px; border-radius: 12px;
+    max-width: 420px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    text-align: center;
+  }
+  .install-box h3 { margin-top: 0; color: #1e3a8a; font-size: 20px; margin-bottom: 12px; }
+  .install-box p { font-size: 14px; line-height: 1.5; margin-bottom: 16px; color: #555; }
+  .install-box ul { text-align: left; font-size: 14px; padding-left: 20px; margin-bottom: 20px; line-height: 1.6; color: #444; }
+  .install-box button {
+    background: #4f46e5; color: white; border: none; padding: 10px 24px;
+    border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .install-box button:hover { background: #4338ca; }
+</style>
+
+<script>
+  // Register Service Worker for PWA
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW failed:', err));
+    });
+  }
+</script>
 </head>
 <body class="live-board">
 
@@ -18,10 +81,32 @@
       <span class="sync-text" id="syncText">CONNECTING</span>
     </div>
     <div class="clock" id="clock">--:--:--</div>
+    
+    <!-- Install App Button with Glow -->
+    <button id="installAppBtn" class="theme-toggle glow-btn" style="margin-right:8px;" onclick="installApp()">Install App</button>
+
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
       <span id="themeIcon">DARK</span>
     </button>
-    <a href="/dashboard" class="staff-login-link">Staff Login</a>
+    
+    <!-- Staff Login Link with Glow -->
+    <a href="/dashboard" class="staff-login-link glow-btn" style="padding: 6px 12px; border-radius: 4px; text-decoration: none;">Staff Login</a>
+  </div>
+
+  <!-- CUSTOM INSTALL MODAL -->
+  <div id="installModal">
+    <div class="install-box">
+      <h3>Install MushaMumwe App</h3>
+      <p>Because you are on a local network (HTTP), your browser requires a manual step to add the app to your home screen or desktop.</p>
+      
+      <ul>
+        <li><strong>On Android/Chrome:</strong> Tap the 3 dots (⋮) and select <strong>"Add to Home screen"</strong>.</li>
+        <li><strong>On iPhone/Safari:</strong> Tap the Share icon (⎋) and select <strong>"Add to Home Screen"</strong>.</li>
+        <li><strong>On PC/Chrome:</strong> Click the 3 dots (⋮) and select <strong>"Install App"</strong>.</li>
+      </ul>
+      
+      <button onclick="document.getElementById('installModal').classList.remove('active')">Got it</button>
+    </div>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -343,7 +428,6 @@ const API_BASE = "";
 const AUTH_TOKEN = localStorage.getItem("token") || "";
 
 // Refresh every widget in one call.
-// Used on first socket connect and on reconnect only.
 function refreshAllWidgets() {
   loadPatientSummary();
   loadEmployeeSummary();
@@ -352,6 +436,29 @@ function refreshAllWidgets() {
   loadDisciplinarySummary();
   loadEstablishmentSummary();
   loadProjectsSummary();
+}
+
+// ============================================================
+// PWA INSTALLATION
+// ============================================================
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+});
+
+async function installApp() {
+  if (deferredPrompt) {
+    // Show the native install prompt (Desktop or Home Screen shortcut)
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User response to the install prompt: ${outcome}`);
+    deferredPrompt = null;
+  } else {
+    // Browser blocked it (HTTP issue) -> Show the custom instructions modal
+    document.getElementById('installModal').classList.add('active');
+  }
 }
 
 // ============================================================

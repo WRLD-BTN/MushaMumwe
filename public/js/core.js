@@ -468,3 +468,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 });
+
+// ============================================================
+// PWA INSTALLATION
+// ============================================================
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById('installAppBtn');
+  if (btn) btn.style.display = 'inline-block';
+});
+
+async function installApp() {
+  if (!deferredPrompt) {
+    alert("To install the app, look for 'Add to Home Screen' or 'Install' in your browser's menu.");
+    return;
+  }
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  console.log(`User response to the install prompt: ${outcome}`);
+  deferredPrompt = null;
+  
+  const btn = document.getElementById('installAppBtn');
+  if (btn) btn.style.display = 'none';
+}
+
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('installAppBtn');
+  if (btn) btn.style.display = 'none';
+});
