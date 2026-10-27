@@ -596,3 +596,30 @@ function registerNursesSocketHandlers() {
     if (sub === myDept || orig === myDept) loadMyTenders();
   };
 }
+function printPatientList() {
+  if (allPatients.length === 0) { alert('No patients to print.'); return; }
+  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
+  const now = new Date();
+  let html = '<div class="print-page a4"><div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Patient Roster</h2></div>';
+  html += '<div class="print-meta"><p><strong>Total Patients:</strong> ' + allPatients.length + '</p><p><strong>Report Generated:</strong> ' + fmtDateTime(now) + '</p></div>';
+  html += '<table class="print-table"><thead><tr><th>#</th><th>Name</th><th>Ward</th><th>Diagnosis</th><th>Status</th><th>Admitted</th></tr></thead><tbody>';
+  allPatients.forEach((p, i) => {
+    html += '<tr><td>' + (i + 1) + '</td><td>' + escapeHtml(p.name) + '</td><td>' + escapeHtml(p.ward ? p.ward.name : '-') + '</td><td>' + escapeHtml(p.diagnosis || '-') + '</td><td>' + p.status.toUpperCase() + '</td><td>' + fmtDate(p.admissionDate) + '</td></tr>';
+  });
+  html += '</tbody></table><div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div></div>';
+  printContent(html);
+}
+
+function printDischarges() {
+  if (allDischarges.length === 0) { alert('No discharges to print.'); return; }
+  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
+  const now = new Date();
+  let html = '<div class="print-page a4"><div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Discharge Records</h2></div>';
+  html += '<div class="print-meta"><p><strong>Total Records:</strong> ' + allDischarges.length + '</p><p><strong>Report Generated:</strong> ' + fmtDateTime(now) + '</p></div>';
+  html += '<table class="print-table"><thead><tr><th>#</th><th>Name</th><th>Ward</th><th>Final Diagnosis</th><th>Outcome</th><th>Discharged</th></tr></thead><tbody>';
+  allDischarges.forEach((d, i) => {
+    html += '<tr><td>' + (i + 1) + '</td><td>' + escapeHtml(d.name) + '</td><td>' + escapeHtml(d.ward ? d.ward.name : '-') + '</td><td>' + escapeHtml(d.finalDiagnosis || '-') + '</td><td>' + escapeHtml(d.outcome || '-') + '</td><td>' + fmtDate(d.dischargeDate) + '</td></tr>';
+  });
+  html += '</tbody></table><div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div></div>';
+  printContent(html);
+}

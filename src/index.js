@@ -13,7 +13,6 @@ const io = socketIo(server, { cors: { origin: '*' } });
 
 app.use(express.json());
 
-// API responses must never be cached.
 app.use('/api', (req, res, next) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   res.set('Pragma', 'no-cache');
@@ -21,9 +20,6 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
-// ============================================================
-// STATIC FILE CACHE FIX
-// ============================================================
 const staticOptions = {
   etag: false,
   setHeaders: (res, filePath) => {
@@ -37,33 +33,18 @@ const staticOptions = {
 
 app.use(express.static('public', staticOptions));
 
-const CLEAN_ROUTES = [
-  '/dashboard',
-  '/portal',
-  '/login',
-  '/nurses',
-  '/it',
-  '/procurement',
-  '/stores',
-  '/hr',
-  '/admin',
-];
+const CLEAN_ROUTES = ['/dashboard', '/login', '/nurses', '/it', '/procurement', '/stores', '/hr', '/admin'];
 
 CLEAN_ROUTES.forEach(route => {
   app.get(route, (req, res) => {
-    // Send the entry point, but ensure it's not cached
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.sendFile(path.join(__dirname, '..', 'public', 'entry.html'));
   });
 });
 
-// Root redirects to the new Dashboard route
-app.get('/', (req, res) => {
-  res.redirect('/Dashboard');
-});
+app.get('/', (req, res) => res.redirect('/portal'));
 
-// Explicit route for the Live Board
-app.get('/Dashboard', (req, res) => {
+app.get('/portal', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
@@ -100,20 +81,8 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 4000;
-
 server.listen(PORT, '0.0.0.0', () => {
-  const nets = os.networkInterfaces();
-  const addrs = [];
-  for (const name of Object.keys(nets)) {
-    for (const net of nets[name]) {
-      if (net.family === 'IPv4' && !net.internal) addrs.push(net.address);
-    }
-  }
-  console.log('');
-  console.log('Sally Mugabe Central Hospital Dashboard running');
-  console.log('Local:   http://localhost:' + PORT);
-  addrs.forEach(a => console.log('Network: http://' + a + ':' + PORT));
-  console.log('');
+  console.log('Sally Mugabe Central Hospital Dashboard running on port ' + PORT);
 });
 
 module.exports = { io, app, server };

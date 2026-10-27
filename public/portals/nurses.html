@@ -1,196 +1,90 @@
-<div class="portal active">
-  <div class="portal-header">
-    <h2>Nurses Department - Patient Management</h2>
-  </div>
-
-  <div class="grid">
-    <div class="card">
-      <h3>Register New Patient</h3>
-      <div class="form-group">
-        <label for="nurses-patientName">Patient Name:</label>
-        <input type="text" id="nurses-patientName">
-      </div>
-      <div class="form-group">
-        <label for="nurses-patientID">National ID:</label>
-        <input type="text" id="nurses-patientID">
-      </div>
-      <div class="form-group">
-        <label for="nurses-patientPhone">Phone:</label>
-        <input type="text" id="nurses-patientPhone">
-      </div>
-      <div class="form-group">
-        <label for="nurses-patientBlood">Blood Group:</label>
-        <select id="nurses-patientBlood">
-          <option value="">Unknown</option>
-          <option>A+</option><option>A-</option>
-          <option>B+</option><option>B-</option>
-          <option>AB+</option><option>AB-</option>
-          <option>O+</option><option>O-</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="nurses-patientDiagnosis">Diagnosis:</label>
-        <input type="text" id="nurses-patientDiagnosis">
-      </div>
-      <div class="form-group">
-        <label for="nurses-patientSymptoms">Symptoms:</label>
-        <textarea id="nurses-patientSymptoms"></textarea>
-      </div>
-      <div class="form-group">
-        <label for="nurses-wardSelect">Ward:</label>
-        <select id="nurses-wardSelect"></select>
-      </div>
-      <button onclick="registerPatient()" class="primary-btn block">Save Record</button>
-      <div id="nurses-patientMessage"></div>
+<div class="portal active" data-dept="Nurses">
+  <h2>Nurses Dashboard</h2>
+  <p class="muted">Manage patients, discharges, and ward inventory.</p>
+  <div class="card">
+    <h3>Patient Search</h3>
+    <div class="filter-bar" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;">
+      <input type="text" id="nurses-patientSearch" placeholder="Search name or ID..." style="flex:1;" onkeyup="debouncedPatientSearch()">
+      <select id="nurses-filterStatus" onchange="runPatientSearch()">
+        <option value="all">All Statuses</option>
+        <option value="admitted">Admitted</option>
+        <option value="treatment">In Treatment</option>
+        <option value="discharged">Discharged</option>
+        <option value="deceased">Deceased</option>
+      </select>
+      <select id="nurses-filterWard" onchange="runPatientSearch()"><option value="all">All Wards</option></select>
+      <button class="ghost-btn" onclick="toggleAdvancedPatientFilters()">Advanced</button>
+      <button class="pill-btn" onclick="printPatientList()">Print Report</button>
     </div>
-
-    <div class="card">
-      <div class="card-head">
-        <h3>Find and Update Patient</h3>
-        <div class="card-head-actions">
-          <button class="pill-btn" onclick="toggleAdvancedPatientFilters()">Filters</button>
-          <button class="pill-btn" onclick="exportPatients()">Export CSV</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <input type="text" id="nurses-patientSearch" placeholder="Search (name / ID / diagnosis / symptoms)..." oninput="debouncedPatientSearch()">
-      </div>
-
-      <div id="nurses-advancedFilters" class="advanced-filters" style="display:none;">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Status</label>
-            <select id="nurses-filterStatus">
-              <option value="all">All</option>
-              <option value="admitted">Admitted</option>
-              <option value="treatment">In Treatment</option>
-              <option value="discharged">Discharged</option>
-              <option value="deceased">Deceased</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Ward</label>
-            <select id="nurses-filterWard">
-              <option value="all">All</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Admitted From</label>
-            <input type="date" id="nurses-filterFrom">
-          </div>
-          <div class="form-group">
-            <label>Admitted To</label>
-            <input type="date" id="nurses-filterTo">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Diagnosis</label>
-          <input type="text" id="nurses-filterDiagnosis" placeholder="e.g. malaria">
-        </div>
-        <button onclick="runPatientSearch()" class="primary-btn block">Search</button>
-        <button onclick="clearPatientFilters()" class="ghost-btn block" style="margin-top:8px;">Clear Filters</button>
-      </div>
-
-      <div class="form-group" style="margin-top:12px;">
-        <label>Select Patient: <span class="muted" id="nurses-resultCount"></span></label>
-        <select id="nurses-patientSelect" size="6" style="height:auto;"></select>
-      </div>
-
-      <div class="form-row">
-        <button onclick="openDischargeModal()" class="primary-btn">Discharge Patient</button>
-        <button onclick="changePatientStatus()" class="ghost-btn">Update Status</button>
-      </div>
-      <div class="form-group" style="margin-top:12px;">
-        <label>New Status:</label>
-        <select id="nurses-newStatus">
-          <option value="admitted">Admitted</option>
-          <option value="treatment">In Treatment</option>
-          <option value="deceased">Deceased</option>
-        </select>
-      </div>
-      <div id="nurses-updateMessage"></div>
+    <div id="nurses-advancedFilters" style="display:none; margin-bottom:15px; gap:10px; flex-wrap:wrap;">
+      <input type="text" id="nurses-filterDiagnosis" placeholder="Diagnosis..." onkeyup="debouncedPatientSearch()">
+      <label>From: <input type="date" id="nurses-filterFrom" onchange="runPatientSearch()"></label>
+      <label>To: <input type="date" id="nurses-filterTo" onchange="runPatientSearch()"></label>
+      <button class="ghost-btn" onclick="clearPatientFilters()">Clear</button>
     </div>
-
-    <div class="card">
-      <h3>Submit Tender Request</h3>
-      <div class="form-group">
-        <label for="nurses-reqOriginator">This tender is for:</label>
-        <select id="nurses-reqOriginator">
-          <option value="Nurses">Nurses</option>
-          <option value="IT">IT</option>
-          <option value="Procurement">Procurement</option>
-          <option value="Stores">Stores</option>
-          <option value="HR">HR</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="nurses-reqItemName">Item Name:</label>
-        <input type="text" id="nurses-reqItemName">
-      </div>
-      <div class="form-group">
-        <label for="nurses-reqQuantity">Quantity:</label>
-        <input type="number" id="nurses-reqQuantity" min="1">
-      </div>
-      <div class="form-group">
-        <label for="nurses-reqReason">Reason:</label>
-        <textarea id="nurses-reqReason"></textarea>
-      </div>
-      <button onclick="submitTenderRequest('nurses')" class="primary-btn block">Submit Request</button>
-      <div id="nurses-requestMessage"></div>
-    </div>
-  </div>
-
-  <div class="card" style="margin-top:20px;">
-    <div class="card-head">
-      <h3>My Tender Tracker <span class="lock-badge">LOCKED TO YOUR DEPARTMENT</span></h3>
-      <div class="card-head-actions">
-        <input type="text" class="search-input" id="nurses-tenderSearch" placeholder="Search tenders..." oninput="filterTenders('nurses')">
-        <button class="pill-btn" onclick="exportMyTenders()">Export CSV</button>
-      </div>
-    </div>
-    <div class="tender-filters" id="nurses-tenderFilters">
-      <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this,'nurses')">All</button>
-      <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this,'nurses')">Pending</button>
-      <button class="filter-btn" data-filter="awaiting_quotation" onclick="setTenderFilter(this,'nurses')">Awaiting Quotation</button>
-      <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this,'nurses')">Ordered</button>
-      <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this,'nurses')">Received</button>
-    </div>
-    <div id="nurses-tenderTrackerList" class="tender-tracker"></div>
-  </div>
-
-  <div class="card" style="margin-top:20px;">
-    <div class="card-head">
-      <h3>Discharge Records</h3>
-      <div class="card-head-actions">
-        <input type="text" class="search-input" id="nurses-dischargeSearch" placeholder="Search discharges..." oninput="debouncedDischargeSearch()">
-        <button class="pill-btn" onclick="exportDischarges()">Export CSV</button>
-      </div>
-    </div>
-
     <div class="form-row">
       <div class="form-group">
-        <label>Outcome</label>
-        <select id="nurses-dischargeOutcome" onchange="loadDischargeRecords()">
-          <option value="all">All</option>
-          <option value="Recovered">Recovered</option>
-          <option value="Improved">Improved</option>
-          <option value="Referred">Referred</option>
-          <option value="Absconded">Absconded</option>
-        </select>
+        <label>Patient: <span id="nurses-resultCount" class="muted">(0 found)</span></label>
+        <select id="nurses-patientSelect"></select>
       </div>
-      <div class="form-group">
-        <label>From</label>
-        <input type="date" id="nurses-dischargeFrom" onchange="loadDischargeRecords()">
-      </div>
-      <div class="form-group">
-        <label>To</label>
-        <input type="date" id="nurses-dischargeTo" onchange="loadDischargeRecords()">
+      <div class="form-group" style="flex:0 0 200px;">
+        <label>Update Status:</label>
+        <div style="display:flex; gap:8px;">
+          <select id="nurses-newStatus" style="flex:1;">
+            <option value="admitted">Admitted</option>
+            <option value="treatment">Treatment</option>
+            <option value="deceased">Deceased</option>
+          </select>
+          <button class="primary-btn" onclick="changePatientStatus()">Update</button>
+        </div>
+        <div id="nurses-updateMessage" style="margin-top:8px;"></div>
       </div>
     </div>
-
-    <div id="nurses-dischargeList" class="table-wrap"></div>
+  </div>
+  <div class="card">
+    <h3>Register New Patient</h3>
+    <div class="form-row">
+      <div class="form-group"><label>Full Name: <span class="req">*</span></label><input type="text" id="nurses-patientName"></div>
+      <div class="form-group"><label>National ID:</label><input type="text" id="nurses-patientID"></div>
+      <div class="form-group"><label>Phone:</label><input type="text" id="nurses-patientPhone"></div>
+      <div class="form-group"><label>Blood Group:</label><select id="nurses-patientBlood"><option value="">Unknown</option><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="AB+">AB+</option><option value="AB-">AB-</option><option value="O+">O+</option><option value="O-">O-</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Diagnosis:</label><input type="text" id="nurses-patientDiagnosis"></div>
+      <div class="form-group"><label>Symptoms:</label><input type="text" id="nurses-patientSymptoms"></div>
+      <div class="form-group"><label>Ward: <span class="req">*</span></label><select id="nurses-wardSelect"></select></div>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button class="primary-btn" onclick="registerPatient()">Register Patient</button>
+      <button class="ghost-btn" onclick="openDischargeModal()" style="margin-left:auto;">Discharge Selected Patient</button>
+    </div>
+    <div id="nurses-patientMessage" style="margin-top:10px;"></div>
+  </div>
+  <div class="card">
+    <h3>Discharge Records</h3>
+    <div class="filter-bar" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;">
+      <input type="text" id="nurses-dischargeSearch" placeholder="Search name..." onkeyup="debouncedDischargeSearch()">
+      <select id="nurses-dischargeOutcome" onchange="loadDischargeRecords()">
+        <option value="all">All Outcomes</option><option value="Recovered">Recovered</option><option value="Improved">Improved</option><option value="Referred">Referred</option><option value="Absconded">Absconded</option>
+      </select>
+      <label>From: <input type="date" id="nurses-dischargeFrom" onchange="loadDischargeRecords()"></label>
+      <label>To: <input type="date" id="nurses-dischargeTo" onchange="loadDischargeRecords()"></label>
+      <button class="pill-btn" onclick="printDischarges()">Print Report</button>
+    </div>
+    <div id="nurses-dischargeList"></div>
+  </div>
+  <div class="card">
+    <div class="card-header" style="display:flex; justify-content:space-between;">
+      <h3>My Department Tenders</h3>
+      <button class="pill-btn" onclick="printMyTenders()">Print Report</button>
+    </div>
+    <div class="filter-bar" style="display:flex; gap:8px; margin-bottom:15px; flex-wrap:wrap;">
+      <button class="filter-btn active" id="nurses-tenderFilters" data-filter="all" onclick="setTenderFilter(this)">All</button>
+      <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this)">Pending</button>
+      <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this)">Ordered</button>
+      <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this)">Received</button>
+      <input type="text" id="nurses-tenderSearch" placeholder="Search..." onkeyup="filterTenders()" style="margin-left:auto;">
+    </div>
+    <div id="nurses-tenderTrackerList"></div>
   </div>
 </div>
