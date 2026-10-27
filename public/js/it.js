@@ -218,3 +218,16 @@ async function exportMyTenders() {
   const blob = await res.blob();
   downloadCSV(blob, 'tenders-it-' + new Date().toISOString().split('T')[0] + '.csv');
 }
+function printMyTenders() {
+  if (allTenders.length === 0) { alert('No tenders to print.'); return; }
+  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
+  const now = new Date();
+  let html = '<div class="print-page a4"><div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>IT Department Tenders</h2></div>';
+  html += '<div class="print-meta"><p><strong>Total:</strong> ' + allTenders.length + '</p><p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p></div>';
+  html += '<table class="print-table"><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+  allTenders.forEach((t, i) => {
+    html += '<tr><td>' + (i + 1) + '</td><td>' + escapeHtml(t.itemName) + '</td><td>' + t.quantity + '</td><td>' + String(t.status).toUpperCase() + '</td><td>' + fmtDate(t.createdAt) + '</td></tr>';
+  });
+  html += '</tbody></table><div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div></div>';
+  printContent(html);
+}
