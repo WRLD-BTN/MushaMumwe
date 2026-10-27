@@ -86,7 +86,7 @@ function getDeptFromURL() {
 // NAVIGATION
 // ============================================================
 function goToDashboard() {
-  window.location.href = '/index.html';
+  window.location.href = '/portal';
 }
 
 // ============================================================
@@ -215,7 +215,7 @@ async function openPortalAsSuperAdmin(deptName) {
 }
 
 function backToSuperAdminHome() {
-  window.location.href = '/';
+  window.location.href = '/portal';
 }
 
 // ============================================================
@@ -396,7 +396,7 @@ function printContent(html) {
 }
 
 // ============================================================
-// SOCKET DISPATCH — gated on auth so login page does no work
+// SOCKET DISPATCH
 // ============================================================
 function _dispatch(event, handler) {
   socket.on(event, (p) => {
@@ -477,25 +477,56 @@ let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  const btn = document.getElementById('installAppBtn');
-  if (btn) btn.style.display = 'inline-block';
 });
 
 async function installApp() {
-  if (!deferredPrompt) {
-    alert("To install the app, look for 'Add to Home Screen' or 'Install' in your browser's menu.");
-    return;
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User response to the install prompt: ${outcome}`);
+    deferredPrompt = null;
+  } else {
+    document.getElementById('installModal').classList.add('active');
   }
-  deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  console.log(`User response to the install prompt: ${outcome}`);
-  deferredPrompt = null;
-  
-  const btn = document.getElementById('installAppBtn');
-  if (btn) btn.style.display = 'none';
+}
+// ============================================================
+// GLOBAL AUTO-WRAPPER FOR TABLES (CAP AT 9 ROWS)
+// ============================================================
+function applySmartTableScroll() {
+  // Find all tables that aren't already wrapped
+  document.querySelectorAll('table.data-table, table.print-table').forEach(table => {
+    if (table.parentElement.classList.contains('smart-table-wrap')) return;
+
+    // Create the wrapper
+    const wrapper = document.createElement('div');
+    wrapper.className = 'smart-table-wrap';
+    wrapper.style.maxHeight = '500px'; // ~9 rows
+    wrapper.style.overflowY = 'auto';
+    wrapper.style.position = 'relative';
+    wrapper.style.border = '1.5px solid var(--border-soft)';
+    wrapper.style.borderRadius = 'var(--radius-sm)';
+    wrapper.style.marginBottom = '12px';
+
+    // Insert the wrapper before the table and move the table into it
+    table.parentNode.insertBefore(wrapper, table);
+    wrapper.appendChild(table);
+
+    // Make the header sticky
+    const thead = table.querySelector('thead');
+    if (thead) {
+      thead.style.position = 'sticky';
+      thead.style.top = '0';
+      thead.style.zIndex = '10';
+      thead.querySelectorAll('th').forEach(th => {
+        th.style.background = 'var(--surface-alt)';
+        th.style.boxShadow = '0 1px 0 var(--border)';
+      });
+    }
+  });
 }
 
-window.addEventListener('appinstalled', () => {
-  const btn = document.getElementById('installAppBtn');
-  if (btn) btn.style.display = 'none';
+// Run this automatically whenever new data is loaded into the DOM
+const observer = new MutationObserver(() => {
+  applySmartTableScroll();
 });
+observer.observe(document.body, { childList: true, subtree: true });

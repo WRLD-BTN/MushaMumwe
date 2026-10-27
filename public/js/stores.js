@@ -298,3 +298,64 @@ async function exportMyTenders() {
   const blob = await res.blob();
   downloadCSV(blob, 'tenders-stores-' + new Date().toISOString().split('T')[0] + '.csv');
 }
+function printInventory() {
+  if (!allInventory || allInventory.length === 0) {
+    alert('No inventory to print.');
+    return;
+  }
+
+  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
+  const now = new Date();
+
+  let html = '<div class="print-page a4">';
+  html += '<div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Inventory Report</h2></div>';
+  
+  html += '<div class="print-meta">';
+  html += '<p><strong>Total Items:</strong> ' + allInventory.length + '</p>';
+  html += '<p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p>';
+  html += '</div>';
+
+  html += '<table class="print-table"><thead><tr><th>#</th><th>Item</th><th>Category</th><th>Quantity</th><th>Unit</th><th>Status</th></tr></thead><tbody>';
+
+  allInventory.forEach((i, idx) => {
+    let statusLabel = 'Adequate';
+    if (i.quantity < 10) statusLabel = 'Critical';
+    else if (i.quantity < 50) statusLabel = 'Low';
+
+    html += '<tr><td>' + (idx + 1) + '</td><td>' + escapeHtml(i.name) + '</td><td>' + escapeHtml(i.category || '-') + '</td><td>' + i.quantity + '</td><td>' + escapeHtml(i.unit) + '</td><td>' + statusLabel + '</td></tr>';
+  });
+
+  html += '</tbody></table>';
+  html += '<div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div>';
+  html += '</div>';
+
+  printContent(html);
+}
+function printInventory() {
+  if (allInventory.length === 0) { alert('No inventory to print.'); return; }
+  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
+  const now = new Date();
+  let html = '<div class="print-page a4"><div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Inventory Report</h2></div>';
+  html += '<div class="print-meta"><p><strong>Total Items:</strong> ' + allInventory.length + '</p><p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p></div>';
+  html += '<table class="print-table"><thead><tr><th>#</th><th>Item</th><th>Category</th><th>Qty</th><th>Unit</th><th>Status</th></tr></thead><tbody>';
+  allInventory.forEach((i, idx) => {
+    let statusLabel = i.quantity < 10 ? 'Critical' : i.quantity < 50 ? 'Low' : 'Adequate';
+    html += '<tr><td>' + (idx + 1) + '</td><td>' + escapeHtml(i.name) + '</td><td>' + escapeHtml(i.category || '-') + '</td><td>' + i.quantity + '</td><td>' + escapeHtml(i.unit) + '</td><td>' + statusLabel + '</td></tr>';
+  });
+  html += '</tbody></table><div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div></div>';
+  printContent(html);
+}
+
+function printMyTenders() {
+  if (allTenders.length === 0) { alert('No tenders to print.'); return; }
+  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
+  const now = new Date();
+  let html = '<div class="print-page a4"><div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Stores Department Tenders</h2></div>';
+  html += '<div class="print-meta"><p><strong>Total:</strong> ' + allTenders.length + '</p><p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p></div>';
+  html += '<table class="print-table"><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+  allTenders.forEach((t, i) => {
+    html += '<tr><td>' + (i + 1) + '</td><td>' + escapeHtml(t.itemName) + '</td><td>' + t.quantity + '</td><td>' + String(t.status).toUpperCase() + '</td><td>' + fmtDate(t.createdAt) + '</td></tr>';
+  });
+  html += '</tbody></table><div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div></div>';
+  printContent(html);
+}
