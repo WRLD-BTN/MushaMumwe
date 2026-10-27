@@ -23,11 +23,9 @@ app.use('/api', (req, res, next) => {
 
 // ============================================================
 // STATIC FILE CACHE FIX
-// Forces browsers to always fetch the latest HTML/JS/CSS
-// so users don't need to press Ctrl+Shift+R when we update.
 // ============================================================
 const staticOptions = {
-  etag: false, // Prevents the 304 Not Modified response
+  etag: false,
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html') || filePath.endsWith('.js') || filePath.endsWith('.css')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -59,9 +57,14 @@ CLEAN_ROUTES.forEach(route => {
   });
 });
 
-// Root redirects to the Live Board
+// Root redirects to the new Dashboard route
 app.get('/', (req, res) => {
-  res.redirect('/index.html');
+  res.redirect('/Dashboard');
+});
+
+// Explicit route for the Live Board
+app.get('/Dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 const authRoutes          = require('./routes/auth');

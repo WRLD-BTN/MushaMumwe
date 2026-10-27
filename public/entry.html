@@ -4,8 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sally Mugabe Central Hospital - Dashboard</title>
-  <link rel="icon" href="data:,">
+  
+  <!-- Favicon and PWA Manifest -->
+  <link rel="icon" href="/logo.jpg" type="image/jpeg" alt="HOSPITAL LOGO">
+  <link rel="manifest" href="/manifest.json">
+  
   <link rel="stylesheet" href="style.css">
+  
+  <script>
+    // Register Service Worker for PWA Installation
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW failed:', err));
+      });
+    }
+  </script>
 </head>
 <body class="entry-portal">
   <div class="container">
@@ -15,12 +28,16 @@
         <p id="appSubtitle">Department Dashboard</p>
       </div>
       
-      <!-- HEADER CONTROLS (Visible on login AND inside the portal) -->
-      <div id="headerControls" class="header-user" style="display:flex; align-items:center;">
-        <!-- Dashboard button: always visible -->
-        <button id="btnDashboard" class="ghost-btn small" onclick="goToDashboard()" style="margin-right:8px;">Dashboard</button>
+      <!-- HEADER CONTROLS -->
+      <div id="headerControls" class="header-user" style="display:flex; align-items:center; gap:8px;">
         
-        <!-- User specific controls: hidden until login -->
+        <!-- Install App Button (Hidden by default until browser fires prompt) -->
+        <button id="installAppBtn" class="ghost-btn small" style="display:none;" onclick="installApp()">Install App</button>
+
+        <!-- Dashboard button -->
+        <button id="btnDashboard" class="ghost-btn small" onclick="goToDashboard()">Live Dashboard</button>
+        
+        <!-- User specific controls -->
         <div id="headerUser" style="display:none; align-items:center; gap:8px;">
           <span id="headerUserLabel"></span>
           <button id="btnOwnPwd" class="ghost-btn small" onclick="openOwnPasswordModal()">Change Password</button>
