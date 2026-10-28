@@ -179,7 +179,11 @@ async function loadPortal(deptName) {
     const initFn = window['init_' + dept.key];
     if (typeof initFn === 'function') await initFn();
 
-    if (typeof init_projects === 'function') await init_projects();
+    if (typeof window.init_projects === 'function') {
+      await window.init_projects();
+    } else {
+      console.warn('Projects module not loaded correctly.');
+    }
   } catch (e) {
     showLoginError(e.message);
   }
@@ -500,7 +504,7 @@ function applySmartTableScroll() {
     // Create the wrapper
     const wrapper = document.createElement('div');
     wrapper.className = 'smart-table-wrap';
-    wrapper.style.maxHeight = '500px'; // ~9 rows
+    wrapper.style.maxHeight = '300px'; // ~5 rows
     wrapper.style.overflowY = 'auto';
     wrapper.style.position = 'relative';
     wrapper.style.border = '1.5px solid var(--border-soft)';
@@ -530,3 +534,40 @@ const observer = new MutationObserver(() => {
   applySmartTableScroll();
 });
 observer.observe(document.body, { childList: true, subtree: true });
+
+// Helper for Super Admin CSV Exports
+function downloadCSV(blob, filename) {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// GLOBAL THEME TOGGLE
+// ============================================================
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('mushamumwe_theme', theme);
+  
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) {
+    btn.textContent = theme === 'light' ? '🌙 Dark' : '☀️ Light';
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+}
+
+// Run immediately to prevent flash of wrong theme
+(function initTheme() {
+  const saved = localStorage.getItem('mushamumwe_theme') || 'light';
+  applyTheme(saved);
+})();
