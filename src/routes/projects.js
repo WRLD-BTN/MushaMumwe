@@ -231,6 +231,19 @@ router.post('/', requireAuth, async (req, res) => {
   }
 
   try {
+    // Anti-duplicate check: Look for an identical project created in the last 5 seconds
+    const recentDuplicate = await prisma.project.findFirst({
+      where: {
+        name: name,
+        department: canonicalDept(req.user.department),
+        createdAt: { gte: new Date(Date.now() - 5000) }
+      }
+    });
+
+    if (recentDuplicate) {
+      return res.status(400).json({ error: 'This project was just created. Please check the list before trying again.' });
+    }
+
     const project = await prisma.project.create({
       data: {
         name,

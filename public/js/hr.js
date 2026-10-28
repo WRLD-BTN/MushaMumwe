@@ -393,7 +393,10 @@ async function loadMyTenders() {
 }
 
 function setTenderFilter(btn) {
-  document.querySelectorAll('#hr-tenderFilters .filter-btn').forEach(b => b.classList.remove('active'));
+  const parent = btn.closest('.filter-bar');
+  if (parent) {
+    parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  }
   btn.classList.add('active');
   tenderFilter = btn.dataset.filter;
   renderTenderTracker();

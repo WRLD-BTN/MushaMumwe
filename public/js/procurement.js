@@ -72,8 +72,11 @@ async function loadProcurementDashboard() {
 }
 
 function setProcActiveFilter(btn) {
-  const parent = document.getElementById('proc-activeFilters');
-  if (parent) parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  // Use the closest wrapper to guarantee we only affect this specific row
+  const parent = btn.closest('.filter-bar');
+  if (parent) {
+    parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  }
   btn.classList.add('active');
   procActiveFilter = btn.dataset.filter;
   renderProcurementOrders();
@@ -412,7 +415,10 @@ async function loadMyTenders() {
 }
 
 function setTenderFilter(btn) {
-  document.querySelectorAll('#proc-tenderFilters .filter-btn').forEach(b => b.classList.remove('active'));
+  const parent = btn.closest('.filter-bar');
+  if (parent) {
+    parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  }
   btn.classList.add('active');
   tenderFilter = btn.dataset.filter;
   renderTenderTracker();
@@ -466,33 +472,6 @@ async function exportMyTenders() {
   if (!res.ok) return alert('Export failed');
   const blob = await res.blob();
   downloadCSV(blob, 'tenders-procurement-' + new Date().toISOString().split('T')[0] + '.csv');
-}
-function printTenderHistory() {
-  if (!allTenders || allTenders.length === 0) {
-    alert('No tender history to print.');
-    return;
-  }
-
-  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
-  const now = new Date();
-  
-  let html = '<div class="print-page a4">';
-  html += '<div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Tender History</h2></div>';
-  html += '<div class="print-meta"><p><strong>Total Tenders:</strong> ' + allTenders.length + '</p><p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p></div>';
-
-  html += '<table class="print-table"><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Dept</th><th>Status</th><th>Supplier</th><th>Date</th></tr></thead><tbody>';
-
-  allTenders.forEach((t, idx) => {
-    const dept = t.originatorDepartment || t.requestingDepartment || '-';
-    const supplier = t.procurementOrder ? t.procurementOrder.supplierName : '-';
-    html += '<tr><td>' + (idx + 1) + '</td><td>' + escapeHtml(t.itemName) + '</td><td>' + t.quantity + '</td><td>' + escapeHtml(dept) + '</td><td>' + t.status.toUpperCase() + '</td><td>' + escapeHtml(supplier) + '</td><td>' + fmtDate(t.createdAt) + '</td></tr>';
-  });
-
-  html += '</tbody></table>';
-  html += '<div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div>';
-  html += '</div>';
-
-  printContent(html);
 }
 function printTenderHistory() {
   if (allTenderHistory.length === 0) { alert('No history to print.'); return; }
