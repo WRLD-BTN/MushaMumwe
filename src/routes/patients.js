@@ -15,16 +15,14 @@ function parseRange(query) {
   let from, to;
 
   if (query.from) {
-    from = new Date(query.from);
-    from.setHours(0, 0, 0, 0);
+    from = new Date(query.from + 'T00:00:00');
   } else {
     from = new Date();
     from.setHours(0, 0, 0, 0);
   }
 
   if (query.to) {
-    to = new Date(query.to);
-    to.setHours(23, 59, 59, 999);
+    to = new Date(query.to + 'T23:59:59.999');
   } else {
     to = new Date();
     to.setHours(23, 59, 59, 999);
@@ -142,7 +140,7 @@ router.get('/detail-public', async (req, res) => {
     const { category } = req.query;
     const { from, to } = parseRange(req.query);
 
-    const validCategories = ['admitted', 'treatment', 'discharged', 'deceased'];
+    const validCategories = ['admitted', 'treatment', 'discharged', 'deceased', 'followups'];
     if (!validCategories.includes(category)) {
       return res.status(400).json({ error: 'Invalid category' });
     }
@@ -161,6 +159,10 @@ router.get('/detail-public', async (req, res) => {
       where = {
         status: 'deceased',
         updatedAt: { gte: from, lte: to },
+      };
+    } else if (category === 'followups') {
+      where = {
+        nextReviewDate: { gte: from, lte: to },
       };
     }
 
@@ -184,7 +186,7 @@ router.get('/detail-public', async (req, res) => {
 
 router.get('/discharges', requireAuth, async (req, res) => {
   try {
-    const { search, outcome, ward, from, to } = req.query;
+    const { search, outcome, ward, from, to, reviewFrom, reviewTo } = req.query;
     const where = { status: 'discharged' };
 
     if (outcome && outcome !== 'all') where.outcome = outcome;
@@ -198,10 +200,15 @@ router.get('/discharges', requireAuth, async (req, res) => {
       ];
     }
     if (from) where.dischargeDate = { gte: new Date(from) };
+    if (reviewFrom && reviewFrom.trim() !== '') where.nextReviewDate = { gte: new Date(reviewFrom) };
     if (to) {
       const toDate = new Date(to);
       toDate.setHours(23, 59, 59, 999);
       where.dischargeDate = { ...(where.dischargeDate || {}), lte: toDate };
+    }
+    if (reviewTo && reviewTo.trim() !== '') {
+      const rToDate = new Date(reviewTo); rToDate.setHours(23, 59, 59, 999);
+      where.nextReviewDate = { ...(where.nextReviewDate || {}), lte: rToDate };
     }
 
     const records = await prisma.patient.findMany({

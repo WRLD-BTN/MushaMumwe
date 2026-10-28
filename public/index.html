@@ -96,7 +96,7 @@
   <!-- CUSTOM INSTALL MODAL -->
   <div id="installModal">
     <div class="install-box">
-      <h3>Install MushaMumwe App</h3>
+      <h3>Install the SMCH App</h3>
       <p>Because you are on a local network (HTTP), your browser requires a manual step to add the app to your home screen or desktop.</p>
       
       <ul>
@@ -181,7 +181,7 @@
           <div class="widget-number" id="todayDischarged">-</div>
           <div class="widget-label">Discharged</div>
         </div>
-        <div class="widget-stat followups">
+        <div class="widget-stat followups" id="followupWidget" onclick="openDetailModal('patients', 'followups')" title="Click to view">
           <div class="widget-number" id="todayFollowups">-</div>
           <div class="widget-label">Follow-ups Due</div>
         </div>
@@ -603,7 +603,18 @@ async function loadTodaySummary() {
 
     document.getElementById("todayAdmitted").textContent = data.admittedToday ?? "-";
     document.getElementById("todayDischarged").textContent = data.dischargedToday ?? "-";
-    document.getElementById("todayFollowups").textContent = data.followUpsDueToday ?? "-";
+    const followups = data.followUpsDueToday || 0;
+    document.getElementById('todayFollowups').textContent = followups;
+    const followupWidget = document.getElementById('followupWidget');
+    if (followups > 0) {
+      document.getElementById('todayFollowups').style.color = '#dc2626';
+      followupWidget.style.background = 'rgba(220, 38, 38, 0.08)';
+      followupWidget.style.border = '1px solid rgba(220, 38, 38, 0.2)';
+    } else {
+      document.getElementById('todayFollowups').style.color = 'var(--primary)';
+      followupWidget.style.background = 'transparent';
+      followupWidget.style.border = 'none';
+    }
     document.getElementById("todayDeaths").textContent = data.deathsToday ?? "-";
     document.getElementById("patientsCaption").textContent = fmtDateShort(from) + " - " + fmtDateShort(to);
   } catch (e) {
@@ -916,6 +927,7 @@ const MODAL_TITLES = {
     admitted: "Admitted Patients",
     treatment: "Patients In Treatment",
     discharged: "Discharged Patients",
+    followups: "Follow-ups Due Today",
     deceased: "Deceased Patients",
   },
   tenders: {

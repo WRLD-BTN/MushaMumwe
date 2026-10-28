@@ -665,7 +665,7 @@ select {
 #discCaseList,
 #estMovementList,
 #auditTableWrap {
-  max-height: 500px !important; /* Caps the height at ~9 rows */
+  max-height: 300px !important; /* Caps the height at ~9 rows */
   overflow-y: auto !important;
   position: relative;
 }
@@ -717,4 +717,121 @@ select {
 #auditTableWrap::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 4px;
+}
+
+@keyframes goldPulse {
+  0% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4); border-color: #d97706; }
+  70% { box-shadow: 0 0 0 10px rgba(217, 119, 6, 0); border-color: #d97706; }
+  100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); border-color: #cbd5e1; }
+}
+.launcher-btn {
+  animation: goldPulse 2s infinite;
+  border: 1.5px solid #d97706 !important;
+}
+.launcher-btn:hover {
+  animation: none;
+  box-shadow: 0 0 15px rgba(217, 119, 6, 0.5) !important;
+  border-color: #b45309 !important;
+}
+
+/* ============================================================
+   COMPACT PRINT OVERRIDES (Fits on 1 Page)
+   ============================================================ */
+@media print {
+  .print-page { 
+    padding: 0 !important; 
+    margin: 0 !important;
+    font-size: 10px !important;
+  }
+  .print-header { 
+    padding-bottom: 5px !important; 
+    margin-bottom: 10px !important; 
+    border-bottom: 1px solid #000 !important;
+  }
+  .print-header h1 { font-size: 16px !important; letter-spacing: 1px !important; }
+  .print-header h2 { font-size: 12px !important; margin-top: 2px !important; }
+  .print-contact { font-size: 9px !important; margin-bottom: 8px !important; }
+  .print-meta { 
+    font-size: 9px !important; 
+    gap: 2px 10px !important; 
+    margin-bottom: 10px !important; 
+  }
+  .print-section { margin-bottom: 8px !important; }
+  .print-section h3 { font-size: 10px !important; padding-bottom: 2px !important; margin-bottom: 4px !important; }
+  .print-section p { font-size: 9px !important; margin-bottom: 2px !important; }
+  .print-signatures { margin-top: 15px !important; gap: 20px !important; }
+  .print-signatures span { font-size: 9px !important; }
+  .sig-line { height: 20px !important; }
+  .print-footer { font-size: 8px !important; margin-top: 10px !important; padding-top: 4px !important; }
+  .print-table { font-size: 9px !important; margin-bottom: 10px !important; }
+  .print-table th { padding: 3px 4px !important; font-size: 8px !important; }
+  .print-table td { padding: 3px 4px !important; }
+}
+
+/* ============================================================
+   COMPACT PRINT OVERRIDES (Fits on 1 Page)
+   ============================================================ */
+@media print {
+  .print-page { 
+    padding: 0 !important; 
+    margin: 0 !important;
+    font-size: 10px !important;
+  }
+  .print-header { 
+    padding-bottom: 5px !important; 
+    margin-bottom: 10px !important; 
+    border-bottom: 1px solid #000 !important;
+  }
+  .print-header h1 { font-size: 16px !important; letter-spacing: 1px !important; }
+  .print-header h2 { font-size: 12px !important; margin-top: 2px !important; }
+  .print-contact { font-size: 9px !important; margin-bottom: 8px !important; }
+  .print-meta { 
+    font-size: 9px !important; 
+    gap: 2px 10px !important; 
+    margin-bottom: 10px !important; 
+  }
+  .print-section { margin-bottom: 8px !important; }
+  .print-section h3 { font-size: 10px !important; padding-bottom: 2px !important; margin-bottom: 4px !important; }
+  .print-section p { font-size: 9px !important; margin-bottom: 2px !important; }
+  .print-signatures { margin-top: 15px !important; gap: 20px !important; }
+  .print-signatures span { font-size: 9px !important; }
+  .sig-line { height: 20px !important; }
+  .print-footer { font-size: 8px !important; margin-top: 10px !important; padding-top: 4px !important; }
+  .print-table { font-size: 9px !important; margin-bottom: 10px !important; }
+  .print-table th { padding: 3px 4px !important; font-size: 8px !important; }
+  .print-table td { padding: 3px 4px !important; }
+}
+
+/* ============================================================
+   COMPACT PRINT OVERRIDES (Fits on 1 Page)
+   ============================================================ */
+@media print {
+  .print-page { 
+    padding: 0 !important; 
+    margin: 0 !important;
+    font-size: 10px !important;
+  }
+  .print-header { 
+    padding-bottom: 5px !important; 
+    margin-bottom: 10px !important; 
+    border-bottom: 1px solid #000 !important;
+  }
+  .print-header h1 { font-size: 16px !important; letter-spacing: 1px !important; }
+  .print-header h2 { font-size: 12px !important; margin-top: 2px !important; }
+  .print-contact { font-size: 9px !important; margin-bottom: 8px !important; }
+  .print-meta { 
+    font-size: 9px !important; 
+    gap: 2px 10px !important; 
+    margin-bottom: 10px !important; 
+  }
+  .print-section { margin-bottom: 8px !important; }
+  .print-section h3 { font-size: 10px !important; padding-bottom: 2px !important; margin-bottom: 4px !important; }
+  .print-section p { font-size: 9px !important; margin-bottom: 2px !important; }
+  .print-signatures { margin-top: 15px !important; gap: 20px !important; }
+  .print-signatures span { font-size: 9px !important; }
+  .sig-line { height: 20px !important; }
+  .print-footer { font-size: 8px !important; margin-top: 10px !important; padding-top: 4px !important; }
+  .print-table { font-size: 9px !important; margin-bottom: 10px !important; }
+  .print-table th { padding: 3px 4px !important; font-size: 8px !important; }
+  .print-table td { padding: 3px 4px !important; }
 }

@@ -492,3 +492,53 @@ function wireProjectForms() {
     updateStatus.dataset.wired = '1';
   }
 }
+// OVERRIDE submitProjectNew to prevent double submissions
+const originalSubmitProjectNew = window.submitProjectNew;
+window.submitProjectNew = async function() {
+  const btn = document.querySelector('button[onclick="submitProjectNew()"]');
+  const msg = document.getElementById('projectNewMessage');
+  
+  // 1. If the button is already disabled, ignore the click
+  if (btn && btn.disabled) return;
+  
+  // 2. Disable the button and show a loading state
+  if (btn) {
+    btn.disabled = true;
+    btn.dataset.originalText = btn.textContent;
+    btn.textContent = 'Creating...';
+  }
+  
+  try {
+    // Run the original logic
+    await originalSubmitProjectNew();
+  } finally {
+    // 3. Re-enable the button after the request finishes (success or fail)
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = btn.dataset.originalText || 'Create Project';
+    }
+  }
+};
+
+// OVERRIDE submitProjectUpdate to prevent double submissions
+const originalSubmitProjectUpdate = window.submitProjectUpdate;
+window.submitProjectUpdate = async function() {
+  const btn = document.querySelector('button[onclick="submitProjectUpdate()"]');
+  
+  if (btn && btn.disabled) return;
+  
+  if (btn) {
+    btn.disabled = true;
+    btn.dataset.originalText = btn.textContent;
+    btn.textContent = 'Saving...';
+  }
+  
+  try {
+    await originalSubmitProjectUpdate();
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = btn.dataset.originalText || 'Add Update';
+    }
+  }
+};

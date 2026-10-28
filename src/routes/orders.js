@@ -99,7 +99,7 @@ router.get('/requests', requireAuth, async (req, res) => {
 
 router.get('/my', requireAuth, async (req, res) => {
   try {
-    const myDept = String(req.user.department || '').trim().toLowerCase();
+    const myDept = String(req.headers['x-acting-dept'] || req.user.department || '').trim().toLowerCase();
     const all = await prisma.orderRequest.findMany({
       include: {
         statusLogs: { orderBy: { timestamp: 'desc' } },
