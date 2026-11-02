@@ -139,15 +139,29 @@ function showLoginError(msg) {
   el.style.display = 'block';
 }
 
+let _portalLoadInFlight = false;
+
 async function loadPortal(deptName) {
+  // 1. Prevent double loading
+  if (_portalLoadInFlight) return;
+  _portalLoadInFlight = true;
+
   const dept = DEPT_MAP[deptName];
-  if (!dept) return showLoginError('Unknown department');
+  if (!dept) {
+    _portalLoadInFlight = false;
+    return showLoginError('Unknown department');
+  }
 
   try {
-    const htmlRes = await fetch(dept.fragment);
+    // 2. Force the browser to get the LATEST html file (no cache)
+    const htmlRes = await fetch(dept.fragment, { cache: 'no-store' });
     if (!htmlRes.ok) throw new Error('Could not load ' + dept.fragment);
     const html = await htmlRes.text();
-    document.getElementById('portalContainer').innerHTML = html;
+    
+    // 3. Clear the container first, then inject
+    const container = document.getElementById('portalContainer');
+    container.innerHTML = ''; 
+    container.innerHTML = html;
 
     await loadScript(dept.script);
     await loadScript('js/projects.js');
@@ -181,11 +195,12 @@ async function loadPortal(deptName) {
 
     if (typeof window.init_projects === 'function') {
       await window.init_projects();
-    } else {
-      console.warn('Projects module not loaded correctly.');
     }
   } catch (e) {
     showLoginError(e.message);
+  } finally {
+    // 4. Unlock so you can log in again later
+    _portalLoadInFlight = false;
   }
 }
 
@@ -388,14 +403,14 @@ function toInputDate(d) {
 // ============================================================
 function printContent(html) {
   const area = document.getElementById('printArea');
-  if (!area) {
-    console.error('printArea element not found');
-    return;
-  }
+  if (!area) { console.error('printArea element not found'); return; }
   area.innerHTML = html;
   setTimeout(() => {
     window.print();
-    setTimeout(() => { area.innerHTML = ''; }, 500);
+    window.addEventListener('afterprint', function clear() {
+      window.removeEventListener('afterprint', clear);
+      area.innerHTML = '';
+    });
   }, 200);
 }
 
@@ -498,7 +513,7 @@ async function installApp() {
 // ============================================================
 function applySmartTableScroll() {
   // Find all tables that aren't already wrapped
-  document.querySelectorAll('table.data-table, table.print-table').forEach(table => {
+  document.querySelectorAll('table.data-table').forEach(table => {
     if (table.parentElement.classList.contains('smart-table-wrap')) return;
 
     // Create the wrapper
@@ -536,16 +551,6 @@ const observer = new MutationObserver(() => {
 observer.observe(document.body, { childList: true, subtree: true });
 
 // Helper for Super Admin CSV Exports
-function downloadCSV(blob, filename) {
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.style.display = 'none';
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  window.URL.revokeObjectURL(url);
-}
 
 // ============================================================
 // GLOBAL THEME TOGGLE

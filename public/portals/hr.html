@@ -13,19 +13,23 @@
       <div class="form-group">
         <label for="hr-empDept">Department:</label>
         <select id="hr-empDept">
-          <option value="Medical">Medical / Doctors</option>
+          <option value="Medical">Medical</option>
           <option value="Nurses">Nurses</option>
-          <option value="Pharmacy">Pharmacy</option>
-          <option value="Laboratory">Laboratory</option>
-          <option value="Admin">Admin</option>
-          <option value="Support">Support / Cleaning</option>
-          <option value="Maintenance">Maintenance</option>
+          <option value="Mortuary">Mortuary</option>
+          <option value="School of Nursing">School of Nursing</option>
+          <option value="School of Midwifery">School of Midwifery</option>
+          <option value="Biomedical Equipment">Biomedical Equipment</option>
+          <option value="Radiography">Radiography</option>
+          <option value="Catering">Catering</option>
           <option value="Security">Security</option>
+          <option value="Laundry">Laundry</option>
+          <option value="Health Information">Health Information</option>
+          <option value="Accounts">Accounts</option>
         </select>
       </div>
       <div class="form-group">
         <label for="hr-empRole">Role:</label>
-        <input type="text" id="hr-empRole" placeholder="e.g. Nurse, Doctor, Cleaner">
+        <input type="text" id="hr-empRole" placeholder="e.g. Chef, Radiographer, Tutor">
       </div>
       <div class="form-group">
         <label for="hr-empWard">Assigned Ward:</label>
@@ -57,10 +61,21 @@
         <label for="hr-reqOriginator">This tender is for:</label>
         <select id="hr-reqOriginator">
           <option value="HR">HR</option>
+          <option value="Medical">Medical</option>
           <option value="Nurses">Nurses</option>
-          <option value="IT">IT</option>
-          <option value="Procurement">Procurement</option>
+          <option value="Mortuary">Mortuary</option>
+          <option value="School of Nursing">School of Nursing</option>
+          <option value="School of Midwifery">School of Midwifery</option>
+          <option value="Biomedical Equipment">Biomedical Equipment</option>
+          <option value="Radiography">Radiography</option>
+          <option value="Catering">Catering</option>
+          <option value="Security">Security</option>
+          <option value="Laundry">Laundry</option>
+          <option value="Health Information">Health Information</option>
+          <option value="Accounts">Accounts</option>
           <option value="Stores">Stores</option>
+          <option value="Procurement">Procurement</option>
+          <option value="IT">IT</option>
         </select>
       </div>
       <div class="form-group">
@@ -143,12 +158,16 @@
           <option value="all">All</option>
           <option value="Medical">Medical</option>
           <option value="Nurses">Nurses</option>
-          <option value="Pharmacy">Pharmacy</option>
-          <option value="Laboratory">Laboratory</option>
-          <option value="Admin">Admin</option>
-          <option value="Support">Support</option>
-          <option value="Maintenance">Maintenance</option>
+          <option value="Mortuary">Mortuary</option>
+          <option value="School of Nursing">School of Nursing</option>
+          <option value="School of Midwifery">School of Midwifery</option>
+          <option value="Biomedical Equipment">Biomedical Equipment</option>
+          <option value="Radiography">Radiography</option>
+          <option value="Catering">Catering</option>
           <option value="Security">Security</option>
+          <option value="Laundry">Laundry</option>
+          <option value="Health Information">Health Information</option>
+          <option value="Accounts">Accounts</option>
         </select>
       </div>
       <div class="form-group">
@@ -226,12 +245,16 @@
           <option value="all">All</option>
           <option value="Medical">Medical</option>
           <option value="Nurses">Nurses</option>
-          <option value="Pharmacy">Pharmacy</option>
-          <option value="Laboratory">Laboratory</option>
-          <option value="Admin">Admin</option>
-          <option value="Support">Support</option>
-          <option value="Maintenance">Maintenance</option>
+          <option value="Mortuary">Mortuary</option>
+          <option value="School of Nursing">School of Nursing</option>
+          <option value="School of Midwifery">School of Midwifery</option>
+          <option value="Biomedical Equipment">Biomedical Equipment</option>
+          <option value="Radiography">Radiography</option>
+          <option value="Catering">Catering</option>
           <option value="Security">Security</option>
+          <option value="Laundry">Laundry</option>
+          <option value="Health Information">Health Information</option>
+          <option value="Accounts">Accounts</option>
         </select>
       </div>
       <div class="form-group">
@@ -274,12 +297,16 @@
             <option value="all">All</option>
             <option value="Medical">Medical</option>
             <option value="Nurses">Nurses</option>
-            <option value="Pharmacy">Pharmacy</option>
-            <option value="Laboratory">Laboratory</option>
-            <option value="Admin">Admin</option>
-            <option value="Support">Support</option>
-            <option value="Maintenance">Maintenance</option>
+            <option value="Mortuary">Mortuary</option>
+            <option value="School of Nursing">School of Nursing</option>
+            <option value="School of Midwifery">School of Midwifery</option>
+            <option value="Biomedical Equipment">Biomedical Equipment</option>
+            <option value="Radiography">Radiography</option>
+            <option value="Catering">Catering</option>
             <option value="Security">Security</option>
+            <option value="Laundry">Laundry</option>
+            <option value="Health Information">Health Information</option>
+            <option value="Accounts">Accounts</option>
           </select>
         </div>
         <div class="form-group">
@@ -307,7 +334,7 @@
       </div>
       <div class="form-group">
         <label>Role</label>
-        <input type="text" id="hr-filterRole" placeholder="e.g. Nurse">
+        <input type="text" id="hr-filterRole" placeholder="e.g. Chef, Radiographer">
       </div>
       <button onclick="runStaffSearch()" class="primary-btn block">Search</button>
       <button onclick="clearStaffFilters()" class="ghost-btn block" style="margin-top:8px;">Clear Filters</button>

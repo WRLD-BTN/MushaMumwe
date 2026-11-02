@@ -1,7 +1,7 @@
-const CACHE_NAME = 'mushamumwe-v1';
+const CACHE_NAME = 'mushamumwe-v3'; // <--- Bumped to v3
 const ASSETS = [
   '/',
-  '/Dashboard',
+  '/portal',
   '/style.css',
   '/js/core.js',
   '/logo.jpg'

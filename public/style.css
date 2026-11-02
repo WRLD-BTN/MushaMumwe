@@ -835,3 +835,38 @@ select {
   .print-table th { padding: 3px 4px !important; font-size: 8px !important; }
   .print-table td { padding: 3px 4px !important; }
 }
+
+
+/* ============================================================
+   PRINT FIX: every scroll container opens up for print
+   ============================================================ */
+@media print {
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .smart-table-wrap,
+  .table-wrap,
+  .roster-scroll,
+  .disc-case-scroll,
+  .tender-tracker,
+  .print-table-wrapper,
+  [id$="List"],
+  [id$="TrackerList"],
+  [id$="HistoryList"],
+  [id$="TableWrap"],
+  [id$="RosterTable"],
+  [id$="MovementList"],
+  [id$="CaseList"],
+  [id$="userList"],
+  [id$="inventoryList"],
+  [id$="approvedOrders"] {
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+  }
+  .data-table thead th,
+  .print-table thead th {
+    position: static !important;
+  }
+}

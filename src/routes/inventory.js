@@ -49,46 +49,6 @@ router.get('/summary', requireAuth, async (req, res) => {
 // ============================================================
 // CSV EXPORT
 // ============================================================
-router.get('/export', requireAuth, async (req, res) => {
-  try {
-    const { search, category, from, to, lowStock } = req.query;
-    const where = {};
-
-    if (category && category !== 'all') where.category = category;
-    if (search) where.name = { contains: search };
-    if (lowStock === 'true') where.quantity = { lt: 10 };
-    if (from || to) {
-      where.lastReceived = {};
-      if (from) where.lastReceived.gte = new Date(from);
-      if (to) {
-        const toDate = new Date(to); toDate.setHours(23, 59, 59, 999);
-        where.lastReceived.lte = toDate;
-      }
-    }
-
-    const items = await prisma.inventoryItem.findMany({ where, orderBy: { name: 'asc' } });
-
-    const escape = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    const lines = [
-      '# Sally Mugabe Central Hospital - Inventory Report',
-      '# Generated: ' + new Date().toISOString(),
-      '# Filters: category=' + (category || 'all') + ' lowStock=' + (lowStock || 'false'),
-      '# Total: ' + items.length,
-      '',
-      ['ID','Name','Category','Quantity','Unit','Expiry','Last Received'].join(','),
-    ];
-    const rows = items.map(i => [
-      i.id, escape(i.name), escape(i.category || ''), i.quantity, escape(i.unit),
-      escape(i.expiryDate ? i.expiryDate.toISOString() : ''),
-      escape(i.lastReceived ? i.lastReceived.toISOString() : ''),
-    ].join(','));
-
-    const csv = lines.concat(rows).join('\n');
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="inventory-' + new Date().toISOString().split('T')[0] + '.csv"');
-    res.send(csv);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
 
 // ============================================================
 // APPROVED ORDERS - ready to receive
