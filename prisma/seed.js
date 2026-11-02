@@ -68,20 +68,67 @@ const OUTCOMES = ['Recovered','Improved','Referred','Absconded'];
 const BLOOD_GROUPS = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
 const REVIEW_DEPARTMENTS = ['Outpatient','Nurses','Medical','Pharmacy','Laboratory'];
 
+// ============================================================
+// DEPARTMENTS — 12 staff departments
+// ============================================================
+
 const EMPLOYEE_DEPARTMENTS = [
-  'Medical','Nurses','Pharmacy','Laboratory','Admin',
-  'Support','Maintenance','Security',
+  'Medical',
+  'Nurses',
+  'Mortuary',
+  'School of Nursing',
+  'School of Midwifery',
+  'Biomedical Equipment',
+  'Radiography',
+  'Catering',
+  'Security',
+  'Laundry',
+  'Health Information',
+  'Accounts',
 ];
 
 const ROLES_BY_DEPT = {
-  Medical:     ['Doctor','Consultant','Medical Officer','Intern'],
-  Nurses:      ['Registered Nurse','Enrolled Nurse','Nurse Aide','Sister','Matron'],
-  Pharmacy:    ['Pharmacist','Pharmacy Technician','Pharmacy Assistant'],
-  Laboratory:  ['Lab Scientist','Lab Technician','Lab Assistant'],
-  Admin:       ['Clerk','Administrator','Receptionist','Data Entry Officer'],
-  Support:     ['Cleaner','Porter','Laundry Staff','Catering'],
-  Maintenance: ['Technician','Electrician','Plumber','Handyman'],
-  Security:    ['Guard','Security Officer','Gate Officer'],
+  Medical: [
+    'Doctor','Consultant','Medical Officer','Intern',
+    'Registered Nurse','Enrolled Nurse','Nurse Aide','Sister','Matron',
+  ],
+  Nurses: [
+    'Registered Nurse','Enrolled Nurse','Nurse Aide','Sister','Matron',
+  ],
+  Mortuary: [
+    'Mortuary Attendant','Mortician','Mortuary Technician','Mortuary Supervisor',
+  ],
+  'School of Nursing': [
+    'Tutor','Clinical Instructor','Lecturer','Principal Tutor','Student Nurse',
+  ],
+  'School of Midwifery': [
+    'Midwifery Tutor','Clinical Instructor','Lecturer','Principal Tutor','Student Midwife',
+  ],
+  'Biomedical Equipment': [
+    'Biomedical Engineer','Biomedical Technician','Electronics Technician','Equipment Officer',
+  ],
+  Radiography: [
+    'Radiologist','Radiographer','Sonographer','CT Technologist',
+    'MRI Technologist','X-Ray Technician','ECG Technician',
+  ],
+  Catering: [
+    'Chef','Head Chef','Sous Chef','Cook','Kitchen Assistant',
+    'Waiter','Waitress','Catering Supervisor','Dietitian','Food Service Manager',
+  ],
+  Security: [
+    'Security Guard','Security Officer','Gate Officer','Security Supervisor',
+  ],
+  Laundry: [
+    'Laundry Attendant','Laundry Supervisor','Laundry Technician',
+  ],
+  'Health Information': [
+    'Health Information Officer','Records Clerk','Medical Coder',
+    'Data Entry Officer','Records Manager',
+  ],
+  Accounts: [
+    'Accountant','Assistant Accountant','Accounts Clerk','Finance Officer',
+    'Cashier','Payroll Officer','Auditor',
+  ],
 };
 
 function pickEmployeeStatus() {
@@ -211,7 +258,7 @@ function pickDisciplinaryAction(status) {
 }
 
 // ============================================================
-// PROJECT SAMPLES — diversified with phase progression
+// PROJECT SAMPLES
 // ============================================================
 
 const PROJECT_SAMPLES = [
@@ -290,27 +337,27 @@ const PROJECT_SAMPLES = [
     ],
   },
   {
-    name: 'Laboratory equipment servicing',
-    description: 'Annual servicing of all laboratory analyzers and microscopes, plus calibration.',
-    department: 'Laboratory',
-    projectHead: 'Lab Tech Tom',
+    name: 'Radiology equipment servicing',
+    description: 'Annual servicing of X-ray, CT, MRI, and ultrasound machines plus calibration.',
+    department: 'Radiography',
+    projectHead: 'Radiographer',
     startOffsetDays: 25,
     targetOffsetDays: 10,
-    createdBy: 'Lab Tech Tom',
+    createdBy: 'Radiographer',
     phases: [
       { offsetDays: 25, status: 'ongoing', note: 'Servicing contract signed with BioMed Services.', actionTaken: 'Contract signed' },
-      { offsetDays: 14, status: 'ongoing', note: 'Two analyzers serviced. Microscope calibration scheduled.', actionTaken: 'Partial servicing done' },
-      { offsetDays: 5,  status: 'ongoing', note: 'Four of five instruments serviced. Final instrument in use, service pending.', actionTaken: '4 of 5 serviced' },
+      { offsetDays: 14, status: 'ongoing', note: 'X-ray and CT serviced. MRI calibration scheduled.', actionTaken: 'Partial servicing done' },
+      { offsetDays: 5,  status: 'ongoing', note: 'Four of five instruments serviced. Ultrasound in use, service pending.', actionTaken: '4 of 5 serviced' },
     ],
   },
   {
     name: 'Medical records digitisation',
     description: 'Scan and digitise 5 years of paper patient records for electronic access.',
-    department: 'Admin',
-    projectHead: 'Admin Clerk Jane',
+    department: 'Health Information',
+    projectHead: 'Records Manager',
     startOffsetDays: 90,
     targetOffsetDays: 90,
-    createdBy: 'Admin Clerk Jane',
+    createdBy: 'Records Manager',
     phases: [
       { offsetDays: 90, status: 'ongoing', note: 'Project approved. Supplier contacted.', actionTaken: 'Approval received' },
       { offsetDays: 60, status: 'ongoing', note: 'Purchase order raised. Waiting for delivery of scanning hardware.', actionTaken: 'PO issued to supplier' },
@@ -322,10 +369,10 @@ const PROJECT_SAMPLES = [
     name: 'Security gate access control',
     description: 'Replace manual gate logs with electronic access control system at staff entrance.',
     department: 'Security',
-    projectHead: 'Security Guard Sam',
+    projectHead: 'Security Supervisor',
     startOffsetDays: 50,
     targetOffsetDays: 10,
-    createdBy: 'Security Guard Sam',
+    createdBy: 'Security Supervisor',
     phases: [
       { offsetDays: 50, status: 'ongoing', note: 'System selected. Supplier is AccessTech Pvt Ltd.', actionTaken: 'Vendor selected' },
       { offsetDays: 30, status: 'ongoing', note: 'Hardware installed. Staff card issuance in progress.', actionTaken: '150 of 300 cards issued' },
@@ -333,27 +380,27 @@ const PROJECT_SAMPLES = [
     ],
   },
   {
-    name: 'Ward B linen replacement',
-    description: 'Replace 200 sets of worn bed linen across Ward B.',
-    department: 'Support',
-    projectHead: 'Support Supervisor',
+    name: 'Laundry linen replacement',
+    description: 'Replace 200 sets of worn bed linen across all wards.',
+    department: 'Laundry',
+    projectHead: 'Laundry Supervisor',
     startOffsetDays: 45,
     targetOffsetDays: 0,
     createdBy: 'Sister Mutsa',
     phases: [
       { offsetDays: 45, status: 'ongoing', note: 'Order placed with linen supplier.', actionTaken: 'PO issued' },
-      { offsetDays: 20, status: 'ongoing', note: 'Linen received and being distributed to Ward B.', actionTaken: '50% distributed' },
-      { offsetDays: 2,  status: 'completed', note: 'All 200 sets deployed to Ward B. Old linen removed and disposed.', actionTaken: '200 sets deployed' },
+      { offsetDays: 20, status: 'ongoing', note: 'Linen received and being distributed to wards.', actionTaken: '50% distributed' },
+      { offsetDays: 2,  status: 'completed', note: 'All 200 sets deployed. Old linen removed and disposed.', actionTaken: '200 sets deployed' },
     ],
   },
   {
     name: 'ICU ventilator maintenance',
     description: 'Preventive maintenance and calibration of all ICU ventilators.',
-    department: 'Medical',
-    projectHead: 'Dr. James Mwale',
+    department: 'Biomedical Equipment',
+    projectHead: 'Biomedical Engineer',
     startOffsetDays: 22,
     targetOffsetDays: 8,
-    createdBy: 'Dr. James Mwale',
+    createdBy: 'Biomedical Engineer',
     phases: [
       { offsetDays: 22, status: 'ongoing', note: 'Biomedical engineer scheduled. Ventilators marked for service.', actionTaken: 'Engineer booked' },
       { offsetDays: 10, status: 'ongoing', note: 'First ventilator serviced and returned to service.', actionTaken: '1 of 6 serviced' },
@@ -363,11 +410,11 @@ const PROJECT_SAMPLES = [
   {
     name: 'Nurses training - infection control',
     description: 'Refresher training for all nurses on infection control protocols.',
-    department: 'Nurses',
-    projectHead: 'Nurse Tatenda',
+    department: 'School of Nursing',
+    projectHead: 'Principal Tutor',
     startOffsetDays: 40,
     targetOffsetDays: 30,
-    createdBy: 'Nurse Tatenda',
+    createdBy: 'Principal Tutor',
     phases: [
       { offsetDays: 40, status: 'ongoing', note: 'Training curriculum finalised. Sessions scheduled.', actionTaken: 'Curriculum approved' },
       { offsetDays: 25, status: 'ongoing', note: 'First batch of 20 nurses trained.', actionTaken: '20 of 80 nurses trained' },
@@ -377,11 +424,11 @@ const PROJECT_SAMPLES = [
   {
     name: 'Emergency generator servicing',
     description: 'Full service of backup generators including fuel system and electrical panel check.',
-    department: 'Maintenance',
-    projectHead: 'Maintenance Bob',
+    department: 'Biomedical Equipment',
+    projectHead: 'Equipment Officer',
     startOffsetDays: 55,
     targetOffsetDays: -5,
-    createdBy: 'Maintenance Bob',
+    createdBy: 'Biomedical Engineer',
     phases: [
       { offsetDays: 55, status: 'ongoing', note: 'Generator 1 and 2 scheduled for service.', actionTaken: 'Contractor booked' },
       { offsetDays: 30, status: 'ongoing', note: 'Generator 1 serviced, tested under load.', actionTaken: 'Generator 1 complete' },
@@ -389,13 +436,13 @@ const PROJECT_SAMPLES = [
     ],
   },
   {
-    name: 'Ward C furniture procurement',
-    description: 'Procure and install 30 hospital beds and 15 bedside cabinets for Ward C.',
-    department: 'Procurement',
-    projectHead: 'Procurement Officer',
+    name: 'Catering kitchen renovation',
+    description: 'Renovate main kitchen: new stoves, extractor fans, and workspace redesign.',
+    department: 'Catering',
+    projectHead: 'Head Chef',
     startOffsetDays: 25,
     targetOffsetDays: 45,
-    createdBy: 'Procurement Officer',
+    createdBy: 'Head Chef',
     phases: [
       { offsetDays: 25, status: 'ongoing',  note: 'Tender published. 4 suppliers invited.', actionTaken: 'Tender issued' },
       { offsetDays: 15, status: 'pending',  note: 'Awaiting quotation from 2 suppliers.', obstacleReason: 'Two suppliers have not yet submitted quotes', actionTaken: 'Reminder sent' },
@@ -403,18 +450,18 @@ const PROJECT_SAMPLES = [
     ],
   },
   {
-    name: 'Pharmacy refrigeration upgrade',
-    description: 'Upgrade vaccine refrigeration units to meet new cold-chain standards.',
-    department: 'Pharmacy',
-    projectHead: 'Pharmacist Lisa',
+    name: 'Mortuary cold storage upgrade',
+    description: 'Upgrade mortuary refrigeration units to meet new standards.',
+    department: 'Mortuary',
+    projectHead: 'Mortuary Supervisor',
     startOffsetDays: 60,
     targetOffsetDays: 30,
-    createdBy: 'Pharmacist Lisa',
+    createdBy: 'Mortuary Supervisor',
     phases: [
-      { offsetDays: 60, status: 'ongoing', note: 'Cold-chain audit identified 2 units needing replacement.', actionTaken: 'Audit complete' },
-      { offsetDays: 40, status: 'ongoing', note: 'Supplier selected. Order placed for 2 pharmaceutical-grade fridges.', actionTaken: 'Order placed' },
-      { offsetDays: 15, status: 'ongoing', note: 'Units delivered. Installation and temperature validation scheduled.', actionTaken: 'Units delivered' },
-      { offsetDays: 3,  status: 'ongoing', note: 'Both units installed and running. Validation tests in progress.', actionTaken: 'Installation complete' },
+      { offsetDays: 60, status: 'ongoing', note: 'Cold storage audit identified 2 units needing replacement.', actionTaken: 'Audit complete' },
+      { offsetDays: 40, status: 'ongoing', note: 'Supplier selected. Order placed for 2 units.', actionTaken: 'Order placed' },
+      { offsetDays: 15, status: 'ongoing', note: 'Units delivered. Installation scheduled.', actionTaken: 'Units delivered' },
+      { offsetDays: 3,  status: 'ongoing', note: 'Both units installed and running. Validation in progress.', actionTaken: 'Installation complete' },
     ],
   },
   {
@@ -427,64 +474,36 @@ const PROJECT_SAMPLES = [
     createdBy: 'IT Manager',
     phases: [
       { offsetDays: 20, status: 'ongoing',  note: 'Network audit identified 3 switches past end-of-life.', actionTaken: 'Audit complete' },
-      { offsetDays: 8,  status: 'pending',  note: 'Awaiting procurement approval for 3 Cisco switches.', obstacleReason: 'Procurement approval pending - submitted 8 days ago', actionTaken: 'Escalated to Procurement' },
+      { offsetDays: 8,  status: 'pending',  note: 'Awaiting procurement approval for 3 switches.', obstacleReason: 'Procurement approval pending - submitted 8 days ago', actionTaken: 'Escalated to Procurement' },
       { offsetDays: 2,  status: 'ongoing',  note: 'Approval received. Purchase order issued. Delivery expected next week.', actionTaken: 'PO issued to supplier' },
     ],
   },
   {
-    name: 'Maternity ward breastfeeding support',
-    description: 'Establish peer breastfeeding support programme with trained counsellors.',
-    department: 'Nurses',
-    projectHead: 'Sister Mutsa',
-    startOffsetDays: 50,
-    targetOffsetDays: 40,
-    createdBy: 'Sister Mutsa',
-    phases: [
-      { offsetDays: 50, status: 'ongoing', note: 'Programme approved. 4 peer counsellors recruited.', actionTaken: 'Counsellors selected' },
-      { offsetDays: 30, status: 'ongoing', note: 'Counsellor training complete. Programme launch set for next month.', actionTaken: 'Training complete' },
-      { offsetDays: 5,  status: 'ongoing', note: 'Programme launched. 12 mothers enrolled in first week.', actionTaken: '12 mothers enrolled' },
-    ],
-  },
-  {
-    name: 'Laboratory information system integration',
-    description: 'Integrate lab results with patient records for faster clinical decisions.',
-    department: 'Laboratory',
-    projectHead: 'Lab Tech Tom',
-    startOffsetDays: 35,
-    targetOffsetDays: 55,
-    createdBy: 'Lab Tech Tom',
-    phases: [
-      { offsetDays: 35, status: 'ongoing',  note: 'Requirements gathering with IT and clinical staff.', actionTaken: 'Requirements documented' },
-      { offsetDays: 20, status: 'pending',  note: 'Waiting for IT to confirm API integration timeline.', obstacleReason: 'IT API integration timeline pending', actionTaken: 'Follow-up sent to IT' },
-      { offsetDays: 7,  status: 'ongoing',  note: 'IT confirmed API integration will begin next sprint.', actionTaken: 'Timeline confirmed' },
-    ],
-  },
-  {
-    name: 'Ward C staffing plan',
-    description: 'Review and update staffing levels for Ward C to match patient load.',
-    department: 'HR',
-    projectHead: 'HR Manager',
+    name: 'Accounts audit readiness',
+    description: 'Prepare finance records for annual audit.',
+    department: 'Accounts',
+    projectHead: 'Accountant',
     startOffsetDays: 30,
     targetOffsetDays: 20,
-    createdBy: 'HR Manager',
+    createdBy: 'Accountant',
     phases: [
-      { offsetDays: 30, status: 'ongoing', note: 'Patient load analysis completed. Staffing gaps identified.', actionTaken: 'Data analysis complete' },
-      { offsetDays: 15, status: 'ongoing', note: 'Draft staffing plan submitted to hospital management.', actionTaken: 'Draft plan submitted' },
-      { offsetDays: 4,  status: 'ongoing', note: 'Plan approved. Recruitment for 3 new positions starting next week.', actionTaken: 'Plan approved by board' },
+      { offsetDays: 30, status: 'ongoing', note: 'Reconciliation started across all accounts.', actionTaken: 'Team briefed' },
+      { offsetDays: 15, status: 'ongoing', note: '70% reconciled. Discrepancies flagged.', actionTaken: 'Reconciliation in progress' },
+      { offsetDays: 4,  status: 'ongoing', note: 'All reconciliations complete. Draft reports ready.', actionTaken: 'Reports prepared' },
     ],
   },
   {
-    name: 'Hospital waste management upgrade',
-    description: 'Upgrade waste segregation and disposal protocols across all wards.',
-    department: 'Support',
-    projectHead: 'Support Supervisor',
-    startOffsetDays: 45,
+    name: 'Health Information file room reorganization',
+    description: 'Reorganize and label physical patient file room.',
+    department: 'Health Information',
+    projectHead: 'Records Manager',
+    startOffsetDays: 40,
     targetOffsetDays: 30,
-    createdBy: 'Support Supervisor',
+    createdBy: 'Records Manager',
     phases: [
-      { offsetDays: 45, status: 'ongoing', note: 'Waste audit completed. New segregation bins ordered.', actionTaken: 'Audit complete' },
-      { offsetDays: 25, status: 'ongoing', note: 'Bins delivered. Staff training on new protocols underway.', actionTaken: 'Bins delivered' },
-      { offsetDays: 6,  status: 'ongoing', note: 'Training 80% complete. First weekly compliance check performed.', actionTaken: 'Training ongoing' },
+      { offsetDays: 40, status: 'ongoing', note: 'File audit completed. Space reallocation planned.', actionTaken: 'Audit complete' },
+      { offsetDays: 20, status: 'ongoing', note: 'New shelving installed. Labeling underway.', actionTaken: 'Shelving installed' },
+      { offsetDays: 6,  status: 'ongoing', note: 'Labeling 80% complete.', actionTaken: 'Labeling ongoing' },
     ],
   },
 ];
@@ -507,7 +526,6 @@ function randomDateWithinDays(daysAgo, hourStart = 6, hourEnd = 22) {
   return d;
 }
 
-// For "loaded today" records — clamp to today at a random hour between 8am-6pm.
 function todayAtHour(hourStart = 8, hourEnd = 18) {
   const d = new Date();
   const hours = hourStart + Math.floor(Math.random() * (hourEnd - hourStart));
@@ -599,16 +617,27 @@ async function main() {
     // Users.
     console.log('Creating users...');
     const users = [
-      { username: 'nurse1',       password: 'nurse123',  fullName: 'Sister Mutsa',          department: 'Nurses',      role: 'staff', wardId: wards[0].id },
-      { username: 'nurse2',       password: 'nurse123',  fullName: 'Nurse Tatenda',         department: 'Nurses',      role: 'staff', wardId: wards[1].id },
-      { username: 'it1',          password: 'it123',     fullName: 'IT Manager',            department: 'IT',          role: 'admin', wardId: null },
-      { username: 'it2',          password: 'it123',     fullName: 'IT Support Officer',    department: 'IT',          role: 'staff', wardId: null },
-      { username: 'procurement1', password: 'proc123',   fullName: 'Procurement Officer',   department: 'Procurement', role: 'staff', wardId: null },
-      { username: 'procurement2', password: 'proc123',   fullName: 'Procurement Assistant', department: 'Procurement', role: 'staff', wardId: null },
-      { username: 'stores1',      password: 'store123',  fullName: 'Store Manager',         department: 'Stores',      role: 'staff', wardId: null },
-      { username: 'stores2',      password: 'store123',  fullName: 'Store Clerk',           department: 'Stores',      role: 'staff', wardId: null },
-      { username: 'hr1',          password: 'hr123',     fullName: 'HR Manager',            department: 'HR',          role: 'staff', wardId: null },
-      { username: 'hr2',          password: 'hr123',     fullName: 'HR Officer',            department: 'HR',          role: 'staff', wardId: null },
+      { username: 'nurse1',       password: 'nurse123',  fullName: 'Sister Mutsa',           department: 'Nurses',               role: 'staff', wardId: wards[0].id },
+      { username: 'nurse2',       password: 'nurse123',  fullName: 'Nurse Tatenda',          department: 'Nurses',               role: 'staff', wardId: wards[1].id },
+      { username: 'it1',          password: 'it123',     fullName: 'IT Manager',             department: 'IT',                   role: 'admin', wardId: null },
+      { username: 'it2',          password: 'it123',     fullName: 'IT Support Officer',     department: 'IT',                   role: 'staff', wardId: null },
+      { username: 'procurement1', password: 'proc123',   fullName: 'Procurement Officer',    department: 'Procurement',          role: 'staff', wardId: null },
+      { username: 'procurement2', password: 'proc123',   fullName: 'Procurement Assistant',  department: 'Procurement',          role: 'staff', wardId: null },
+      { username: 'stores1',      password: 'store123',  fullName: 'Store Manager',          department: 'Stores',               role: 'staff', wardId: null },
+      { username: 'stores2',      password: 'store123',  fullName: 'Store Clerk',            department: 'Stores',               role: 'staff', wardId: null },
+      { username: 'hr1',          password: 'hr123',     fullName: 'HR Manager',             department: 'HR',                   role: 'staff', wardId: null },
+      { username: 'hr2',          password: 'hr123',     fullName: 'HR Officer',             department: 'HR',                   role: 'staff', wardId: null },
+      { username: 'medical1',     password: 'med123',    fullName: 'Dr. James Mwale',        department: 'Medical',              role: 'staff', wardId: null },
+      { username: 'mortuary1',    password: 'mort123',   fullName: 'Mortuary Supervisor',    department: 'Mortuary',             role: 'staff', wardId: null },
+      { username: 'son1',         password: 'son123',    fullName: 'Principal Tutor',        department: 'School of Nursing',    role: 'staff', wardId: null },
+      { username: 'som1',         password: 'som123',    fullName: 'Midwifery Tutor',        department: 'School of Midwifery',  role: 'staff', wardId: null },
+      { username: 'biomed1',      password: 'bio123',    fullName: 'Biomedical Engineer',    department: 'Biomedical Equipment', role: 'staff', wardId: null },
+      { username: 'radio1',       password: 'rad123',    fullName: 'Radiographer',           department: 'Radiography',          role: 'staff', wardId: null },
+      { username: 'catering1',    password: 'cat123',    fullName: 'Head Chef',              department: 'Catering',             role: 'staff', wardId: null },
+      { username: 'security1',    password: 'sec123',    fullName: 'Security Supervisor',    department: 'Security',             role: 'staff', wardId: null },
+      { username: 'laundry1',     password: 'lau123',    fullName: 'Laundry Supervisor',     department: 'Laundry',              role: 'staff', wardId: null },
+      { username: 'healthinfo1',  password: 'hi123',     fullName: 'Records Manager',        department: 'Health Information',   role: 'staff', wardId: null },
+      { username: 'accounts1',    password: 'acc123',    fullName: 'Accountant',             department: 'Accounts',             role: 'staff', wardId: null },
     ];
 
     for (const u of users) {
@@ -645,7 +674,7 @@ async function main() {
       const hireDaysAgo = Math.floor(Math.random() * EMPLOYEE_DAYS_SPAN);
       const hireDate = randomDateWithinDays(hireDaysAgo, 8, 17);
 
-      const wardAssigned = ['Nurses', 'Medical', 'Support'].includes(department);
+      const wardAssigned = ['Nurses', 'Medical'].includes(department);
       const wardId = wardAssigned && Math.random() < 0.85 ? pick(wards).id : null;
 
       let terminationDate = null;
@@ -673,7 +702,7 @@ async function main() {
     }
     console.log('  Employees created: ' + empCreated);
 
-    // Patients — first 20 force "today" admission, first 5 discharged force today discharge.
+    // Patients.
     console.log('Creating 1000 patients...');
     const TOTAL_PATIENTS = 1000;
     const PATIENT_DAYS_SPAN = 90;
@@ -717,7 +746,6 @@ async function main() {
         const dischargeCandidate = new Date(admissionDate);
         dischargeCandidate.setDate(dischargeCandidate.getDate() + stayDays);
 
-        // First 5 discharged → force today's discharge
         if (i < 5) {
           dischargeDate = todayAtHour(8, 18);
         } else {
@@ -797,21 +825,274 @@ async function main() {
     }
     console.log('  Created ' + inventoryItems.length + ' inventory items');
 
-    // Tenders — first 3 forced today.
+    // ============================================================
+    // Tenders — spread across all departments and all statuses
+    // ============================================================
     console.log('Creating sample tender requests...');
-    const orderRequests = [
-      // Forced-today tenders
-      { requestingDepartment: 'Nurses',      originatorDepartment: 'Nurses',      requestingBy: 'Sister Mutsa',        itemName: 'Surgical Gloves (Box)',  quantity: 40,  reason: 'Ward stock depleted after weekend admissions', status: 'pending',            createdAt: todayAtHour(9, 15) },
-      { requestingDepartment: 'IT',          originatorDepartment: 'IT',          requestingBy: 'IT Manager',          itemName: 'Network Cables',          quantity: 30,  reason: 'Replacing damaged cables in admin block',      status: 'ordered',            createdAt: todayAtHour(8, 14) },
-      { requestingDepartment: 'HR',          originatorDepartment: 'HR',          requestingBy: 'HR Manager',          itemName: 'Recruitment Pack',        quantity: 25,  reason: 'Interview materials for new hires',           status: 'awaiting_quotation', createdAt: todayAtHour(10, 16) },
 
-      // Older tenders (varied status)
-      { requestingDepartment: 'Nurses',      originatorDepartment: 'Nurses',      requestingBy: 'Sister Mutsa',        itemName: 'Medical Gloves (Box)',   quantity: 50,  reason: 'Running low on stock',                                       status: 'pending' },
-      { requestingDepartment: 'IT',          originatorDepartment: 'Nurses',      requestingBy: 'IT Manager',          itemName: 'Nurse Tablets',          quantity: 20,  reason: 'Computerised nurse registry - requested on behalf of Nurses', status: 'pending' },
-      { requestingDepartment: 'Nurses',      originatorDepartment: 'Nurses',      requestingBy: 'Nurse Tatenda',       itemName: 'Surgical Masks (Box)',   quantity: 100, reason: 'Monthly restock',                                            status: 'ordered' },
-      { requestingDepartment: 'Procurement', originatorDepartment: 'Procurement', requestingBy: 'Procurement Officer', itemName: 'Office Chairs',          quantity: 10,  reason: 'Replacing broken furniture',                                 status: 'awaiting_quotation' },
-      { requestingDepartment: 'HR',          originatorDepartment: 'HR',          requestingBy: 'HR Manager',          itemName: 'Filing Cabinets',        quantity: 5,   reason: 'New staff records require additional storage',              status: 'received' },
-      { requestingDepartment: 'Stores',      originatorDepartment: 'Stores',      requestingBy: 'Store Manager',       itemName: 'Shelf Labels',           quantity: 200, reason: 'Reorganising inventory shelves',                             status: 'completed' },
+    function daysAgoAt(daysAgo, hourStart = 8, hourEnd = 17) {
+      if (daysAgo === 0) return todayAtHour(hourStart, hourEnd);
+      return randomDateWithinDays(daysAgo, hourStart, hourEnd);
+    }
+
+    const orderRequests = [
+      // TODAY
+      {
+        requestingDepartment: 'Nurses',
+        originatorDepartment: 'Nurses',
+        requestingBy: 'Sister Mutsa',
+        itemName: 'Surgical Gloves (Box)',
+        quantity: 40,
+        reason: 'Ward stock depleted after weekend admissions',
+        status: 'pending',
+        category: 'PPE',
+        urgency: 'high',
+        createdAt: todayAtHour(9, 15),
+      },
+      {
+        requestingDepartment: 'IT',
+        originatorDepartment: 'IT',
+        requestingBy: 'IT Manager',
+        itemName: 'Network Cables',
+        quantity: 30,
+        reason: 'Replacing damaged cables in admin block',
+        status: 'ordered',
+        category: 'IT Equipment',
+        urgency: 'normal',
+        createdAt: todayAtHour(8, 14),
+      },
+      {
+        requestingDepartment: 'HR',
+        originatorDepartment: 'HR',
+        requestingBy: 'HR Manager',
+        itemName: 'Recruitment Pack',
+        quantity: 25,
+        reason: 'Interview materials for new hires',
+        status: 'awaiting_quotation',
+        category: 'Stationery',
+        urgency: 'normal',
+        createdAt: todayAtHour(10, 16),
+      },
+
+      // RECENT (1–7 days)
+      {
+        requestingDepartment: 'Procurement',
+        originatorDepartment: 'Procurement',
+        requestingBy: 'Procurement Officer',
+        itemName: 'Office Chairs',
+        quantity: 10,
+        reason: 'Replacing broken furniture',
+        status: 'awaiting_quotation',
+        category: 'Furniture',
+        urgency: 'normal',
+        createdAt: daysAgoAt(4),
+      },
+      {
+        requestingDepartment: 'IT',
+        originatorDepartment: 'Nurses',
+        requestingBy: 'IT Manager',
+        itemName: 'Nurse Tablets',
+        quantity: 20,
+        reason: 'Computerised nurse registry - requested on behalf of Nurses',
+        status: 'pending',
+        category: 'IT Equipment',
+        urgency: 'high',
+        createdAt: daysAgoAt(3),
+      },
+      {
+        requestingDepartment: 'Nurses',
+        originatorDepartment: 'Nurses',
+        requestingBy: 'Nurse Tatenda',
+        itemName: 'Surgical Masks (Box)',
+        quantity: 100,
+        reason: 'Monthly restock',
+        status: 'ordered',
+        category: 'PPE',
+        urgency: 'normal',
+        createdAt: daysAgoAt(5),
+      },
+      {
+        requestingDepartment: 'Catering',
+        originatorDepartment: 'Catering',
+        requestingBy: 'Head Chef',
+        itemName: 'Commercial Cooking Pots',
+        quantity: 6,
+        reason: 'Replacing worn pots in main kitchen',
+        status: 'ordered',
+        category: 'Kitchen Equipment',
+        urgency: 'high',
+        createdAt: daysAgoAt(6),
+      },
+      {
+        requestingDepartment: 'Laundry',
+        originatorDepartment: 'Laundry',
+        requestingBy: 'Laundry Supervisor',
+        itemName: 'Laundry Detergent (Bulk)',
+        quantity: 30,
+        reason: 'Ward linen washing supplies',
+        status: 'ordered',
+        category: 'Cleaning Supplies',
+        urgency: 'normal',
+        createdAt: daysAgoAt(7),
+      },
+      {
+        requestingDepartment: 'Security',
+        originatorDepartment: 'Security',
+        requestingBy: 'Security Supervisor',
+        itemName: 'Access Cards (Pack)',
+        quantity: 300,
+        reason: 'Electronic gate access rollout',
+        status: 'received',
+        category: 'Security Equipment',
+        urgency: 'normal',
+        createdAt: daysAgoAt(11),
+      },
+
+      // OLDER (2–8 weeks)
+      {
+        requestingDepartment: 'HR',
+        originatorDepartment: 'HR',
+        requestingBy: 'HR Manager',
+        itemName: 'Filing Cabinets',
+        quantity: 5,
+        reason: 'New staff records require additional storage',
+        status: 'received',
+        category: 'Furniture',
+        urgency: 'normal',
+        createdAt: daysAgoAt(14),
+      },
+      {
+        requestingDepartment: 'Stores',
+        originatorDepartment: 'Stores',
+        requestingBy: 'Store Manager',
+        itemName: 'Shelf Labels',
+        quantity: 200,
+        reason: 'Reorganising inventory shelves',
+        status: 'completed',
+        category: 'Stationery',
+        urgency: 'normal',
+        createdAt: daysAgoAt(21),
+      },
+      {
+        requestingDepartment: 'Medical',
+        originatorDepartment: 'Medical',
+        requestingBy: 'Dr. James Mwale',
+        itemName: 'Stethoscopes',
+        quantity: 12,
+        reason: 'New doctors onboarding next month',
+        status: 'completed',
+        category: 'Medical Equipment',
+        urgency: 'normal',
+        createdAt: daysAgoAt(30),
+      },
+      {
+        requestingDepartment: 'Mortuary',
+        originatorDepartment: 'Mortuary',
+        requestingBy: 'Mortuary Supervisor',
+        itemName: 'Body Bags (Pack)',
+        quantity: 100,
+        reason: 'Monthly mortuary supplies',
+        status: 'received',
+        category: 'Mortuary Supplies',
+        urgency: 'high',
+        createdAt: daysAgoAt(18),
+      },
+      {
+        requestingDepartment: 'School of Nursing',
+        originatorDepartment: 'School of Nursing',
+        requestingBy: 'Principal Tutor',
+        itemName: 'Anatomical Models',
+        quantity: 4,
+        reason: 'New intake requires teaching models',
+        status: 'awaiting_quotation',
+        category: 'Teaching Equipment',
+        urgency: 'normal',
+        createdAt: daysAgoAt(25),
+      },
+      {
+        requestingDepartment: 'School of Midwifery',
+        originatorDepartment: 'School of Midwifery',
+        requestingBy: 'Principal Tutor',
+        itemName: 'Birthing Simulators',
+        quantity: 2,
+        reason: 'Simulation lab upgrade for midwifery training',
+        status: 'pending',
+        category: 'Teaching Equipment',
+        urgency: 'high',
+        createdAt: daysAgoAt(33),
+      },
+      {
+        requestingDepartment: 'Biomedical Equipment',
+        originatorDepartment: 'Biomedical Equipment',
+        requestingBy: 'Biomedical Engineer',
+        itemName: 'Calibration Kits',
+        quantity: 5,
+        reason: 'Quarterly equipment calibration',
+        status: 'ordered',
+        category: 'Biomedical Tools',
+        urgency: 'normal',
+        createdAt: daysAgoAt(40),
+      },
+      {
+        requestingDepartment: 'Radiography',
+        originatorDepartment: 'Radiography',
+        requestingBy: 'Radiographer',
+        itemName: 'X-Ray Film (Box)',
+        quantity: 50,
+        reason: 'Radiology film restock',
+        status: 'received',
+        category: 'Radiology Supplies',
+        urgency: 'normal',
+        createdAt: daysAgoAt(16),
+      },
+      {
+        requestingDepartment: 'Radiography',
+        originatorDepartment: 'Radiography',
+        requestingBy: 'CT Technologist',
+        itemName: 'CT Scan Contrast Media',
+        quantity: 20,
+        reason: 'Contrast media stock for CT scans',
+        status: 'ordered',
+        category: 'Radiology Supplies',
+        urgency: 'high',
+        createdAt: daysAgoAt(9),
+      },
+      {
+        requestingDepartment: 'Health Information',
+        originatorDepartment: 'Health Information',
+        requestingBy: 'Records Manager',
+        itemName: 'Patient File Folders',
+        quantity: 500,
+        reason: 'Patient file storage for new admissions',
+        status: 'received',
+        category: 'Stationery',
+        urgency: 'normal',
+        createdAt: daysAgoAt(45),
+      },
+      {
+        requestingDepartment: 'Accounts',
+        originatorDepartment: 'Accounts',
+        requestingBy: 'Accountant',
+        itemName: 'Accounting Software Licenses',
+        quantity: 5,
+        reason: 'Finance system upgrade',
+        status: 'completed',
+        category: 'Software',
+        urgency: 'normal',
+        createdAt: daysAgoAt(55),
+      },
+      {
+        requestingDepartment: 'Accounts',
+        originatorDepartment: 'Accounts',
+        requestingBy: 'Finance Officer',
+        itemName: 'Invoice Books',
+        quantity: 20,
+        reason: 'Billing department stationery',
+        status: 'received',
+        category: 'Stationery',
+        urgency: 'low',
+        createdAt: daysAgoAt(60),
+      },
     ];
 
     for (const order of orderRequests) {
@@ -819,7 +1100,7 @@ async function main() {
     }
     console.log('  Created ' + orderRequests.length + ' sample tenders');
 
-    // Disciplinary cases — first 4 forced today with mixed statuses.
+    // Disciplinary cases.
     console.log('Creating disciplinary cases...');
     const sampleEmployees = await prisma.employee.findMany({
       select: { id: true },
@@ -837,7 +1118,6 @@ async function main() {
         const offenseType = pick(DISCIPLINARY_OFFENSES);
         const description = pick(DISCIPLINARY_DESCRIPTIONS[offenseType] || DISCIPLINARY_DESCRIPTIONS.Other);
 
-        // First 4 cases forced to today with mixed statuses
         let daysAgo;
         let status;
         if (i < 4) {
@@ -928,21 +1208,25 @@ async function main() {
     // Establishment targets.
     console.log('Creating establishment targets...');
     const establishmentTargets = [
-      { department: 'Medical',     minHeadcount: 10,  maxHeadcount: 50  },
-      { department: 'Nurses',      minHeadcount: 150, maxHeadcount: 250 },
-      { department: 'Pharmacy',    minHeadcount: 5,   maxHeadcount: 15  },
-      { department: 'Laboratory',  minHeadcount: 5,   maxHeadcount: 20  },
-      { department: 'Admin',       minHeadcount: 10,  maxHeadcount: 30  },
-      { department: 'Support',     minHeadcount: 20,  maxHeadcount: 60  },
-      { department: 'Maintenance', minHeadcount: 3,   maxHeadcount: 10  },
-      { department: 'Security',    minHeadcount: 5,   maxHeadcount: 15  },
+      { department: 'Medical',              minHeadcount: 30, maxHeadcount: 80  },
+      { department: 'Nurses',               minHeadcount: 150, maxHeadcount: 250 },
+      { department: 'Mortuary',             minHeadcount: 3,  maxHeadcount: 10  },
+      { department: 'School of Nursing',    minHeadcount: 8,  maxHeadcount: 20  },
+      { department: 'School of Midwifery',  minHeadcount: 5,  maxHeadcount: 15  },
+      { department: 'Biomedical Equipment', minHeadcount: 4,  maxHeadcount: 12  },
+      { department: 'Radiography',          minHeadcount: 6,  maxHeadcount: 20  },
+      { department: 'Catering',             minHeadcount: 10, maxHeadcount: 30  },
+      { department: 'Security',             minHeadcount: 8,  maxHeadcount: 20  },
+      { department: 'Laundry',              minHeadcount: 5,  maxHeadcount: 15  },
+      { department: 'Health Information',   minHeadcount: 4,  maxHeadcount: 12  },
+      { department: 'Accounts',             minHeadcount: 4,  maxHeadcount: 12  },
     ];
     for (const t of establishmentTargets) {
       await prisma.establishmentTarget.create({ data: t });
     }
     console.log('  Created ' + establishmentTargets.length + ' establishment targets');
 
-    // Movements — first 5 forced today with type variety.
+    // Movements.
     console.log('Creating sample employee movements...');
     const sampleEmployeesForMovement = await prisma.employee.findMany({
       select: { id: true, name: true, department: true, wardId: true, hireDate: true },
@@ -951,7 +1235,7 @@ async function main() {
 
     if (sampleEmployeesForMovement.length > 0) {
       const TOTAL_MOVEMENTS = 30;
-      const DEPARTMENTS = ['Medical','Nurses','Pharmacy','Laboratory','Admin','Support','Maintenance','Security'];
+      const DEPARTMENTS = EMPLOYEE_DEPARTMENTS;
       const RESIGNATION_REASONS = [
         'Better opportunity elsewhere','Relocation','Health reasons',
         'Family reasons','Further studies','Salary dissatisfaction',
@@ -979,12 +1263,9 @@ async function main() {
           createdAt: date,
         };
 
-        // First 5 movements → force type to guarantee variety today
         let typeRoll = Math.random();
         if (forceTodayMovement) {
-          typeRoll = i < 2 ? 0.1   // transfer
-                   : i < 4 ? 0.6   // retirement
-                   : 0.9;          // resignation
+          typeRoll = i < 2 ? 0.1 : i < 4 ? 0.6 : 0.9;
         }
 
         if (typeRoll < 0.5) {
@@ -1067,8 +1348,6 @@ async function main() {
       }
     }
 
-    // Post-pass: force a "today" update on the first 3 ongoing projects
-    // so the Live Board "projects this week" widget is always populated.
     const ongoingProjects = await prisma.project.findMany({
       where: { status: 'ongoing' },
       take: 3,
@@ -1122,60 +1401,24 @@ async function main() {
     console.log('  Project updates: '       + totalProjectUpdates);
     console.log('');
 
-    const patientStatuses = ['admitted', 'treatment', 'discharged', 'deceased'];
-    console.log('Patient status breakdown:');
-    for (const s of patientStatuses) {
-      const count = await prisma.patient.count({ where: { status: s } });
-      console.log('  ' + s + ': ' + count);
-    }
-    console.log('');
-
-    const empStatuses = ['active', 'on_leave', 'sick', 'terminated'];
-    console.log('Employee status breakdown:');
-    for (const s of empStatuses) {
-      const count = await prisma.employee.count({ where: { status: s } });
-      console.log('  ' + s + ': ' + count);
-    }
-    console.log('');
-
-    const discStatuses = ['open', 'under_investigation', 'resolved', 'dismissed'];
-    console.log('Disciplinary status breakdown:');
-    for (const s of discStatuses) {
-      const count = await prisma.disciplinaryCase.count({ where: { status: s } });
-      console.log('  ' + s + ': ' + count);
-    }
-    console.log('');
-
-    const projStatuses = ['ongoing', 'pending', 'completed'];
-    console.log('Project status breakdown:');
-    for (const s of projStatuses) {
-      const count = await prisma.project.count({ where: { status: s } });
-      console.log('  ' + s + ': ' + count);
-    }
-    console.log('');
-
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentUpdates = await prisma.projectUpdate.findMany({
-      where: { timestamp: { gte: sevenDaysAgo } },
-      select: { projectId: true },
-      distinct: ['projectId'],
-    });
-    console.log('Projects with activity in last 7 days: ' + recentUpdates.length + ' / ' + totalProjects);
-    console.log('');
-
     console.log('Test credentials:');
-    console.log('  Nurses:      nurse1 / nurse123');
-    console.log('  Nurses:      nurse2 / nurse123');
-    console.log('  IT:          it1 / it123');
-    console.log('  IT:          it2 / it123');
-    console.log('  Procurement: procurement1 / proc123');
-    console.log('  Procurement: procurement2 / proc123');
-    console.log('  Stores:      stores1 / store123');
-    console.log('  Stores:      stores2 / store123');
-    console.log('  HR:          hr1 / hr123');
-    console.log('  HR:          hr2 / hr123');
-    console.log('  Super Admin: Admin / (your configured password)');
+    console.log('  Nurses:              nurse1 / nurse123');
+    console.log('  IT:                  it1 / it123');
+    console.log('  Procurement:         procurement1 / proc123');
+    console.log('  Stores:              stores1 / store123');
+    console.log('  HR:                  hr1 / hr123');
+    console.log('  Medical:             medical1 / med123');
+    console.log('  Mortuary:            mortuary1 / mort123');
+    console.log('  School of Nursing:   son1 / son123');
+    console.log('  School of Midwifery: som1 / som123');
+    console.log('  Biomedical Equip:    biomed1 / bio123');
+    console.log('  Radiography:         radio1 / rad123');
+    console.log('  Catering:            catering1 / cat123');
+    console.log('  Security:            security1 / sec123');
+    console.log('  Laundry:             laundry1 / lau123');
+    console.log('  Health Information:  healthinfo1 / hi123');
+    console.log('  Accounts:            accounts1 / acc123');
+    console.log('  Super Admin:         Admin / (your configured password)');
     console.log('');
   } catch (e) {
     console.error('');

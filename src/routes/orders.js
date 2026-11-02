@@ -118,49 +118,42 @@ router.get('/my', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/my/export', requireAuth, async (req, res) => {
-  try {
-    const myDept = String(req.user.department || '').trim().toLowerCase();
-    const all = await prisma.orderRequest.findMany({
-      include: { procurementOrder: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    const mine = all.filter(r => {
-      const submitter = String(r.requestingDepartment || '').trim().toLowerCase();
-      const originator = String(r.originatorDepartment || '').trim().toLowerCase();
-      return submitter === myDept || originator === myDept;
-    });
-
-    const escape = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    const header = ['ID','Submitted By','Originator','Item','Quantity','Reason','Status','Supplier','Created'].join(',');
-    const rows = mine.map(t => [
-      t.id,
-      escape(t.requestingDepartment),
-      escape(t.originatorDepartment || t.requestingDepartment),
-      escape(t.itemName),
-      t.quantity,
-      escape(t.reason),
-      escape(t.status),
-      escape(t.procurementOrder?.supplierName || ''),
-      escape(t.createdAt.toISOString()),
-    ].join(','));
-
-    const csv = [header].concat(rows).join('\n');
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="tenders-' + myDept + '-' + new Date().toISOString().split('T')[0] + '.csv"');
-    res.send(csv);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
 router.get('/history', requireAuth, async (req, res) => {
   if (req.user.department !== 'Procurement' && !isITOrSuperAdmin(req)) {
     return res.status(403).json({ error: 'Only Procurement can view tender history' });
   }
   try {
     const { search, status, department, from, to } = req.query;
-    const all = await prisma.orderRequest.findMany({
+
+    const where = {};
+
+    if (status && status !== 'all') {
+      if (status === 'received') {
+        where.status = { in: ['received', 'in_storage'] };
+      } else {
+        where.status = status;
+      }
+    }
+
+    if (department && department !== 'all') {
+      where.OR = [
+        { requestingDepartment: department },
+        { originatorDepartment: department },
+      ];
+    }
+
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt.gte = new Date(from);
+      if (to) {
+        const toDate = new Date(to);
+        toDate.setHours(23, 59, 59, 999);
+        where.createdAt.lte = toDate;
+      }
+    }
+
+    let filtered = await prisma.orderRequest.findMany({
+      where,
       include: {
         statusLogs: { orderBy: { timestamp: 'desc' } },
         procurementOrder: { include: { itemReceives: true } },
@@ -168,15 +161,6 @@ router.get('/history', requireAuth, async (req, res) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    let filtered = all;
-    if (status && status !== 'all') filtered = filtered.filter(r => r.status === status);
-    if (department && department !== 'all') {
-      const d = department.toLowerCase();
-      filtered = filtered.filter(r =>
-        String(r.requestingDepartment || '').toLowerCase() === d ||
-        String(r.originatorDepartment || '').toLowerCase() === d
-      );
-    }
     if (search) {
       const q = search.toLowerCase();
       filtered = filtered.filter(r =>
@@ -187,11 +171,6 @@ router.get('/history', requireAuth, async (req, res) => {
         String(r.reason || '').toLowerCase().includes(q) ||
         String(r.id) === q
       );
-    }
-    if (from) filtered = filtered.filter(r => new Date(r.createdAt) >= new Date(from));
-    if (to) {
-      const toDate = new Date(to); toDate.setHours(23, 59, 59, 999);
-      filtered = filtered.filter(r => new Date(r.createdAt) <= toDate);
     }
 
     res.json(filtered);
@@ -224,38 +203,6 @@ router.get('/history/summary', requireAuth, async (req, res) => {
     const recent = all.filter(r => new Date(r.createdAt) >= thirtyDaysAgo).length;
 
     res.json({ total: all.length, byStatus, byDepartment: byDept, last30Days: recent });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-router.get('/history/export', requireAuth, async (req, res) => {
-  if (req.user.department !== 'Procurement' && !isITOrSuperAdmin(req)) {
-    return res.status(403).json({ error: 'Only Procurement can export tender history' });
-  }
-  try {
-    const all = await prisma.orderRequest.findMany({
-      include: { procurementOrder: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    const escape = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    const header = ['ID','Submitted By','Originator','Requested By','Item','Quantity','Reason','Status','Supplier','Created'].join(',');
-    const rows = all.map(t => [
-      t.id,
-      escape(t.requestingDepartment),
-      escape(t.originatorDepartment || t.requestingDepartment),
-      escape(t.requestingBy),
-      escape(t.itemName),
-      t.quantity,
-      escape(t.reason),
-      escape(t.status),
-      escape(t.procurementOrder?.supplierName || ''),
-      escape(t.createdAt.toISOString()),
-    ].join(','));
-    const csv = [header].concat(rows).join('\n');
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="tender-history-' + new Date().toISOString().split('T')[0] + '.csv"');
-    res.send(csv);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -380,7 +327,6 @@ router.get('/summary', requireAuth, async (req, res) => {
   }
 });
 
-// Public summary for Live Board widget. No auth.
 router.get('/summary-public', async (req, res) => {
   try {
     const { from, to } = parseRange(req.query);
@@ -411,7 +357,6 @@ router.get('/summary-public', async (req, res) => {
   }
 });
 
-// Detail list for a single tender status. Public.
 router.get('/detail-public', async (req, res) => {
   try {
     const { category } = req.query;

@@ -1,0 +1,88 @@
+.
+├── config
+│   └── hospitals.example.json
+├── ecosystem.config.js
+├── .env
+├── .env.example
+├── .gitignore
+├── package.json
+├── package-lock.json
+├── prisma
+│   ├── dev.db
+│   ├── migrations
+│   │   ├── 20260828122954_init
+│   │   │   └── migration.sql
+│   │   ├── 20260828123238_init
+│   │   │   └── migration.sql
+│   │   ├── 20260910122053_init
+│   │   │   └── migration.sql
+│   │   ├── 20260924131447_add_patient_discharge_and_search
+│   │   │   └── migration.sql
+│   │   ├── 20261001085326_add_system_settings
+│   │   │   └── migration.sql
+│   │   ├── 20261002080206_phase_a_originator_and_workflow
+│   │   │   └── migration.sql
+│   │   ├── 20261005111208_add_labour_relations
+│   │   │   └── migration.sql
+│   │   ├── 20261012080926_add_establishment
+│   │   │   └── migration.sql
+│   │   ├── 20261016095720_add_projects_and_attachments
+│   │   │   └── migration.sql
+│   │   ├── 20261020071818_add_audit_log
+│   │   │   └── migration.sql
+│   │   └── migration_lock.toml
+│   ├── schema.prisma
+│   └── seed.js
+├── project-tree.txt
+├── public
+│   ├── entry.html
+│   ├── index.html
+│   ├── js
+│   │   ├── core.js
+│   │   ├── hr.js
+│   │   ├── it.js
+│   │   ├── nurses.js
+│   │   ├── procurement.js
+│   │   ├── projects.js
+│   │   ├── stores.js
+│   │   └── superadmin.js
+│   ├── logo.jpg
+│   ├── manifest.json
+│   ├── portals
+│   │   ├── hr.html
+│   │   ├── it.html
+│   │   ├── nurses.html
+│   │   ├── procurement.html
+│   │   ├── projects.html
+│   │   ├── stores.html
+│   │   └── superadmin.html
+│   ├── style.css
+│   ├── sw.js
+│   └── uploads
+│       └── disciplinary
+│           └── case-1-1791275998309-1tyt2w.pdf
+├── setup.sh
+├── sql
+│   └── trigger.sql
+├── sqlite-backup.json
+└── src
+    ├── adapters
+    ├── audit.js
+    ├── auth.js
+    ├── index.js
+    ├── pgListener.js
+    ├── prismaClient.js
+    └── routes
+        ├── audit.js
+        ├── auth.js
+        ├── disciplinary.js
+        ├── employees.js
+        ├── establishment.js
+        ├── inventory.js
+        ├── orders.js
+        ├── patients.js
+        ├── projects.js
+        ├── settings.js
+        └── wards.js
+
+23 directories, 63 files

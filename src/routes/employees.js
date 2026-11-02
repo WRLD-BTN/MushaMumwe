@@ -64,55 +64,6 @@ router.get('/summary', async (req, res) => {
 // ============================================================
 // CSV EXPORT
 // ============================================================
-router.get('/export', requireAuth, async (req, res) => {
-  if (!isITOrSuperAdmin(req) && req.user.department !== 'HR') {
-    return res.status(403).json({ error: 'Only HR can export staff data' });
-  }
-  try {
-    const { search, department, status, role, from, to } = req.query;
-    const where = {};
-    if (department && department !== 'all') where.department = department;
-    if (status && status !== 'all') where.status = status;
-    if (role && role !== 'all') where.role = role;
-    if (search) {
-      where.OR = [
-        { name: { contains: search } },
-        { department: { contains: search } },
-        { role: { contains: search } },
-      ];
-    }
-    if (from) where.hireDate = { gte: new Date(from) };
-    if (to) {
-      const toDate = new Date(to); toDate.setHours(23, 59, 59, 999);
-      where.hireDate = { ...(where.hireDate || {}), lte: toDate };
-    }
-
-    const employees = await prisma.employee.findMany({
-      where, include: { ward: true }, orderBy: { name: 'asc' },
-    });
-
-    const escape = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-    const lines = [
-      '# Sally Mugabe Central Hospital - Staff Report',
-      '# Generated: ' + new Date().toISOString(),
-      '# Filters: dept=' + (department || 'all') + ' status=' + (status || 'all') + ' role=' + (role || 'all'),
-      '# Total: ' + employees.length,
-      '',
-      ['ID','Name','Department','Role','Ward','Status','Hire Date','Termination Date'].join(','),
-    ];
-    const rows = employees.map(e => [
-      e.id, escape(e.name), escape(e.department), escape(e.role || ''),
-      escape(e.ward?.name || ''), escape(e.status),
-      escape(e.hireDate ? e.hireDate.toISOString() : ''),
-      escape(e.terminationDate ? e.terminationDate.toISOString() : ''),
-    ].join(','));
-
-    const csv = lines.concat(rows).join('\n');
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="staff-' + new Date().toISOString().split('T')[0] + '.csv"');
-    res.send(csv);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
 
 // ============================================================
 // CREATE employee

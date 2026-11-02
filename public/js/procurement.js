@@ -5,51 +5,35 @@
 let allProcurementOrders = [];
 let allTenders = [];
 let tenderFilter = 'all';
-let procActiveFilter = 'pending';
-let historySearchTimer = null;
+let procActiveFilter = 'all';   // status filter for the main tender list
+let procDeptFilter   = 'all';   // department filter for the main tender list
 
+// ============================================================
+// INIT
+// ============================================================
 async function init_proc() {
   await loadProcurementDashboard();
   await loadMyTenders();
+
   window.onOrderUpdated = (payload) => {
     loadProcurementDashboard();
-    if (document.getElementById('procTabHistory')?.classList.contains('active')) {
-      loadHistorySummary();
-      loadTenderHistory();
-    }
     const myDept = String(currentDeptName || '').toLowerCase();
-    const sub = String(payload?.department || '').toLowerCase();
+    const sub  = String(payload?.department || '').toLowerCase();
     const orig = String(payload?.originator || '').toLowerCase();
     if (sub === myDept || orig === myDept) loadMyTenders();
   };
+
   window.onOrderCreated = () => loadProcurementDashboard();
 }
 
 // ============================================================
-// TABS
-// ============================================================
-function switchProcTab(btn) {
-  document.querySelectorAll('.dept-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-
-  const tab = btn.dataset.tab;
-  document.querySelectorAll('.proc-tab-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById(tab === 'history' ? 'procTabHistory' : 'procTabActive').classList.add('active');
-
-  if (tab === 'history') {
-    loadHistorySummary();
-    loadTenderHistory();
-  }
-}
-
-// ============================================================
-// ACTIVE BOARD
+// LOAD DASHBOARD (summary + all tenders)
 // ============================================================
 async function loadProcurementDashboard() {
   try {
     const [reqRes, sumRes] = await Promise.all([
       fetch('/api/orders/requests', { headers: { Authorization: 'Bearer ' + token() } }),
-      fetch('/api/orders/summary', { headers: { Authorization: 'Bearer ' + token() } }),
+      fetch('/api/orders/summary',  { headers: { Authorization: 'Bearer ' + token() } }),
     ]);
 
     allProcurementOrders = await reqRes.json();
@@ -57,28 +41,74 @@ async function loadProcurementDashboard() {
 
     renderProcurementOrders();
 
-    document.getElementById('proc-procPending').textContent = summary.pending;
-    document.getElementById('proc-procOrdered').textContent = summary.ordered;
-    document.getElementById('proc-procInStorage').textContent = summary.received;
+    document.getElementById('proc-procPending').textContent   = summary.pending    ?? 0;
+    document.getElementById('proc-procOrdered').textContent   = summary.ordered    ?? 0;
+    document.getElementById('proc-procInStorage').textContent = summary.received   ?? 0;
 
     const awaitEl = document.getElementById('proc-procAwaiting');
     if (awaitEl) awaitEl.textContent = summary.awaitingQuotation ?? 0;
-
-    const rejEl = document.getElementById('proc-procRejected');
-    if (rejEl) rejEl.textContent = 0;
   } catch (e) {
-    console.error(e);
+    console.error('Failed to load procurement dashboard:', e);
   }
 }
 
+// ============================================================
+// FILTERS — STATUS
+// ============================================================
 function setProcActiveFilter(btn) {
-  // Use the closest wrapper to guarantee we only affect this specific row
-  const parent = btn.closest('.filter-bar');
-  if (parent) {
-    parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  }
+  const bar = btn.closest('.tender-filters');
+  if (bar) bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   procActiveFilter = btn.dataset.filter;
+  filterProcurementOrders();
+}
+
+// ============================================================
+// FILTERS — DEPARTMENT
+// ============================================================
+function setProcDeptFilter(btn) {
+  const bar = btn.closest('.tender-filters');
+  if (bar) bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  procDeptFilter = btn.dataset.dept;
+  filterProcurementOrders();
+}
+
+// ============================================================
+// FILTERS — CLEAR ALL
+// ============================================================
+function clearProcFilters() {
+  procActiveFilter = 'all';
+  procDeptFilter   = 'all';
+
+  const search = document.getElementById('proc-pendingSearch');
+  const from   = document.getElementById('proc-filterFrom');
+  const to     = document.getElementById('proc-filterTo');
+  if (search) search.value = '';
+  if (from)   from.value = '';
+  if (to)     to.value = '';
+
+  const statusBar = document.getElementById('proc-activeFilters');
+  if (statusBar) {
+    statusBar.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.filter === 'all');
+    });
+  }
+
+  const deptBar = document.getElementById('proc-deptFilters');
+  if (deptBar) {
+    deptBar.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.dept === 'all');
+    });
+  }
+
+  filterProcurementOrders();
+}
+
+// ============================================================
+// FILTER + RENDER MAIN TENDER LIST
+// ============================================================
+function filterProcurementOrders() {
   renderProcurementOrders();
 }
 
@@ -86,36 +116,101 @@ function renderProcurementOrders() {
   const el = document.getElementById('proc-pendingOrdersList');
   if (!el) return;
 
-  const q = (document.getElementById('proc-pendingSearch')?.value || '').toLowerCase();
+  const search  = (document.getElementById('proc-pendingSearch')?.value || '').trim().toLowerCase();
+  const fromStr = document.getElementById('proc-filterFrom')?.value || '';
+  const toStr   = document.getElementById('proc-filterTo')?.value   || '';
+
+  const fromDate = fromStr ? new Date(fromStr + 'T00:00:00')       : null;
+  const toDate   = toStr   ? new Date(toStr   + 'T23:59:59.999')   : null;
 
   let list = allProcurementOrders;
-  if (procActiveFilter !== 'all') list = list.filter(o => o.status === procActiveFilter);
-  if (q) {
+
+  // STATUS FILTER
+  if (procActiveFilter !== 'all') {
+    if (procActiveFilter === 'received') {
+      list = list.filter(o => o.status === 'received' || o.status === 'in_storage');
+    } else {
+      list = list.filter(o => o.status === procActiveFilter);
+    }
+  }
+
+  // DEPARTMENT FILTER (matches originator OR submitter)
+  if (procDeptFilter !== 'all') {
+    const want = procDeptFilter.toLowerCase();
+    list = list.filter(o => {
+      const sub  = String(o.requestingDepartment || '').toLowerCase();
+      const orig = String(o.originatorDepartment || '').toLowerCase();
+      return sub === want || orig === want;
+    });
+  }
+
+  // DATE RANGE FILTER (uses createdAt)
+  if (fromDate || toDate) {
+    list = list.filter(o => {
+      if (!o.createdAt) return false;
+      const d = new Date(o.createdAt);
+      if (fromDate && d < fromDate) return false;
+      if (toDate   && d > toDate)   return false;
+      return true;
+    });
+  }
+
+  // SEARCH FILTER
+  if (search) {
     list = list.filter(o =>
-      String(o.itemName || '').toLowerCase().includes(q) ||
-      String(o.requestingDepartment || '').toLowerCase().includes(q) ||
-      String(o.originatorDepartment || '').toLowerCase().includes(q) ||
-      String(o.requestingBy || '').toLowerCase().includes(q) ||
-      String(o.id).includes(q));
+      String(o.itemName || '').toLowerCase().includes(search) ||
+      String(o.requestingDepartment || '').toLowerCase().includes(search) ||
+      String(o.originatorDepartment || '').toLowerCase().includes(search) ||
+      String(o.requestingBy || '').toLowerCase().includes(search) ||
+      String(o.reason || '').toLowerCase().includes(search) ||
+      String(o.id).includes(search)
+    );
+  }
+
+  // RESULT COUNT LINE
+  const countEl = document.getElementById('proc-resultCount');
+  if (countEl) {
+    const bits = [];
+    if (procActiveFilter !== 'all') bits.push('status=' + procActiveFilter.replace('_', ' '));
+    if (procDeptFilter   !== 'all') bits.push('dept=' + procDeptFilter);
+    if (fromStr) bits.push('from=' + fromStr);
+    if (toStr)   bits.push('to=' + toStr);
+    if (search)  bits.push('search="' + search + '"');
+    const desc = bits.length ? ' (filters: ' + bits.join(', ') + ')' : ' (no filters - showing all)';
+    countEl.textContent = list.length + ' tender' + (list.length === 1 ? '' : 's') + desc;
   }
 
   if (list.length === 0) {
-    const label = procActiveFilter === 'all' ? '' : procActiveFilter.toUpperCase() + ' ';
-    el.innerHTML = '<div class="empty-state">No ' + label + 'Tenders</div>';
+    el.innerHTML = '<div class="empty-state">No Matching Tenders</div>';
     return;
   }
 
   el.innerHTML = list.map(o => {
-    const submitter = o.requestingDepartment || '';
+    const submitter  = o.requestingDepartment || '';
     const originator = o.originatorDepartment || submitter;
     let originatorLine = '';
     if (submitter.toLowerCase() !== originator.toLowerCase()) {
-      originatorLine = ' <span class="muted">(submitted by ' + escapeHtml(submitter) + ' for ' + escapeHtml(originator) + ')</span>';
+      originatorLine = ' <span class="muted">(submitted by ' + escapeHtml(submitter) +
+                       ' for ' + escapeHtml(originator) + ')</span>';
     }
 
     const supplier = o.procurementOrder && o.procurementOrder.supplierName
       ? '<p><em>Supplier:</em> ' + escapeHtml(o.procurementOrder.supplierName) + '</p>'
       : '';
+
+    const timeline = (o.statusLogs || []).length > 0
+      ? '<details><summary class="muted">Timeline (' + o.statusLogs.length + ' events)</summary>' +
+        '<div class="tender-timeline">' +
+        o.statusLogs.slice().reverse().map(log =>
+          '<div class="tl-item"><span class="tl-dot"></span>' +
+          '<span><strong>' + log.newStatus.toUpperCase() + '</strong> - ' +
+          escapeHtml(log.changedBy) + ' - ' + fmtDateTime(log.timestamp) + '</span>' +
+          (log.notes ? '<div class="muted">' + escapeHtml(log.notes) + '</div>' : '') +
+          '</div>'
+        ).join('') +
+        '</div></details>'
+      : '';
+
     const actions = renderProcOrderActions(o);
 
     return '<div class="tender-card">' +
@@ -123,7 +218,8 @@ function renderProcurementOrders() {
       '<div>' +
       '<strong>#' + o.id + ' - ' + escapeHtml(o.itemName) + ' x' + o.quantity + '</strong>' +
       '<div class="muted"><span class="dept-pill">' + escapeHtml(originator) + '</span>' +
-      originatorLine + '</div>' +
+      originatorLine +
+      ' - ' + fmtDate(o.createdAt) + '</div>' +
       '</div>' +
       '<div>' + statusBadge(o.status) + '</div>' +
       '</div>' +
@@ -131,6 +227,7 @@ function renderProcurementOrders() {
       '<p><em>Reason:</em> ' + escapeHtml(o.reason) + '</p>' +
       supplier +
       '</div>' +
+      timeline +
       (actions ? '<div class="order-actions">' + actions + '</div>' : '') +
       '</div>';
   }).join('');
@@ -144,8 +241,6 @@ function renderProcOrderActions(o) {
   return '';
 }
 
-function filterProcurementOrders() { renderProcurementOrders(); }
-
 // ============================================================
 // APPROVE MODAL
 // ============================================================
@@ -153,13 +248,12 @@ function openApproveModal(orderId) {
   const o = allProcurementOrders.find(x => x.id === orderId);
   if (!o) return;
 
-  document.getElementById('approveOrderId') || (function () {
-    // Create hidden field if not present
+  if (!document.getElementById('approveOrderId')) {
     const f = document.createElement('input');
     f.type = 'hidden';
     f.id = 'approveOrderId';
     document.body.appendChild(f);
-  })();
+  }
 
   document.getElementById('approveOrderId').value = orderId;
   document.getElementById('approveOrderLabel').textContent =
@@ -202,6 +296,7 @@ async function confirmApprove() {
 
     closeApproveModal();
     await loadProcurementDashboard();
+    await loadMyTenders();
   } catch (e) {
     msg.innerHTML = '<div class="error">' + e.message + '</div>';
   }
@@ -252,141 +347,30 @@ async function confirmAwaitQuotation() {
 
     closeAwaitModal();
     await loadProcurementDashboard();
+    await loadMyTenders();
   } catch (e) {
     msg.innerHTML = '<div class="error">' + e.message + '</div>';
   }
 }
 
 // ============================================================
-// TENDER HISTORY
-// ============================================================
-function debouncedHistorySearch() {
-  clearTimeout(historySearchTimer);
-  historySearchTimer = setTimeout(loadTenderHistory, 300);
-}
-
-async function loadHistorySummary() {
-  try {
-    const res = await fetch('/api/orders/history/summary', { headers: { Authorization: 'Bearer ' + token() } });
-    if (!res.ok) return;
-    const s = await res.json();
-
-    document.getElementById('hTotal').textContent = s.total;
-    document.getElementById('hPending').textContent = s.byStatus.pending || 0;
-    document.getElementById('hApproved').textContent = s.byStatus.ordered || 0;
-    document.getElementById('hRejected').textContent = s.byStatus.awaiting_quotation || 0;
-    document.getElementById('hReceived').textContent =
-      (s.byStatus.received || 0) + (s.byStatus.in_storage || 0);
-    document.getElementById('hRecent').textContent = s.last30Days;
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-async function loadTenderHistory() {
-  const el = document.getElementById('proc-tenderHistoryList');
-  const search = document.getElementById('histSearch').value.trim();
-  const status = document.getElementById('histStatus').value;
-  const department = document.getElementById('histDept').value;
-  const from = document.getElementById('histFrom').value;
-  const to = document.getElementById('histTo').value;
-
-  const params = new URLSearchParams();
-  if (search) params.set('search', search);
-  if (status !== 'all') params.set('status', status);
-  if (department !== 'all') params.set('department', department);
-  if (from) params.set('from', from);
-  if (to) params.set('to', to);
-
-  el.innerHTML = '<p class="muted">Loading...</p>';
-
-  try {
-    const res = await fetch('/api/orders/history?' + params, { headers: { Authorization: 'Bearer ' + token() } });
-    if (!res.ok) throw new Error('Failed');
-    const tenders = await res.json();
-
-    document.getElementById('histCount').textContent = '(' + tenders.length + ')';
-
-    if (tenders.length === 0) {
-      el.innerHTML = '<div class="empty-state">No Matching Tenders</div>';
-      return;
-    }
-
-    el.innerHTML = tenders.map(t => {
-      const submitter = t.requestingDepartment || '';
-      const originator = t.originatorDepartment || submitter;
-      const supplier = t.procurementOrder && t.procurementOrder.supplierName
-        ? '<p><em>Supplier:</em> ' + escapeHtml(t.procurementOrder.supplierName) + '</p>'
-        : '';
-      const timeline = (t.statusLogs || []).length > 0
-        ? '<details><summary class="muted">Timeline (' + t.statusLogs.length + ' events)</summary>' +
-          '<div class="tender-timeline">' +
-          t.statusLogs.slice().reverse().map(log =>
-            '<div class="tl-item"><span class="tl-dot"></span>' +
-            '<span><strong>' + log.newStatus.toUpperCase() + '</strong> - ' +
-            escapeHtml(log.changedBy) + ' - ' + fmtDateTime(log.timestamp) + '</span>' +
-            (log.notes ? '<div class="muted">' + escapeHtml(log.notes) + '</div>' : '') +
-            '</div>'
-          ).join('') +
-          '</div></details>'
-        : '';
-
-      return '<div class="tender-card">' +
-        '<div class="tender-head">' +
-        '<div>' +
-        '<strong>#' + t.id + ' - ' + escapeHtml(t.itemName) + ' x' + t.quantity + '</strong>' +
-        '<div class="muted"><span class="dept-pill">' + escapeHtml(originator) + '</span>' +
-        (submitter !== originator ? ' (submitted by ' + escapeHtml(submitter) + ')' : '') +
-        ' by ' + escapeHtml(t.requestingBy) + ' - ' + fmtDate(t.createdAt) + '</div>' +
-        '</div>' +
-        '<div>' + statusBadge(t.status) + '</div>' +
-        '</div>' +
-        '<div class="tender-body">' +
-        '<p><em>Reason:</em> ' + escapeHtml(t.reason) + '</p>' +
-        supplier +
-        '</div>' +
-        timeline +
-        '</div>';
-    }).join('');
-  } catch (e) {
-    el.innerHTML = '<p class="error">' + e.message + '</p>';
-  }
-}
-
-function clearHistoryFilters() {
-  document.getElementById('histSearch').value = '';
-  document.getElementById('histStatus').value = 'all';
-  document.getElementById('histDept').value = 'all';
-  document.getElementById('histFrom').value = '';
-  document.getElementById('histTo').value = '';
-  loadTenderHistory();
-}
-
-async function exportTenderHistory() {
-  try {
-    const res = await fetch('/api/orders/history/export', { headers: { Authorization: 'Bearer ' + token() } });
-    if (!res.ok) throw new Error('Export failed');
-    const blob = await res.blob();
-    downloadCSV(blob, 'tender-history-' + new Date().toISOString().split('T')[0] + '.csv');
-  } catch (e) {
-    alert(e.message);
-  }
-}
-
-// ============================================================
-// MY TENDERS
+// NEW TENDER SUBMISSION
 // ============================================================
 async function submitTenderRequest(deptKey) {
   const originatorDepartment = document.getElementById(deptKey + '-reqOriginator')?.value || currentDeptName;
   const itemName = document.getElementById(deptKey + '-reqItemName').value.trim();
   const quantity = document.getElementById(deptKey + '-reqQuantity').value;
-  const reason = document.getElementById(deptKey + '-reqReason').value.trim();
-  const msg = document.getElementById(deptKey + '-requestMessage');
+  const reason   = document.getElementById(deptKey + '-reqReason').value.trim();
+  const msg      = document.getElementById(deptKey + '-requestMessage');
 
   if (!itemName || !quantity || !reason) {
     msg.innerHTML = '<div class="error">All fields required</div>';
     return;
   }
+
+  const btn = document.querySelector('button[onclick="submitTenderRequest(\'' + deptKey + '\')"]');
+  if (btn && btn.disabled) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
 
   try {
     const res = await fetch('/api/orders/request', {
@@ -400,13 +384,19 @@ async function submitTenderRequest(deptKey) {
     msg.innerHTML = '<div class="success">Request submitted</div>';
     document.getElementById(deptKey + '-reqItemName').value = '';
     document.getElementById(deptKey + '-reqQuantity').value = '';
-    document.getElementById(deptKey + '-reqReason').value = '';
+    document.getElementById(deptKey + '-reqReason').value   = '';
     await loadMyTenders();
+    await loadProcurementDashboard();
   } catch (e) {
     msg.innerHTML = '<div class="error">' + e.message + '</div>';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Submit Request'; }
   }
 }
 
+// ============================================================
+// MY DEPARTMENT TENDERS
+// ============================================================
 async function loadMyTenders() {
   const res = await fetch('/api/orders/my', { headers: { Authorization: 'Bearer ' + token() } });
   if (!res.ok) return;
@@ -415,10 +405,8 @@ async function loadMyTenders() {
 }
 
 function setTenderFilter(btn) {
-  const parent = btn.closest('.filter-bar');
-  if (parent) {
-    parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  }
+  const bar = btn.closest('.filter-bar, .tender-filters');
+  if (bar) bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   tenderFilter = btn.dataset.filter;
   renderTenderTracker();
@@ -428,10 +416,18 @@ function filterTenders() { renderTenderTracker(); }
 
 function renderTenderTracker() {
   const el = document.getElementById('proc-tenderTrackerList');
+  if (!el) return;
+
   const q = (document.getElementById('proc-tenderSearch')?.value || '').toLowerCase();
 
   let list = allTenders;
-  if (tenderFilter !== 'all') list = list.filter(t => t.status === tenderFilter);
+  if (tenderFilter !== 'all') {
+    if (tenderFilter === 'received') {
+      list = list.filter(t => t.status === 'received' || t.status === 'in_storage');
+    } else {
+      list = list.filter(t => t.status === tenderFilter);
+    }
+  }
   if (q) list = list.filter(t => String(t.itemName).toLowerCase().includes(q));
 
   if (list.length === 0) {
@@ -442,15 +438,15 @@ function renderTenderTracker() {
   const myDept = String(currentDeptName || '').toLowerCase();
 
   el.innerHTML = list.map(t => {
-    const submitter = t.requestingDepartment || '';
+    const submitter  = t.requestingDepartment || '';
     const originator = t.originatorDepartment || submitter;
-    const submittedByMe = String(submitter).toLowerCase() === myDept;
+    const submittedByMe  = String(submitter).toLowerCase()  === myDept;
     const submittedForMe = String(originator).toLowerCase() === myDept;
 
     let meta = 'Requested by: ' + escapeHtml(submitter);
     if (!submittedByMe && submittedForMe) {
       meta = 'Requested FOR your department by ' + escapeHtml(submitter);
-    } else if (submittedByMe && originator !== submitter) {
+    } else if (submittedByMe && originator.toLowerCase() !== submitter.toLowerCase()) {
       meta = 'Submitted by you FOR ' + escapeHtml(originator);
     }
 
@@ -467,23 +463,102 @@ function renderTenderTracker() {
   }).join('');
 }
 
-async function exportMyTenders() {
-  const res = await fetch('/api/orders/my/export', { headers: { Authorization: 'Bearer ' + token() } });
-  if (!res.ok) return alert('Export failed');
-  const blob = await res.blob();
-  downloadCSV(blob, 'tenders-procurement-' + new Date().toISOString().split('T')[0] + '.csv');
-}
+// ============================================================
+// PRINT — MAIN TENDER LIST (respects active filters)
+// ============================================================
 function printTenderHistory() {
-  if (allTenderHistory.length === 0) { alert('No history to print.'); return; }
+  const search  = (document.getElementById('proc-pendingSearch')?.value || '').trim();
+  const fromStr = document.getElementById('proc-filterFrom')?.value || '';
+  const toStr   = document.getElementById('proc-filterTo')?.value   || '';
+
+  const fromDate = fromStr ? new Date(fromStr + 'T00:00:00')     : null;
+  const toDate   = toStr   ? new Date(toStr   + 'T23:59:59.999') : null;
+
+  let list = allProcurementOrders;
+
+  if (procActiveFilter !== 'all') {
+    if (procActiveFilter === 'received') {
+      list = list.filter(o => o.status === 'received' || o.status === 'in_storage');
+    } else {
+      list = list.filter(o => o.status === procActiveFilter);
+    }
+  }
+  if (procDeptFilter !== 'all') {
+    const want = procDeptFilter.toLowerCase();
+    list = list.filter(o => {
+      const sub  = String(o.requestingDepartment || '').toLowerCase();
+      const orig = String(o.originatorDepartment || '').toLowerCase();
+      return sub === want || orig === want;
+    });
+  }
+  if (fromDate || toDate) {
+    list = list.filter(o => {
+      if (!o.createdAt) return false;
+      const d = new Date(o.createdAt);
+      if (fromDate && d < fromDate) return false;
+      if (toDate   && d > toDate)   return false;
+      return true;
+    });
+  }
+  if (search) {
+    const q = search.toLowerCase();
+    list = list.filter(o =>
+      String(o.itemName || '').toLowerCase().includes(q) ||
+      String(o.requestingDepartment || '').toLowerCase().includes(q) ||
+      String(o.originatorDepartment || '').toLowerCase().includes(q) ||
+      String(o.requestingBy || '').toLowerCase().includes(q) ||
+      String(o.reason || '').toLowerCase().includes(q) ||
+      String(o.id).includes(q)
+    );
+  }
+
+  if (list.length === 0) { alert('No tenders match the current filters.'); return; }
+
   const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
   const now = new Date();
-  let html = '<div class="print-page a4"><div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Tender History</h2></div>';
-  html += '<div class="print-meta"><p><strong>Total Tenders:</strong> ' + allTenderHistory.length + '</p><p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p></div>';
-  html += '<table class="print-table"><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Dept</th><th>Status</th><th>Supplier</th><th>Date</th></tr></thead><tbody>';
-  allTenderHistory.forEach((t, idx) => {
-    const dept = t.originatorDepartment || t.requestingDepartment || '-';
+
+  const filterParts = [];
+  if (procActiveFilter !== 'all') filterParts.push('Status=' + procActiveFilter.replace('_', ' '));
+  if (procDeptFilter   !== 'all') filterParts.push('Department=' + procDeptFilter);
+  if (fromStr) filterParts.push('From=' + fromStr);
+  if (toStr)   filterParts.push('To=' + toStr);
+  if (search)  filterParts.push('Search="' + search + '"');
+  const filterLine = filterParts.length ? 'Filters: ' + filterParts.join(', ') : 'Filters: none (all tenders)';
+
+  let html = '<div class="print-page a4">';
+  html += '<div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Tender Report</h2></div>';
+  html += '<div class="print-meta">' +
+          '<p><strong>Total Tenders:</strong> ' + list.length + '</p>' +
+          '<p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p>' +
+          '<p style="grid-column: span 2;"><strong>' + escapeHtml(filterLine) + '</strong></p>' +
+          '</div>';
+  html += '<table class="print-table"><thead><tr>' +
+          '<th>#</th><th>Item</th><th>Qty</th><th>Dept</th><th>Status</th><th>Supplier</th><th>Date</th>' +
+          '</tr></thead><tbody>';
+  list.forEach((t, idx) => {
+    const dept     = t.originatorDepartment || t.requestingDepartment || '-';
     const supplier = t.procurementOrder ? t.procurementOrder.supplierName : '-';
-    html += '<tr><td>' + (idx + 1) + '</td><td>' + escapeHtml(t.itemName) + '</td><td>' + t.quantity + '</td><td>' + escapeHtml(dept) + '</td><td>' + t.status.toUpperCase() + '</td><td>' + escapeHtml(supplier) + '</td><td>' + fmtDate(t.createdAt) + '</td></tr>';
+    html += '<tr><td>' + (idx + 1) + '</td><td>' + escapeHtml(t.itemName) + '</td><td>' + t.quantity + '</td><td>' +
+            escapeHtml(dept) + '</td><td>' + t.status.toUpperCase() + '</td><td>' + escapeHtml(supplier) + '</td><td>' +
+            fmtDate(t.createdAt) + '</td></tr>';
+  });
+  html += '</tbody></table><div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div></div>';
+  printContent(html);
+}
+
+// ============================================================
+// PRINT — MY DEPARTMENT TENDERS
+// ============================================================
+function printMyTenders() {
+  if (allTenders.length === 0) { alert('No tenders to print.'); return; }
+  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
+  const now = new Date();
+  let html = '<div class="print-page a4"><div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Procurement Department Tenders</h2></div>';
+  html += '<div class="print-meta"><p><strong>Total:</strong> ' + allTenders.length + '</p><p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p></div>';
+  html += '<table class="print-table"><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Status</th><th>Supplier</th><th>Date</th></tr></thead><tbody>';
+  allTenders.forEach((t, i) => {
+    const supplier = t.procurementOrder ? t.procurementOrder.supplierName : '-';
+    html += '<tr><td>' + (i + 1) + '</td><td>' + escapeHtml(t.itemName) + '</td><td>' + t.quantity + '</td><td>' + String(t.status).toUpperCase() + '</td><td>' + escapeHtml(supplier) + '</td><td>' + fmtDate(t.createdAt) + '</td></tr>';
   });
   html += '</tbody></table><div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div></div>';
   printContent(html);

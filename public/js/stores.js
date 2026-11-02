@@ -11,10 +11,11 @@ async function init_stores() {
   await loadStoresInventory();
   await loadApprovedOrdersForStores();
   await loadMyTenders();
+
   window.onOrderUpdated = (payload) => {
     loadApprovedOrdersForStores();
     const myDept = String(currentDeptName || '').toLowerCase();
-    const sub = String(payload?.department || '').toLowerCase();
+    const sub  = String(payload?.department || '').toLowerCase();
     const orig = String(payload?.originator || '').toLowerCase();
     if (sub === myDept || orig === myDept) loadMyTenders();
   };
@@ -26,44 +27,40 @@ async function init_stores() {
 // ============================================================
 async function loadStoresInventory() {
   try {
-    const [invRes, sumRes, histRes] = await Promise.all([
+    const [invRes, sumRes] = await Promise.all([
       fetch('/api/inventory', { headers: { Authorization: 'Bearer ' + token() } }),
       fetch('/api/inventory/summary', { headers: { Authorization: 'Bearer ' + token() } }),
-      fetch('/api/inventory/receive-history', { headers: { Authorization: 'Bearer ' + token() } }),
     ]);
 
     allInventory = await invRes.json();
     const summary = await sumRes.json();
-    const history = await histRes.json();
 
     renderInventory();
 
-    document.getElementById('stores-invCritical').textContent = summary.critical;
-    document.getElementById('stores-invLow').textContent = summary.low;
-    document.getElementById('stores-invAdequate').textContent = summary.adequate;
-    document.getElementById('stores-invTotal').textContent = summary.totalItems;
-
-    renderReceiveHistory(history);
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('stores-invTotal',    summary.totalItems ?? 0);
+    set('stores-invCritical', summary.critical   ?? 0);
+    set('stores-invLow',      summary.low        ?? 0);
+    set('stores-invAdequate', summary.adequate   ?? 0);
   } catch (e) {
-    console.error(e);
+    console.error('Failed to load inventory:', e);
   }
 }
 
 function renderInventory() {
   const el = document.getElementById('stores-inventoryList');
-  const q = (document.getElementById('stores-invSearch')?.value || '').toLowerCase();
+  if (!el) return;
 
-  const list = q
-    ? allInventory.filter(i => i.name.toLowerCase().includes(q))
-    : allInventory;
+  const q = (document.getElementById('stores-invSearch')?.value || '').toLowerCase();
+  const list = q ? allInventory.filter(i => i.name.toLowerCase().includes(q)) : allInventory;
 
   if (list.length === 0) {
-    el.innerHTML = '<div class="empty-state">No Inventory</div>';
+    el.innerHTML = '<div class="empty-state">No inventory items match</div>';
     return;
   }
 
   el.innerHTML = '<table class="data-table">' +
-    '<thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Status</th></tr></thead><tbody>' +
+    '<thead><tr><th>Item</th><th>Category</th><th>Qty</th><th>Unit</th><th>Status</th></tr></thead><tbody>' +
     list.map(i => {
       let label = 'Adequate';
       let cls = 'status-ok';
@@ -72,6 +69,7 @@ function renderInventory() {
 
       return '<tr>' +
         '<td>' + escapeHtml(i.name) + '</td>' +
+        '<td>' + escapeHtml(i.category || '-') + '</td>' +
         '<td><strong>' + i.quantity + '</strong></td>' +
         '<td>' + escapeHtml(i.unit) + '</td>' +
         '<td><span class="status-pill ' + cls + '">' + label + '</span></td>' +
@@ -82,34 +80,8 @@ function renderInventory() {
 
 function filterInventory() { renderInventory(); }
 
-function renderReceiveHistory(history) {
-  const el = document.getElementById('stores-receiveHistory');
-  if (history.length === 0) {
-    el.innerHTML = '<div class="empty-state">No receipts yet</div>';
-    return;
-  }
-
-  el.innerHTML = history.slice(0, 15).map(r =>
-    '<div class="mini-item">' +
-    '<strong>' + escapeHtml(r.inventoryItem.name) + ' x' + r.quantityReceived + '</strong>' +
-    '<span class="muted"> - ' + escapeHtml(r.receivedBy) + ' - ' + fmtDateTime(r.receivedAt) + '</span>' +
-    '</div>'
-  ).join('');
-}
-
-async function exportInventory() {
-  try {
-    const res = await fetch('/api/inventory/export', { headers: { Authorization: 'Bearer ' + token() } });
-    if (!res.ok) throw new Error('Export failed');
-    const blob = await res.blob();
-    downloadCSV(blob, 'inventory-' + new Date().toISOString().split('T')[0] + '.csv');
-  } catch (e) {
-    alert(e.message);
-  }
-}
-
 // ============================================================
-// APPROVED ORDERS
+// APPROVED ORDERS WAITING
 // ============================================================
 async function loadApprovedOrdersForStores() {
   try {
@@ -118,14 +90,15 @@ async function loadApprovedOrdersForStores() {
     allApprovedForStores = await res.json();
     renderApprovedForStores();
   } catch (e) {
-    console.error(e);
+    console.error('Failed to load approved orders:', e);
   }
 }
 
 function renderApprovedForStores() {
   const el = document.getElementById('stores-approvedOrders');
-  const q = (document.getElementById('stores-approvedSearch')?.value || '').toLowerCase();
+  if (!el) return;
 
+  const q = (document.getElementById('stores-approvedSearch')?.value || '').toLowerCase();
   const list = q
     ? allApprovedForStores.filter(o =>
         o.itemName.toLowerCase().includes(q) ||
@@ -134,7 +107,7 @@ function renderApprovedForStores() {
     : allApprovedForStores;
 
   if (list.length === 0) {
-    el.innerHTML = '<div class="empty-state">No Approved Tenders Waiting</div>';
+    el.innerHTML = '<div class="empty-state">No approved orders waiting</div>';
     return;
   }
 
@@ -142,9 +115,9 @@ function renderApprovedForStores() {
     const originator = o.originatorDepartment || o.requestingDepartment;
     return '<div class="order-card-mini">' +
       '<div><strong>#' + o.id + '</strong> ' + escapeHtml(o.itemName) + ' x' + o.quantity + '</div>' +
-      '<div class="muted">' + escapeHtml(originator) + ' - ' + statusBadge(o.status) + '</div>' +
+      '<div class="muted">' + escapeHtml(originator) + ' &nbsp; ' + statusBadge(o.status) + '</div>' +
       '<button class="pill-btn" onclick="prefillReceive(' + o.id + ', \'' +
-      o.itemName.replace(/'/g, "\\'") + '\', ' + o.quantity + ')">Receive This</button>' +
+        o.itemName.replace(/'/g, "\\'") + '\', ' + o.quantity + ')">Receive This</button>' +
       '</div>';
   }).join('');
 }
@@ -159,7 +132,7 @@ function prefillReceive(orderId, itemName, qty) {
 }
 
 // ============================================================
-// RECEIVE
+// RECEIVE ITEMS
 // ============================================================
 async function receiveItems() {
   const orderRequestId = document.getElementById('stores-receiveOrderId').value;
@@ -202,19 +175,23 @@ async function receiveItems() {
 }
 
 // ============================================================
-// TENDERS
+// NEW TENDER REQUEST (was missing)
 // ============================================================
 async function submitTenderRequest(deptKey) {
   const originatorDepartment = document.getElementById(deptKey + '-reqOriginator')?.value || currentDeptName;
   const itemName = document.getElementById(deptKey + '-reqItemName').value.trim();
   const quantity = document.getElementById(deptKey + '-reqQuantity').value;
-  const reason = document.getElementById(deptKey + '-reqReason').value.trim();
-  const msg = document.getElementById(deptKey + '-requestMessage');
+  const reason   = document.getElementById(deptKey + '-reqReason').value.trim();
+  const msg      = document.getElementById(deptKey + '-requestMessage');
 
   if (!itemName || !quantity || !reason) {
     msg.innerHTML = '<div class="error">All fields required</div>';
     return;
   }
+
+  const btn = document.querySelector('button[onclick="submitTenderRequest(\'' + deptKey + '\')"]');
+  if (btn && btn.disabled) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
 
   try {
     const res = await fetch('/api/orders/request', {
@@ -228,25 +205,32 @@ async function submitTenderRequest(deptKey) {
     msg.innerHTML = '<div class="success">Request submitted</div>';
     document.getElementById(deptKey + '-reqItemName').value = '';
     document.getElementById(deptKey + '-reqQuantity').value = '';
-    document.getElementById(deptKey + '-reqReason').value = '';
+    document.getElementById(deptKey + '-reqReason').value   = '';
     await loadMyTenders();
   } catch (e) {
     msg.innerHTML = '<div class="error">' + e.message + '</div>';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Submit Tender Request'; }
   }
 }
 
+// ============================================================
+// MY TENDERS — LOAD + FILTER
+// ============================================================
 async function loadMyTenders() {
-  const res = await fetch('/api/orders/my', { headers: { Authorization: 'Bearer ' + token() } });
-  if (!res.ok) return;
-  allTenders = await res.json();
-  renderTenderTracker();
+  try {
+    const res = await fetch('/api/orders/my', { headers: { Authorization: 'Bearer ' + token() } });
+    if (!res.ok) return;
+    allTenders = await res.json();
+    renderTenderTracker();
+  } catch (e) {
+    console.error('Failed to load tenders:', e);
+  }
 }
 
 function setTenderFilter(btn) {
-  const parent = btn.closest('.filter-bar');
-  if (parent) {
-    parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  }
+  const bar = btn.closest('.tender-filters, .filter-bar');
+  if (bar) bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   tenderFilter = btn.dataset.filter;
   renderTenderTracker();
@@ -256,11 +240,39 @@ function filterTenders() { renderTenderTracker(); }
 
 function renderTenderTracker() {
   const el = document.getElementById('stores-tenderTrackerList');
-  const q = (document.getElementById('stores-tenderSearch')?.value || '').toLowerCase();
+  if (!el) return;
+
+  const q = (document.getElementById('stores-tenderSearch')?.value || '').trim().toLowerCase();
 
   let list = allTenders;
-  if (tenderFilter !== 'all') list = list.filter(t => t.status === tenderFilter);
-  if (q) list = list.filter(t => String(t.itemName).toLowerCase().includes(q));
+
+  if (tenderFilter !== 'all') {
+    if (tenderFilter === 'received') {
+      list = list.filter(t => t.status === 'received' || t.status === 'in_storage');
+    } else {
+      list = list.filter(t => t.status === tenderFilter);
+    }
+  }
+
+  if (q) {
+    list = list.filter(t =>
+      String(t.itemName || '').toLowerCase().includes(q) ||
+      String(t.reason || '').toLowerCase().includes(q) ||
+      String(t.requestingBy || '').toLowerCase().includes(q) ||
+      String(t.requestingDepartment || '').toLowerCase().includes(q) ||
+      String(t.originatorDepartment || '').toLowerCase().includes(q) ||
+      String(t.id).includes(q)
+    );
+  }
+
+  const countEl = document.getElementById('stores-tenderResultCount');
+  if (countEl) {
+    const bits = [];
+    if (tenderFilter !== 'all') bits.push('status=' + tenderFilter.replace('_', ' '));
+    if (q) bits.push('search="' + q + '"');
+    const desc = bits.length ? ' (filters: ' + bits.join(', ') + ')' : ' (no filters - showing all)';
+    countEl.textContent = list.length + ' tender' + (list.length === 1 ? '' : 's') + desc;
+  }
 
   if (list.length === 0) {
     el.innerHTML = '<div class="empty-state">No Tenders</div>';
@@ -270,9 +282,9 @@ function renderTenderTracker() {
   const myDept = String(currentDeptName || '').toLowerCase();
 
   el.innerHTML = list.map(t => {
-    const submitter = t.requestingDepartment || '';
+    const submitter  = t.requestingDepartment || '';
     const originator = t.originatorDepartment || submitter;
-    const submittedByMe = String(submitter).toLowerCase() === myDept;
+    const submittedByMe  = String(submitter).toLowerCase()  === myDept;
     const submittedForMe = String(originator).toLowerCase() === myDept;
 
     let meta = 'Requested by: ' + escapeHtml(submitter);
@@ -282,58 +294,29 @@ function renderTenderTracker() {
       meta = 'Submitted by you FOR ' + escapeHtml(originator);
     }
 
+    const supplier = t.procurementOrder && t.procurementOrder.supplierName
+      ? '<p><em>Supplier:</em> ' + escapeHtml(t.procurementOrder.supplierName) + '</p>'
+      : '';
+
     return '<div class="tender-card">' +
       '<div class="tender-head">' +
       '<div>' +
       '<strong>#' + t.id + ' - ' + escapeHtml(t.itemName) + ' x' + t.quantity + '</strong>' +
-      '<div class="muted">' + meta + '</div>' +
+      '<div class="muted">' + meta + ' - ' + fmtDate(t.createdAt) + '</div>' +
       '</div>' +
       '<div>' + statusBadge(t.status) + '</div>' +
       '</div>' +
-      '<div class="tender-body"><p><em>Reason:</em> ' + escapeHtml(t.reason) + '</p></div>' +
+      '<div class="tender-body">' +
+      '<p><em>Reason:</em> ' + escapeHtml(t.reason) + '</p>' +
+      supplier +
+      '</div>' +
       '</div>';
   }).join('');
 }
 
-async function exportMyTenders() {
-  const res = await fetch('/api/orders/my/export', { headers: { Authorization: 'Bearer ' + token() } });
-  if (!res.ok) return alert('Export failed');
-  const blob = await res.blob();
-  downloadCSV(blob, 'tenders-stores-' + new Date().toISOString().split('T')[0] + '.csv');
-}
-function printInventory() {
-  if (!allInventory || allInventory.length === 0) {
-    alert('No inventory to print.');
-    return;
-  }
-
-  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
-  const now = new Date();
-
-  let html = '<div class="print-page a4">';
-  html += '<div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Inventory Report</h2></div>';
-  
-  html += '<div class="print-meta">';
-  html += '<p><strong>Total Items:</strong> ' + allInventory.length + '</p>';
-  html += '<p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p>';
-  html += '</div>';
-
-  html += '<table class="print-table"><thead><tr><th>#</th><th>Item</th><th>Category</th><th>Quantity</th><th>Unit</th><th>Status</th></tr></thead><tbody>';
-
-  allInventory.forEach((i, idx) => {
-    let statusLabel = 'Adequate';
-    if (i.quantity < 10) statusLabel = 'Critical';
-    else if (i.quantity < 50) statusLabel = 'Low';
-
-    html += '<tr><td>' + (idx + 1) + '</td><td>' + escapeHtml(i.name) + '</td><td>' + escapeHtml(i.category || '-') + '</td><td>' + i.quantity + '</td><td>' + escapeHtml(i.unit) + '</td><td>' + statusLabel + '</td></tr>';
-  });
-
-  html += '</tbody></table>';
-  html += '<div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div>';
-  html += '</div>';
-
-  printContent(html);
-}
+// ============================================================
+// PRINT
+// ============================================================
 function printInventory() {
   if (allInventory.length === 0) { alert('No inventory to print.'); return; }
   const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
