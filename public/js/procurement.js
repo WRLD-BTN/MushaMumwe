@@ -273,12 +273,15 @@ function closeApproveModal() {
   document.getElementById('modalBackdrop').classList.remove('active');
 }
 
+// Inside confirmApprove, update the fields being grabbed and sent
 async function confirmApprove() {
   const id = document.getElementById('approveOrderId').value;
   const supplierName = document.getElementById('approveSupplierName').value.trim();
   const expectedDeliveryDate = document.getElementById('approveExpectedDate').value;
   const approvalNotes = document.getElementById('approveNotes').value.trim();
-  const msg = document.getElementById('approveMessage');
+  
+  const priceUsd = document.getElementById('approvePriceUsd').value;
+  const priceZwg = document.getElementById('approvePriceZwg').value;
 
   if (!supplierName) {
     msg.innerHTML = '<div class="error">Supplier name is required</div>';
@@ -289,7 +292,7 @@ async function confirmApprove() {
     const res = await fetch('/api/orders/requests/' + id + '/approve', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() },
-      body: JSON.stringify({ supplierName, expectedDeliveryDate, approvalNotes }),
+      body: JSON.stringify({ supplierName, expectedDeliveryDate, approvalNotes, priceUsd, priceZwg }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);

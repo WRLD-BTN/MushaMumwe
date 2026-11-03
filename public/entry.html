@@ -56,11 +56,34 @@
         <label for="department">Select Department:</label>
         <select id="department" onchange="updateLoginButton()">
           <option value="">-- Choose Department --</option>
-          <option value="Nurses">Nurses / Ward Staff</option>
-          <option value="IT">IT Management</option>
-          <option value="Procurement">Procurement</option>
-          <option value="Stores">Stores / Inventory</option>
-          <option value="HR">Human Resources</option>
+          
+          <optgroup label="Clinical Services">
+            <option value="Medical">Medical (Doctors)</option>
+            <option value="Nurses">Nurses / Ward Staff</option>
+            <option value="Mortuary">Mortuary</option>
+            <option value="Radiography">Radiography (X-Ray, CT, MRI, ECG)</option>
+          </optgroup>
+
+          <optgroup label="Schools & Training">
+            <option value="School of Nursing">School of Nursing</option>
+            <option value="School of Midwifery">School of Midwifery</option>
+          </optgroup>
+
+          <optgroup label="Support & Logistics">
+            <option value="Catering">Catering / Kitchen</option>
+            <option value="Laundry">Laundry</option>
+            <option value="Security">Security</option>
+            <option value="Biomedical Equipment">Biomedical Equipment</option>
+          </optgroup>
+
+          <optgroup label="Administration & Finance">
+            <option value="Accounts">Accounts / Finance</option>
+            <option value="HR">Human Resources</option>
+            <option value="Health Information">Health Information / Records</option>
+            <option value="IT">IT Management</option>
+            <option value="Procurement">Procurement</option>
+            <option value="Stores">Stores / Inventory</option>
+          </optgroup>
         </select>
       </div>
       <div class="form-group">
@@ -251,6 +274,19 @@
         <label>Expected Delivery Date:</label>
         <input type="date" id="approveExpectedDate">
       </div>
+      
+      <!-- PRICE INPUTS FOR ACCOUNTS -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Price (USD):</label>
+          <input type="number" id="approvePriceUsd" step="0.01" placeholder="e.g. 150.00">
+        </div>
+        <div class="form-group">
+          <label>Price (ZWG):</label>
+          <input type="number" id="approvePriceZwg" step="0.01" placeholder="e.g. 2000.00">
+        </div>
+      </div>
+
       <div class="form-group">
         <label>Notes:</label>
         <textarea id="approveNotes" placeholder="Optional notes for this approval"></textarea>
@@ -488,12 +524,16 @@
           <select id="estTransferToDept">
             <option value="Medical">Medical / Doctors</option>
             <option value="Nurses">Nurses</option>
-            <option value="Pharmacy">Pharmacy</option>
-            <option value="Laboratory">Laboratory</option>
-            <option value="Admin">Admin</option>
-            <option value="Support">Support / Cleaning</option>
-            <option value="Maintenance">Maintenance</option>
+            <option value="Mortuary">Mortuary</option>
+            <option value="School of Nursing">School of Nursing</option>
+            <option value="School of Midwifery">School of Midwifery</option>
+            <option value="Biomedical Equipment">Biomedical Equipment</option>
+            <option value="Radiography">Radiography</option>
+            <option value="Catering">Catering</option>
             <option value="Security">Security</option>
+            <option value="Laundry">Laundry</option>
+            <option value="Health Information">Health Information</option>
+            <option value="Accounts">Accounts</option>
           </select>
         </div>
         <div class="form-group">

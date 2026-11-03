@@ -212,7 +212,7 @@ router.patch('/requests/:id/approve', requireAuth, async (req, res) => {
   if (req.user.department !== 'Procurement' && !isITOrSuperAdmin(req)) {
     return res.status(403).json({ error: 'Only Procurement can approve' });
   }
-  const { supplierName, expectedDeliveryDate, approvalNotes } = req.body;
+  const { supplierName, expectedDeliveryDate, approvalNotes, priceUsd, priceZwg } = req.body;
 
   try {
     const request = await prisma.orderRequest.findUnique({ where: { id: parseInt(req.params.id) } });
@@ -242,6 +242,8 @@ router.patch('/requests/:id/approve', requireAuth, async (req, res) => {
       supplierName,
       expectedDeliveryDate: expectedDeliveryDate ? new Date(expectedDeliveryDate) : null,
       approvalNotes: approvalNotes || null,
+      priceUsd: priceUsd ? parseFloat(priceUsd) : null,
+      priceZwg: priceZwg ? parseFloat(priceZwg) : null,
       status: 'ordered',
     };
 

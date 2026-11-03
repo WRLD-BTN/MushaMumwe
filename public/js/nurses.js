@@ -7,6 +7,9 @@ let dischargeSearchTimer = null;
 let selectedPatientIdForDischarge = null;
 let patientToPrint = null;
 
+// ============================================================
+// INIT
+// ============================================================
 async function init_nurses() {
   await loadWards();
   await runPatientSearch();
@@ -15,6 +18,75 @@ async function init_nurses() {
   registerNursesSocketHandlers();
   await checkFollowups();
   updatePatientFilters(); 
+}
+
+// ============================================================
+// FOLLOW-UP ALERTS
+// ============================================================
+async function checkFollowups() {
+  try {
+    const now = new Date();
+    const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    const res = await fetch('/api/patients/today-summary?from=' + today + '&to=' + today);
+    if (!res.ok) return;
+    const data = await res.json();
+    const count = data.followUpsDueToday || 0;
+    
+    const alertBox = document.getElementById('nurses-followupAlert');
+    const countSpan = document.getElementById('nurses-followupCount');
+    
+    if (alertBox && countSpan) {
+      if (count > 0) {
+        countSpan.textContent = count;
+        alertBox.style.setProperty('display', 'flex', 'important');
+      } else {
+        alertBox.style.setProperty('display', 'none', 'important');
+      }
+    }
+  } catch (e) { console.error('Failed to check follow-ups', e); }
+}
+
+function filterTodayFollowups() {
+  document.getElementById('nurses-patientSearch').value = '';
+  document.getElementById('nurses-filterWard').value = 'all';
+  document.getElementById('nurses-filterDiagnosis').value = '';
+  
+  const now = new Date();
+  const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  
+  const params = new URLSearchParams();
+  params.set('category', 'followups');
+  params.set('from', today);
+  params.set('to', today);
+
+  fetch('/api/patients/detail-public?' + params)
+    .then(r => r.json())
+    .then(rows => {
+      allPatients = rows.map(r => ({
+        id: r.id,
+        name: 'Case #' + r.id,
+        status: r.status,
+        ward: r.ward,
+        diagnosis: 'Follow-up due',
+        admissionDate: r.updatedAt
+      }));
+      renderPatientSelect();
+      
+      setTimeout(() => {
+        const card = document.getElementById('nurses-patientSearch').closest('.card');
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          card.style.transition = 'box-shadow 0.5s ease, border-color 0.5s ease';
+          card.style.boxShadow = '0 0 20px rgba(220, 38, 38, 0.4)';
+          card.style.borderColor = '#dc2626';
+          setTimeout(() => {
+            card.style.boxShadow = '';
+            card.style.borderColor = '';
+          }, 2000);
+        }
+      }, 100);
+    })
+    .catch(e => console.error('Failed to fetch followups:', e));
 }
 
 // ============================================================
@@ -55,6 +127,43 @@ async function submitNursesTender() {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Submit Request'; }
   }
+}
+
+async function loadMyTenders() {
+  const res = await fetch('/api/orders/my', { headers: { Authorization: 'Bearer ' + token() } });
+  if (!res.ok) return;
+  allTenders = await res.json();
+  renderTenderTracker();
+}
+
+function setTenderFilter(btn) {
+  const parent = btn.closest('.filter-bar');
+  if (parent) {
+    parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  }
+  btn.classList.add('active');
+  tenderFilter = btn.dataset.filter;
+  renderTenderTracker();
+}
+
+function filterTenders() { renderTenderTracker(); }
+
+function renderTenderTracker() {
+  const el = document.getElementById('nurses-tenderTrackerList');
+  const q = (document.getElementById('nurses-tenderSearch')?.value || '').toLowerCase();
+  let list = allTenders;
+  if (tenderFilter !== 'all') list = list.filter(t => t.status === tenderFilter);
+  if (q) list = list.filter(t => String(t.itemName).toLowerCase().includes(q));
+
+  if (list.length === 0) {
+    el.innerHTML = '<div class="empty-state">No Tenders</div>';
+    return;
+  }
+
+  el.innerHTML = list.map(t => {
+    const supplier = t.procurementOrder && t.procurementOrder.supplierName ? '<p><em>Supplier:</em> ' + escapeHtml(t.procurementOrder.supplierName) + '</p>' : '';
+    return '<div class="tender-card"><div class="tender-head"><div><strong>#' + t.id + ' - ' + escapeHtml(t.itemName) + ' x' + t.quantity + '</strong></div><div>' + statusBadge(t.status) + '</div></div><div class="tender-body"><p><em>Reason:</em> ' + escapeHtml(t.reason) + '</p>' + supplier + '</div></div>';
+  }).join('');
 }
 
 // ============================================================
@@ -134,6 +243,19 @@ async function runPatientSearch() {
   }
 }
 
+function clearPatientFilters() {
+  document.getElementById('nurses-patientSearch').value = '';
+  document.getElementById('nurses-filterStatus').value = 'all';
+  document.getElementById('nurses-filterWard').value = 'all';
+  document.getElementById('nurses-filterDiagnosis').value = '';
+  document.getElementById('nurses-filterFrom').value = '';
+  document.getElementById('nurses-filterTo').value = '';
+  updatePatientFilters();
+}
+
+// ============================================================
+// PATIENT TABLE RENDER
+// ============================================================
 function renderPatientSelect() {
   const countEl = document.getElementById('nurses-resultCount');
   if (countEl) countEl.textContent = '(' + allPatients.length + ' found)';
@@ -153,16 +275,15 @@ function renderPatientSelect() {
 
   tbody.innerHTML = allPatients.map(p => {
     const wardName = p.ward ? p.ward.name : '-';
-    const isSelected = sel && sel.value === String(p.id);
-    const rowStyle = isSelected ? 'background: #4f46e5; color: #ffffff;' : '';
-    const textStyle = isSelected ? 'style="color: #ffffff !important;"' : '';
+    const isDeceased = p.status === 'deceased';
+    const statusColor = isDeceased ? 'var(--text-muted)' : 'var(--primary)';
     
-    return '<tr style="cursor:pointer; ' + rowStyle + '" onclick="selectPatientRow(' + p.id + ', this)">' +
-      '<td ' + textStyle + '><strong ' + textStyle + '>' + escapeHtml(p.name) + '</strong></td>' +
-      '<td ' + textStyle + '>' + escapeHtml(wardName) + '</td>' +
-      '<td ' + textStyle + '>' + p.status.toUpperCase() + '</td>' +
-      '<td ' + textStyle + '>' + escapeHtml(p.diagnosis || '-') + '</td>' +
-      '<td><button class="pill-btn" onclick="event.stopPropagation(); selectPatientRow(' + p.id + ', this.closest(\'tr\'))" style="' + (isSelected ? 'background:#fff; color:#4f46e5;' : '') + '">Select</button></td>' +
+    return '<tr style="cursor:pointer;" onclick="selectPatientRow(' + p.id + ', this)">' +
+      '<td><strong>' + escapeHtml(p.name) + '</strong></td>' +
+      '<td>' + escapeHtml(wardName) + '</td>' +
+      '<td><span style="color: ' + statusColor + '; font-weight: 600;">' + p.status.toUpperCase() + '</span></td>' +
+      '<td>' + escapeHtml(p.diagnosis || '-') + '</td>' +
+      '<td><button class="pill-btn" onclick="event.stopPropagation(); selectPatientRow(' + p.id + ', this.closest(\'tr\'))">Select</button></td>' +
       '</tr>';
   }).join('');
 
@@ -199,16 +320,9 @@ window.selectPatientRow = function(id, rowEl) {
   }
 };
 
-function clearPatientFilters() {
-  document.getElementById('nurses-patientSearch').value = '';
-  document.getElementById('nurses-filterStatus').value = 'all';
-  document.getElementById('nurses-filterWard').value = 'all';
-  document.getElementById('nurses-filterDiagnosis').value = '';
-  document.getElementById('nurses-filterFrom').value = '';
-  document.getElementById('nurses-filterTo').value = '';
-  updatePatientFilters();
-}
-
+// ============================================================
+// REGISTER PATIENT
+// ============================================================
 async function registerPatient() {
   const name = document.getElementById('nurses-patientName').value.trim();
   const nationalId = document.getElementById('nurses-patientID').value.trim();
@@ -243,20 +357,42 @@ async function registerPatient() {
   }
 }
 
+// ============================================================
+// UPDATE PATIENT STATUS (Confirmation & Deceased Lock)
+// ============================================================
 async function changePatientStatus() {
   const patientId = document.getElementById('nurses-patientSelect').value;
-  const status = document.getElementById('nurses-newStatus').value;
+  const newStatus = document.getElementById('nurses-newStatus').value;
   const msg = document.getElementById('nurses-updateMessage');
 
   if (!patientId) {
-    msg.innerHTML = '<div class="error">Select a patient</div>';
+    msg.innerHTML = '<div class="error">Select a patient first</div>';
     return;
   }
 
-  const body = { status };
-  if (status === 'deceased') {
-    const cause = prompt('Cause of death:');
-    if (cause) body.causeOfDeath = cause;
+  const patient = allPatients.find(p => p.id === parseInt(patientId));
+  if (!patient) return;
+
+  // DECEASED LOGIC
+  if (patient.status === 'deceased') {
+    msg.innerHTML = '<div class="error">Action Blocked: Deceased patients cannot have their status changed.</div>';
+    return;
+  }
+
+  if (patient.status === newStatus) {
+    msg.innerHTML = '<div class="error">Patient is already in this status.</div>';
+    return;
+  }
+
+  // CONFIRMATION PROMPT
+  const confirmMsg = `Are you sure you want to change Patient #${patient.id} (${patient.name}) from ${patient.status.toUpperCase()} to ${newStatus.toUpperCase()}?`;
+  if (!confirm(confirmMsg)) return;
+
+  const body = { status: newStatus };
+  if (newStatus === 'deceased') {
+    const cause = prompt('Please enter the Cause of Death:');
+    if (cause === null) return;
+    if (cause.trim()) body.causeOfDeath = cause.trim();
   }
 
   try {
@@ -268,7 +404,9 @@ async function changePatientStatus() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
 
-    msg.innerHTML = '<div class="success">Status updated</div>';
+    msg.innerHTML = '<div class="success">Status updated successfully</div>';
+    setTimeout(() => { msg.innerHTML = ''; }, 3000);
+    
     await runPatientSearch();
   } catch (e) {
     msg.innerHTML = '<div class="error">' + e.message + '</div>';
@@ -286,6 +424,11 @@ function openDischargeModal() {
   }
   const p = allPatients.find(x => x.id === parseInt(patientId));
   if (!p) return;
+
+  if (p.status === 'deceased') {
+    alert('Deceased patients cannot be discharged.');
+    return;
+  }
 
   selectedPatientIdForDischarge = p.id;
   document.getElementById('dischargePatientName').textContent = p.name;
@@ -386,10 +529,13 @@ async function loadDischargeRecords() {
 
 function renderDischargeRecords() {
   const el = document.getElementById('nurses-dischargeList');
+  if (!el) return;
+
   if (allDischarges.length === 0) {
     el.innerHTML = '<div class="empty-state">No discharge records</div>';
     return;
   }
+
   el.innerHTML = '<table class="data-table"><thead><tr><th>#</th><th>Name</th><th>Ward</th><th>Final Diagnosis</th><th>Outcome</th><th>Discharged</th><th>Review</th><th>Action</th></tr></thead><tbody>' +
     allDischarges.map(d => {
       const wardName = d.ward ? d.ward.name : '-';
@@ -446,46 +592,6 @@ function printDischarges() {
   printContent(html);
 }
 
-// ============================================================
-// TENDERS
-// ============================================================
-async function loadMyTenders() {
-  const res = await fetch('/api/orders/my', { headers: { Authorization: 'Bearer ' + token() } });
-  if (!res.ok) return;
-  allTenders = await res.json();
-  renderTenderTracker();
-}
-
-function setTenderFilter(btn) {
-  const parent = btn.closest('.filter-bar');
-  if (parent) {
-    parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  }
-  btn.classList.add('active');
-  tenderFilter = btn.dataset.filter;
-  renderTenderTracker();
-}
-
-function filterTenders() { renderTenderTracker(); }
-
-function renderTenderTracker() {
-  const el = document.getElementById('nurses-tenderTrackerList');
-  const q = (document.getElementById('nurses-tenderSearch')?.value || '').toLowerCase();
-  let list = allTenders;
-  if (tenderFilter !== 'all') list = list.filter(t => t.status === tenderFilter);
-  if (q) list = list.filter(t => String(t.itemName).toLowerCase().includes(q));
-
-  if (list.length === 0) {
-    el.innerHTML = '<div class="empty-state">No Tenders</div>';
-    return;
-  }
-
-  el.innerHTML = list.map(t => {
-    const supplier = t.procurementOrder && t.procurementOrder.supplierName ? '<p><em>Supplier:</em> ' + escapeHtml(t.procurementOrder.supplierName) + '</p>' : '';
-    return '<div class="tender-card"><div class="tender-head"><div><strong>#' + t.id + ' - ' + escapeHtml(t.itemName) + ' x' + t.quantity + '</strong></div><div>' + statusBadge(t.status) + '</div></div><div class="tender-body"><p><em>Reason:</em> ' + escapeHtml(t.reason) + '</p>' + supplier + '</div></div>';
-  }).join('');
-}
-
 function printMyTenders() {
   if (allTenders.length === 0) { alert('No tenders to print.'); return; }
   const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
@@ -499,75 +605,6 @@ function printMyTenders() {
   });
   html += '</tbody></table><div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div></div>';
   printContent(html);
-}
-
-// ============================================================
-// FOLLOW-UP ALERTS
-// ============================================================
-async function checkFollowups() {
-  try {
-    const now = new Date();
-    const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-    const res = await fetch('/api/patients/today-summary?from=' + today + '&to=' + today);
-    if (!res.ok) return;
-    const data = await res.json();
-    const count = data.followUpsDueToday || 0;
-    
-    const alertBox = document.getElementById('nurses-followupAlert');
-    const countSpan = document.getElementById('nurses-followupCount');
-    
-    if (alertBox && countSpan) {
-      if (count > 0) {
-        countSpan.textContent = count;
-        alertBox.style.setProperty('display', 'flex', 'important');
-      } else {
-        alertBox.style.setProperty('display', 'none', 'important');
-      }
-    }
-  } catch (e) { console.error('Failed to check follow-ups', e); }
-}
-
-function filterTodayFollowups() {
-  document.getElementById('nurses-patientSearch').value = '';
-  document.getElementById('nurses-filterWard').value = 'all';
-  document.getElementById('nurses-filterDiagnosis').value = '';
-  
-  const now = new Date();
-  const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-  
-  const params = new URLSearchParams();
-  params.set('category', 'followups');
-  params.set('from', today);
-  params.set('to', today);
-
-  fetch('/api/patients/detail-public?' + params)
-    .then(r => r.json())
-    .then(rows => {
-      allPatients = rows.map(r => ({
-        id: r.id,
-        name: 'Case #' + r.id,
-        status: r.status,
-        ward: r.ward,
-        diagnosis: 'Follow-up due',
-        admissionDate: r.updatedAt
-      }));
-      renderPatientSelect();
-      
-      setTimeout(() => {
-        const card = document.getElementById('nurses-patientSearch').closest('.card');
-        if (card) {
-          card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          card.style.transition = 'box-shadow 0.5s ease, border-color 0.5s ease';
-          card.style.boxShadow = '0 0 20px rgba(220, 38, 38, 0.4)';
-          card.style.borderColor = '#dc2626';
-          setTimeout(() => {
-            card.style.boxShadow = '';
-            card.style.borderColor = '';
-          }, 2000);
-        }
-      }, 100);
-    })
-    .catch(e => console.error('Failed to fetch followups:', e));
 }
 
 // ============================================================
@@ -646,6 +683,9 @@ function buildDischargePrintHTML(p, paperSize, copies) {
   return singleCopy('');
 }
 
+// ============================================================
+// SOCKET HANDLERS
+// ============================================================
 function registerNursesSocketHandlers() {
   window.onPatientUpdated = () => { runPatientSearch(); checkFollowups(); };
   window.onPatientCreated = () => { runPatientSearch(); checkFollowups(); };
