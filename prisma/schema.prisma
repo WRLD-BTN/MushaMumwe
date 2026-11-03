@@ -167,6 +167,8 @@ model ProcurementOrder {
   expectedDate         DateTime?
   expectedDeliveryDate DateTime?
   approvalNotes        String?
+  priceUsd             Float?
+  priceZwg             Float?
   status               String       @default("ordered")
   itemReceives         ItemReceive[]
   createdAt            DateTime     @default(now())
@@ -331,4 +333,15 @@ model AuditLog {
   @@index([entity])
   @@index([action])
   @@index([department])
+}
+
+model CashFlow {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @default(now())
+  type      String   // "in" or "out"
+  currency  String   // "USD" or "ZWG"
+  amount    Float
+  source    String   // <-- ADDED THIS
+  reason    String
+  addedBy   String
 }

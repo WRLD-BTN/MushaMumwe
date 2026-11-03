@@ -14,12 +14,13 @@ let systemSettings = {
 function token() { return localStorage.getItem('token'); }
 
 const DEPT_MAP = {
-  Nurses:      { key: 'nurses', fragment: 'portals/nurses.html',      script: 'js/nurses.js',      url: '/nurses' },
-  IT:          { key: 'it',     fragment: 'portals/it.html',          script: 'js/it.js',          url: '/it' },
-  Procurement: { key: 'proc',   fragment: 'portals/procurement.html', script: 'js/procurement.js', url: '/procurement' },
-  Stores:      { key: 'stores', fragment: 'portals/stores.html',      script: 'js/stores.js',      url: '/stores' },
-  HR:          { key: 'hr',     fragment: 'portals/hr.html',          script: 'js/hr.js',          url: '/hr' },
-  SuperAdmin:  { key: 'super',  fragment: 'portals/superadmin.html',  script: 'js/superadmin.js',  url: '/admin' },
+  Nurses:      { key: 'nurses',   fragment: 'portals/nurses.html',      script: 'js/nurses.js',      url: '/nurses' },
+  IT:          { key: 'it',       fragment: 'portals/it.html',          script: 'js/it.js',          url: '/it' },
+  Procurement: { key: 'proc',     fragment: 'portals/procurement.html', script: 'js/procurement.js', url: '/procurement' },
+  Stores:      { key: 'stores',   fragment: 'portals/stores.html',      script: 'js/stores.js',      url: '/stores' },
+  HR:          { key: 'hr',       fragment: 'portals/hr.html',          script: 'js/hr.js',          url: '/hr' },
+  Accounts:    { key: 'accounts', fragment: 'portals/accounts.html',    script: 'js/accounts.js',    url: '/accounts' },
+  SuperAdmin:  { key: 'super',    fragment: 'portals/superadmin.html',  script: 'js/superadmin.js',  url: '/admin' },
 };
 
 const URL_TO_DEPT = {
@@ -31,6 +32,7 @@ const URL_TO_DEPT = {
   '/procurement': 'Procurement',
   '/stores': 'Stores',
   '/hr': 'HR',
+  '/accounts': 'Accounts',
   '/admin': 'SuperAdmin',
 };
 
@@ -97,7 +99,8 @@ async function login() {
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
 
-  const isSuperAdminAttempt = username === 'Admin';
+  // Allow login without a department selected ONLY if they are the Super Admin
+  const isSuperAdminAttempt = username.toLowerCase() === 'admin' || !dept;
 
   if (!username || !password) {
     return showLoginError('Username and password required');
@@ -129,8 +132,13 @@ async function login() {
 
 function updateLoginButton() {
   const dept = document.getElementById('department').value;
+  const username = document.getElementById('username').value.trim();
   const btn = document.getElementById('loginBtn');
-  if (btn) btn.disabled = !dept;
+  
+  // Enable button if a department is selected OR if the username is "Admin"
+  if (btn) {
+    btn.disabled = !dept && username.toLowerCase() !== 'admin';
+  }
 }
 
 function showLoginError(msg) {
@@ -142,23 +150,20 @@ function showLoginError(msg) {
 let _portalLoadInFlight = false;
 
 async function loadPortal(deptName) {
-  // 1. Prevent double loading
   if (_portalLoadInFlight) return;
   _portalLoadInFlight = true;
 
   const dept = DEPT_MAP[deptName];
   if (!dept) {
     _portalLoadInFlight = false;
-    return showLoginError('Unknown department');
+    return showLoginError('Unknown department. Portal not yet implemented.');
   }
 
   try {
-    // 2. Force the browser to get the LATEST html file (no cache)
     const htmlRes = await fetch(dept.fragment, { cache: 'no-store' });
     if (!htmlRes.ok) throw new Error('Could not load ' + dept.fragment);
     const html = await htmlRes.text();
     
-    // 3. Clear the container first, then inject
     const container = document.getElementById('portalContainer');
     container.innerHTML = ''; 
     container.innerHTML = html;
@@ -168,7 +173,6 @@ async function loadPortal(deptName) {
 
     document.getElementById('login').style.display = 'none';
 
-    // Show the user's name and buttons
     const userWrap = document.getElementById('headerUser');
     userWrap.style.display = 'inline-flex';
     document.getElementById('headerUserLabel').textContent =
@@ -199,7 +203,6 @@ async function loadPortal(deptName) {
   } catch (e) {
     showLoginError(e.message);
   } finally {
-    // 4. Unlock so you can log in again later
     _portalLoadInFlight = false;
   }
 }
@@ -508,29 +511,26 @@ async function installApp() {
     document.getElementById('installModal').classList.add('active');
   }
 }
+
 // ============================================================
 // GLOBAL AUTO-WRAPPER FOR TABLES (CAP AT 9 ROWS)
 // ============================================================
 function applySmartTableScroll() {
-  // Find all tables that aren't already wrapped
   document.querySelectorAll('table.data-table').forEach(table => {
     if (table.parentElement.classList.contains('smart-table-wrap')) return;
 
-    // Create the wrapper
     const wrapper = document.createElement('div');
     wrapper.className = 'smart-table-wrap';
-    wrapper.style.maxHeight = '300px'; // ~5 rows
+    wrapper.style.maxHeight = '300px';
     wrapper.style.overflowY = 'auto';
     wrapper.style.position = 'relative';
     wrapper.style.border = '1.5px solid var(--border-soft)';
     wrapper.style.borderRadius = 'var(--radius-sm)';
     wrapper.style.marginBottom = '12px';
 
-    // Insert the wrapper before the table and move the table into it
     table.parentNode.insertBefore(wrapper, table);
     wrapper.appendChild(table);
 
-    // Make the header sticky
     const thead = table.querySelector('thead');
     if (thead) {
       thead.style.position = 'sticky';
@@ -544,13 +544,10 @@ function applySmartTableScroll() {
   });
 }
 
-// Run this automatically whenever new data is loaded into the DOM
 const observer = new MutationObserver(() => {
   applySmartTableScroll();
 });
 observer.observe(document.body, { childList: true, subtree: true });
-
-// Helper for Super Admin CSV Exports
 
 // ============================================================
 // GLOBAL THEME TOGGLE
@@ -571,7 +568,6 @@ function toggleTheme() {
   applyTheme(next);
 }
 
-// Run immediately to prevent flash of wrong theme
 (function initTheme() {
   const saved = localStorage.getItem('mushamumwe_theme') || 'light';
   applyTheme(saved);

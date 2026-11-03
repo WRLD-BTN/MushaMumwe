@@ -296,7 +296,7 @@ const PROJECT_SAMPLES = [
   {
     name: 'Ward A painting and repairs',
     description: 'Repaint Ward A walls, replace 4 broken beds, and fix leaking ceiling in the west corner.',
-    department: 'Maintenance',
+    department: 'Biomedical Equipment',
     projectHead: 'Maintenance Supervisor',
     startOffsetDays: 35,
     targetOffsetDays: 5,
@@ -325,7 +325,7 @@ const PROJECT_SAMPLES = [
   {
     name: 'Pharmacy stock reconciliation',
     description: 'Full physical inventory count and reconciliation against system records for pharmacy.',
-    department: 'Pharmacy',
+    department: 'Stores',
     projectHead: 'Pharmacist Lisa',
     startOffsetDays: 30,
     targetOffsetDays: 0,
@@ -1375,6 +1375,40 @@ async function main() {
     }
     console.log('  Added today updates to ' + ongoingProjects.length + ' ongoing projects');
     console.log('  Created ' + projectCount + ' projects with ' + updateCount + ' phase updates');
+        // ============================================================
+    // Sample Cash Flow Data
+    // ============================================================
+    console.log('Creating sample cash flow data...');
+    const cashFlowSamples = [
+      { type: 'in', currency: 'USD', amount: 1500, source: 'OPD Fees', reason: 'Morning consultations' },
+      { type: 'in', currency: 'ZWG', amount: 20000, source: 'OPD Fees', reason: 'Morning consultations' },
+      { type: 'in', currency: 'USD', amount: 450, source: 'Pharmacy', reason: 'Drug sales' },
+      { type: 'out', currency: 'USD', amount: 200, source: 'Other', reason: 'Cleaning supplies' },
+      { type: 'in', currency: 'ZWG', amount: 5000, source: 'Radiology', reason: 'X-Ray scans' },
+      { type: 'in', currency: 'USD', amount: 10000, source: 'Grants / Donations', reason: 'Ministry of Health grant' },
+      { type: 'out', currency: 'ZWG', amount: 15000, source: 'Staff Payments', reason: 'Locum nurse payments' },
+      { type: 'in', currency: 'USD', amount: 300, source: 'Laboratory', reason: 'Blood tests' },
+    ];
+
+    for (let i = 0; i < 30; i++) {
+      const sample = cashFlowSamples[Math.floor(Math.random() * cashFlowSamples.length)];
+      const daysAgo = Math.floor(Math.random() * 30); // Spread over the last 30 days
+      const date = new Date();
+      date.setDate(date.getDate() - daysAgo);
+      
+      await prisma.cashFlow.create({
+        data: {
+          date,
+          type: sample.type,
+          currency: sample.currency,
+          amount: sample.amount * (0.8 + Math.random() * 0.4), // Slight variance
+          source: sample.source,
+          reason: sample.reason,
+          addedBy: 'Accountant',
+        }
+      });
+    }
+    console.log('  Created sample cash flow records');
 
     // Summary.
     console.log('');
