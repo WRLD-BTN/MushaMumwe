@@ -13,6 +13,9 @@ prisma/*.db-wal
 # Uploads
 public/uploads/
 
+# Backups
+backups_*/
+
 # Logs
 *.log
 npm-debug.log*
@@ -30,4 +33,3 @@ main
 mushamumwe@1.0.0
 node
 logs/
-backups_*/
