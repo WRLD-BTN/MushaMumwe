@@ -1,0 +1,65 @@
+<section id="superAdminHome" class="portal active" data-dept="SuperAdmin">
+  <h2>Super Admin Dashboard</h2>
+  <p class="muted">Configure the hospital portal, manage system settings, and audit every action.</p>
+
+  <div class="summary-strip" style="display:flex; flex-wrap:wrap; gap:16px; margin:16px 0;">
+    <div class="summary-tile" style="flex:1; min-width:180px;">
+      <div class="muted">Hospital Name</div>
+      <div id="saHospitalName" style="font-weight:600;">-</div>
+    </div>
+    <div class="summary-tile" style="flex:1; min-width:180px;">
+      <div class="muted">Subtitle</div>
+      <div id="saSubtitle" style="font-weight:600;">-</div>
+    </div>
+    <div class="summary-tile" style="flex:1; min-width:180px;">
+      <div class="muted">Contact Phone</div>
+      <div id="saPhone" style="font-weight:600;">-</div>
+    </div>
+    <div class="summary-tile" style="flex:1; min-width:180px;">
+      <div class="muted">Address</div>
+      <div id="saAddress" style="font-weight:600;">-</div>
+    </div>
+  </div>
+
+  <div class="action-row" style="display:flex; gap:8px; flex-wrap:wrap; margin:12px 0;">
+    <button class="pill-btn" onclick="openSettingsModal()">System Settings</button>
+    
+    <!-- Embedded logic prevents 'function not defined' cache errors -->
+    <button class="pill-btn" onclick="var el = document.getElementById('auditSection'); if (el) { el.style.display = 'block'; el.scrollIntoView({ behavior: 'smooth' }); if (typeof initAudit === 'function') initAudit(); }">Audit Log</button>
+    
+    <button class="pill-btn" onclick="openPortalAsSuperAdmin('Nurses')">Open Nurses Portal</button>
+    <button class="pill-btn" onclick="openPortalAsSuperAdmin('IT')">Open IT Portal</button>
+    <button class="pill-btn" onclick="openPortalAsSuperAdmin('Procurement')">Open Procurement Portal</button>
+    <button class="pill-btn" onclick="openPortalAsSuperAdmin('Stores')">Open Stores Portal</button>
+    <button class="pill-btn" onclick="openPortalAsSuperAdmin('HR')">Open HR Portal</button>
+    <!-- In the openPortalAsSuperAdmin buttons -->
+    <button class="pill-btn" onclick="openPortalAsSuperAdmin('Accounts')">Open Accounts Portal</button>
+  </div>
+
+  <div id="auditSection" style="display:none; margin-top:24px;">
+    <h3>Audit Log</h3>
+    <p class="muted">Every mutating action, who did it, and when.</p>
+
+    <div class="filter-bar" style="display:flex; flex-wrap:wrap; gap:8px; margin:12px 0;">
+      <input type="text" id="auditSearch" placeholder="Search summary, user, ID..." style="flex:1; min-width:200px;">
+      <select id="auditFilterAction"><option value="">All actions</option></select>
+      <select id="auditFilterEntity"><option value="">All entities</option></select>
+      <select id="auditFilterUser"><option value="">All users</option></select>
+      <select id="auditFilterDept"><option value="">All depts</option></select>
+      <input type="date" id="auditFrom">
+      <input type="date" id="auditTo">
+      <button class="pill-btn" onclick="loadAudit(1)">Filter</button>
+      <button class="ghost-btn" onclick="clearAuditFilters()">Clear</button>
+      <button class="ghost-btn" onclick="printAuditLog()">Print</button>
+    </div>
+
+    <div id="auditCount" class="muted" style="margin-bottom:8px;"></div>
+    
+    <!-- Max height limits it to 9 rows (~55px each) + header (~40px) = ~535px -->
+    <div id="auditTableWrap" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 4px;">
+      <!-- Table rendered here -->
+    </div>
+    
+    <div id="auditPager" style="margin-top:12px; display:flex; gap:8px; align-items:center;"></div>
+  </div>
+</section>

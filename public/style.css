@@ -111,28 +111,64 @@ body {
 
 label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; color: var(--text-strong); letter-spacing: -0.1px; }
 
-input[type="text"], input[type="password"], input[type="number"], input[type="date"], input[type="search"], textarea, select {
+input[type="text"], input[type="password"], input[type="number"], input[type="date"], input[type="search"], textarea {
   width: 100%; min-height: 42px; padding: 10px 14px;
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   font-size: 14px; font-family: inherit; background: var(--input-bg); color: var(--text);
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s; line-height: 1.4;
 }
 textarea { min-height: 84px; padding: 12px 14px; resize: vertical; font-family: inherit; }
-input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:disabled) { border-color: #94a3b8; }
-input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); background: var(--surface); }
-input:disabled, select:disabled, textarea:disabled { background: #f1f5f9; color: var(--text-faint); cursor: not-allowed; }
+input:hover:not(:disabled), textarea:hover:not(:disabled) { border-color: #94a3b8; }
+input:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); background: var(--surface); }
+input:disabled, textarea:disabled { background: #f1f5f9; color: var(--text-faint); cursor: not-allowed; }
 
+/* ============================================================
+   NATIVE SELECT DROPDOWN (Fixes double-click issue)
+   ============================================================ */
 select {
-  appearance: none; -webkit-appearance: none; -moz-appearance: none;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23475569' d='M6 8L0 .6h12z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 14px center; background-size: 10px 6px;
-  padding-right: 40px; cursor: pointer;
+  appearance: auto;
+  -webkit-appearance: auto;
+  -moz-appearance: auto;
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: inherit;
+  background-color: var(--input-bg);
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  line-height: 1.4;
+  cursor: pointer;
 }
-select:focus { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%234f46e5' d='M6 8L0 .6h12z'/%3E%3C/svg%3E"); }
-select::-ms-expand { display: none; }
-[data-theme="dark"] select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238D97AF' d='M6 8L0 .6h12z'/%3E%3C/svg%3E"); }
-[data-theme="dark"] select:focus { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23818cf8' d='M6 8L0 .6h12z'/%3E%3C/svg%3E"); }
-select[size] { appearance: auto; -webkit-appearance: auto; background-image: none; padding-right: 14px; height: auto; }
+
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+select:hover:not(:disabled) {
+  border-color: #94a3b8;
+}
+
+select:disabled {
+  background: #f1f5f9;
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+[data-theme="dark"] select {
+  background-color: #1e293b;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+select option {
+  background-color: var(--surface);
+  color: var(--text);
+}
 
 button, .primary-btn, .ghost-btn, .pill-btn, .logout-btn { font-family: inherit; cursor: pointer; font-weight: 600; font-size: 13px; border-radius: var(--radius-sm); transition: all 0.15s ease; border: none; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -570,169 +606,6 @@ body.live-board { background: var(--board-bg); color: var(--board-text); min-hei
     padding: 24px 16px 0 16px;
   }
 }
-/* ============================================================
-   FIX UGLY DROPDOWN BACKGROUND (Repeating Triangles)
-   ============================================================ */
-select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-color: #ffffff;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 10px;
-  padding-right: 35px !important;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
-}
-
-[data-theme="dark"] select {
-  background-color: #1e293b;
-  color: #f8fafc;
-  border-color: #334155;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23cbd5e1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-}
-/* ============================================================
-   FIX UGLY DROPDOWN BACKGROUND (Repeating Triangles)
-   ============================================================ */
-select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-color: #ffffff;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 10px;
-  padding-right: 35px !important;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
-}
-
-[data-theme="dark"] select {
-  background-color: #1e293b;
-  color: #f8fafc;
-  border-color: #334155;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23cbd5e1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-}
-
-/* ============================================================
-   HARD FIX FOR NATIVE SELECT / OPTION ELEMENTS
-   ============================================================ */
-select, option {
-  background-color: #ffffff !important;
-  color: #333333 !important;
-}
-
-/* Force the select box to only show one clean arrow */
-select {
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  -moz-appearance: none !important;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E") !important;
-  background-repeat: no-repeat !important;
-  background-position: right 12px center !important;
-  background-size: 10px !important;
-  padding-right: 35px !important;
-  border: 1px solid #cbd5e1 !important;
-  border-radius: 4px !important;
-}
-
-/* Dark Mode Override */
-[data-theme="dark"] select, 
-[data-theme="dark"] option {
-  background-color: #1e293b !important;
-  color: #f8fafc !important;
-}
-
-[data-theme="dark"] select {
-  border-color: #334155 !important;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23cbd5e1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E") !important;
-}
-
-/* ============================================================
-   SMART SCROLLING TABLES (CAP AT 9 ROWS)
-   ============================================================ */
-.table-wrap, 
-.roster-scroll, 
-.disc-case-scroll,
-#patientsTableWrap,
-#it-userList,
-#proc-tenderHistoryList,
-#stores-inventoryList,
-#hr-empRosterTable,
-#discCaseList,
-#estMovementList,
-#auditTableWrap {
-  max-height: 300px !important; /* Caps the height at ~9 rows */
-  overflow-y: auto !important;
-  position: relative;
-}
-
-/* Make table headers stick to the top while scrolling */
-.table-wrap table thead th,
-.roster-scroll table thead th,
-.disc-case-scroll table thead th,
-#patientsTableWrap table thead th,
-#it-userList table thead th,
-#proc-tenderHistoryList table thead th,
-#stores-inventoryList table thead th,
-#hr-empRosterTable table thead th,
-#discCaseList table thead th,
-#estMovementList table thead th,
-#auditTableWrap table thead th {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 10 !important;
-  background: var(--surface-alt) !important;
-  box-shadow: 0 1px 0 var(--border) !important;
-}
-
-/* Custom scrollbar for a cleaner look */
-.table-wrap::-webkit-scrollbar,
-.roster-scroll::-webkit-scrollbar,
-.disc-case-scroll::-webkit-scrollbar,
-#patientsTableWrap::-webkit-scrollbar,
-#it-userList::-webkit-scrollbar,
-#proc-tenderHistoryList::-webkit-scrollbar,
-#stores-inventoryList::-webkit-scrollbar,
-#hr-empRosterTable::-webkit-scrollbar,
-#discCaseList::-webkit-scrollbar,
-#estMovementList::-webkit-scrollbar,
-#auditTableWrap::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-.table-wrap::-webkit-scrollbar-thumb,
-.roster-scroll::-webkit-scrollbar-thumb,
-.disc-case-scroll::-webkit-scrollbar-thumb,
-#patientsTableWrap::-webkit-scrollbar-thumb,
-#it-userList::-webkit-scrollbar-thumb,
-#proc-tenderHistoryList::-webkit-scrollbar-thumb,
-#stores-inventoryList::-webkit-scrollbar-thumb,
-#hr-empRosterTable::-webkit-scrollbar-thumb,
-#discCaseList::-webkit-scrollbar-thumb,
-#estMovementList::-webkit-scrollbar-thumb,
-#auditTableWrap::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
-
-@keyframes goldPulse {
-  0% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4); border-color: #d97706; }
-  70% { box-shadow: 0 0 0 10px rgba(217, 119, 6, 0); border-color: #d97706; }
-  100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); border-color: #cbd5e1; }
-}
-.launcher-btn {
-  animation: goldPulse 2s infinite;
-  border: 1.5px solid #d97706 !important;
-}
-.launcher-btn:hover {
-  animation: none;
-  box-shadow: 0 0 15px rgba(217, 119, 6, 0.5) !important;
-  border-color: #b45309 !important;
-}
 
 /* ============================================================
    COMPACT PRINT OVERRIDES (Fits on 1 Page)
@@ -767,75 +640,6 @@ select {
   .print-table th { padding: 3px 4px !important; font-size: 8px !important; }
   .print-table td { padding: 3px 4px !important; }
 }
-
-/* ============================================================
-   COMPACT PRINT OVERRIDES (Fits on 1 Page)
-   ============================================================ */
-@media print {
-  .print-page { 
-    padding: 0 !important; 
-    margin: 0 !important;
-    font-size: 10px !important;
-  }
-  .print-header { 
-    padding-bottom: 5px !important; 
-    margin-bottom: 10px !important; 
-    border-bottom: 1px solid #000 !important;
-  }
-  .print-header h1 { font-size: 16px !important; letter-spacing: 1px !important; }
-  .print-header h2 { font-size: 12px !important; margin-top: 2px !important; }
-  .print-contact { font-size: 9px !important; margin-bottom: 8px !important; }
-  .print-meta { 
-    font-size: 9px !important; 
-    gap: 2px 10px !important; 
-    margin-bottom: 10px !important; 
-  }
-  .print-section { margin-bottom: 8px !important; }
-  .print-section h3 { font-size: 10px !important; padding-bottom: 2px !important; margin-bottom: 4px !important; }
-  .print-section p { font-size: 9px !important; margin-bottom: 2px !important; }
-  .print-signatures { margin-top: 15px !important; gap: 20px !important; }
-  .print-signatures span { font-size: 9px !important; }
-  .sig-line { height: 20px !important; }
-  .print-footer { font-size: 8px !important; margin-top: 10px !important; padding-top: 4px !important; }
-  .print-table { font-size: 9px !important; margin-bottom: 10px !important; }
-  .print-table th { padding: 3px 4px !important; font-size: 8px !important; }
-  .print-table td { padding: 3px 4px !important; }
-}
-
-/* ============================================================
-   COMPACT PRINT OVERRIDES (Fits on 1 Page)
-   ============================================================ */
-@media print {
-  .print-page { 
-    padding: 0 !important; 
-    margin: 0 !important;
-    font-size: 10px !important;
-  }
-  .print-header { 
-    padding-bottom: 5px !important; 
-    margin-bottom: 10px !important; 
-    border-bottom: 1px solid #000 !important;
-  }
-  .print-header h1 { font-size: 16px !important; letter-spacing: 1px !important; }
-  .print-header h2 { font-size: 12px !important; margin-top: 2px !important; }
-  .print-contact { font-size: 9px !important; margin-bottom: 8px !important; }
-  .print-meta { 
-    font-size: 9px !important; 
-    gap: 2px 10px !important; 
-    margin-bottom: 10px !important; 
-  }
-  .print-section { margin-bottom: 8px !important; }
-  .print-section h3 { font-size: 10px !important; padding-bottom: 2px !important; margin-bottom: 4px !important; }
-  .print-section p { font-size: 9px !important; margin-bottom: 2px !important; }
-  .print-signatures { margin-top: 15px !important; gap: 20px !important; }
-  .print-signatures span { font-size: 9px !important; }
-  .sig-line { height: 20px !important; }
-  .print-footer { font-size: 8px !important; margin-top: 10px !important; padding-top: 4px !important; }
-  .print-table { font-size: 9px !important; margin-bottom: 10px !important; }
-  .print-table th { padding: 3px 4px !important; font-size: 8px !important; }
-  .print-table td { padding: 3px 4px !important; }
-}
-
 
 /* ============================================================
    PRINT FIX: every scroll container opens up for print

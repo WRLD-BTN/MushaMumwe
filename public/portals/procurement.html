@@ -21,75 +21,87 @@
     </div>
   </div>
 
-  <div class="proc-tab-panel active">
+  <div class="dept-tabs">
+    <button class="dept-tab active" data-tab="active" onclick="switchProcTab(this)">Active Board</button>
+    <button class="dept-tab" data-tab="history" onclick="switchProcTab(this)">Tender History</button>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- ACTIVE BOARD TAB                                              -->
+  <!-- ============================================================ -->
+  <div id="procTabActive" class="proc-tab-panel active">
+    <div class="card">
+      <div class="filter-bar" id="proc-activeFilters" style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;">
+        <button class="filter-btn active" data-filter="pending" onclick="setProcActiveFilter(this)">Pending</button>
+        <button class="filter-btn" data-filter="awaiting_quotation" onclick="setProcActiveFilter(this)">Awaiting Quote</button>
+        <button class="filter-btn" data-filter="ordered" onclick="setProcActiveFilter(this)">Ordered</button>
+        <button class="filter-btn" data-filter="received" onclick="setProcActiveFilter(this)">Received</button>
+        <button class="filter-btn" data-filter="all" onclick="setProcActiveFilter(this)">All</button>
+        <input type="text" id="proc-pendingSearch" placeholder="Search..." onkeyup="filterProcurementOrders()" style="margin-left:auto;">
+      </div>
+      <div id="proc-pendingOrdersList"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TENDER HISTORY TAB                                           -->
+  <!-- ============================================================ -->
+  <div id="procTabHistory" class="proc-tab-panel" style="display:none;">
     <div class="card">
       <div class="card-head">
-        <h3>All Tenders</h3>
+        <h3>Tender History - All Departments</h3>
         <div class="card-head-actions">
-          <button class="pill-btn" onclick="printTenderHistory()">Print All</button>
+          <button class="pill-btn" onclick="printTenderHistory()">Print History</button>
         </div>
       </div>
 
-      <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Status</div>
-      <div class="tender-filters" id="proc-activeFilters" style="margin-bottom:14px;">
-        <button class="filter-btn active" data-filter="all"                onclick="setProcActiveFilter(this)">All</button>
-        <button class="filter-btn"        data-filter="pending"            onclick="setProcActiveFilter(this)">Pending</button>
-        <button class="filter-btn"        data-filter="awaiting_quotation" onclick="setProcActiveFilter(this)">Awaiting Quote</button>
-        <button class="filter-btn"        data-filter="ordered"            onclick="setProcActiveFilter(this)">Ordered</button>
-        <button class="filter-btn"        data-filter="received"           onclick="setProcActiveFilter(this)">Received</button>
-        <button class="filter-btn"        data-filter="completed"          onclick="setProcActiveFilter(this)">Completed</button>
-      </div>
-
-      <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Department</div>
-      <div class="tender-filters" id="proc-deptFilters" style="margin-bottom:14px;">
-        <button class="filter-btn active" data-dept="all"                 onclick="setProcDeptFilter(this)">All Depts</button>
-        <button class="filter-btn"        data-dept="Medical"             onclick="setProcDeptFilter(this)">Medical</button>
-        <button class="filter-btn"        data-dept="Nurses"              onclick="setProcDeptFilter(this)">Nurses</button>
-        <button class="filter-btn"        data-dept="Mortuary"            onclick="setProcDeptFilter(this)">Mortuary</button>
-        <button class="filter-btn"        data-dept="School of Nursing"   onclick="setProcDeptFilter(this)">School of Nursing</button>
-        <button class="filter-btn"        data-dept="School of Midwifery" onclick="setProcDeptFilter(this)">School of Midwifery</button>
-        <button class="filter-btn"        data-dept="Biomedical Equipment"onclick="setProcDeptFilter(this)">Biomedical Equipment</button>
-        <button class="filter-btn"        data-dept="Radiography"         onclick="setProcDeptFilter(this)">Radiography</button>
-        <button class="filter-btn"        data-dept="Catering"            onclick="setProcDeptFilter(this)">Catering</button>
-        <button class="filter-btn"        data-dept="Security"            onclick="setProcDeptFilter(this)">Security</button>
-        <button class="filter-btn"        data-dept="Laundry"             onclick="setProcDeptFilter(this)">Laundry</button>
-        <button class="filter-btn"        data-dept="Health Information"  onclick="setProcDeptFilter(this)">Health Information</button>
-        <button class="filter-btn"        data-dept="Accounts"            onclick="setProcDeptFilter(this)">Accounts</button>
-        <button class="filter-btn"        data-dept="HR"                  onclick="setProcDeptFilter(this)">HR</button>
-        <button class="filter-btn"        data-dept="Stores"              onclick="setProcDeptFilter(this)">Stores</button>
-        <button class="filter-btn"        data-dept="Procurement"         onclick="setProcDeptFilter(this)">Procurement</button>
-        <button class="filter-btn"        data-dept="IT"                  onclick="setProcDeptFilter(this)">IT</button>
+      <div class="disc-summary" style="margin-bottom:16px;">
+        <div class="disc-summary-item">
+          <div class="disc-summary-num" id="hTotal">0</div>
+          <div class="disc-summary-lbl">Total</div>
+        </div>
+        <div class="disc-summary-item">
+          <div class="disc-summary-num" id="hPending">0</div>
+          <div class="disc-summary-lbl">Pending</div>
+        </div>
+        <div class="disc-summary-item">
+          <div class="disc-summary-num" id="hApproved">0</div>
+          <div class="disc-summary-lbl">Ordered</div>
+        </div>
+        <div class="disc-summary-item">
+          <div class="disc-summary-num" id="hRejected">0</div>
+          <div class="disc-summary-lbl">Awaiting Quote</div>
+        </div>
+        <div class="disc-summary-item">
+          <div class="disc-summary-num" id="hReceived">0</div>
+          <div class="disc-summary-lbl">Received</div>
+        </div>
+        <div class="disc-summary-item">
+          <div class="disc-summary-num" id="hRecent">0</div>
+          <div class="disc-summary-lbl">Last 30 Days</div>
+        </div>
       </div>
 
       <div class="filter-bar" style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;align-items:flex-end;">
         <div class="form-group" style="margin:0;min-width:220px;flex:1;">
           <label>Search</label>
-          <input type="text" id="proc-pendingSearch" placeholder="Item, requester, reason, ID..." onkeyup="filterProcurementOrders()">
+          <input type="text" id="histSearch" placeholder="Item, requester, reason, ID..." onkeyup="debouncedHistorySearch()">
         </div>
-        <div class="form-group" style="margin:0;min-width:150px;">
-          <label>From Date</label>
-          <input type="date" id="proc-filterFrom" onchange="filterProcurementOrders()">
+        <div class="form-group" style="margin:0;min-width:160px;">
+          <label>Status</label>
+          <select id="histStatus" onchange="loadTenderHistory()">
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="awaiting_quotation">Awaiting Quote</option>
+            <option value="ordered">Ordered</option>
+            <option value="received">Received</option>
+            <option value="completed">Completed</option>
+          </select>
         </div>
-        <div class="form-group" style="margin:0;min-width:150px;">
-          <label>To Date</label>
-          <input type="date" id="proc-filterTo" onchange="filterProcurementOrders()">
-        </div>
-        <div class="form-group" style="margin:0;">
-          <button class="ghost-btn" onclick="clearProcFilters()">Clear All</button>
-        </div>
-      </div>
-
-      <div class="muted" id="proc-resultCount" style="margin-bottom:8px;"></div>
-      <div id="proc-pendingOrdersList"></div>
-    </div>
-
-    <div class="card">
-      <h3>New Tender Request</h3>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Originator Department:</label>
-          <select id="proc-reqOriginator">
-            <option value="Procurement">Procurement</option>
+        <div class="form-group" style="margin:0;min-width:160px;">
+          <label>Department</label>
+          <select id="histDept" onchange="loadTenderHistory()">
+            <option value="all">All Departments</option>
             <option value="Medical">Medical</option>
             <option value="Nurses">Nurses</option>
             <option value="Mortuary">Mortuary</option>
@@ -102,46 +114,27 @@
             <option value="Laundry">Laundry</option>
             <option value="Health Information">Health Information</option>
             <option value="Accounts">Accounts</option>
-            <option value="HR">HR</option>
-            <option value="Stores">Stores</option>
             <option value="IT">IT</option>
+            <option value="HR">HR</option>
+            <option value="Procurement">Procurement</option>
+            <option value="Stores">Stores</option>
           </select>
         </div>
-        <div class="form-group">
-          <label>Item Name: <span class="req">*</span></label>
-          <input type="text" id="proc-reqItemName">
+        <div class="form-group" style="margin:0;min-width:140px;">
+          <label>From</label>
+          <input type="date" id="histFrom" onchange="loadTenderHistory()">
         </div>
-        <div class="form-group">
-          <label>Quantity: <span class="req">*</span></label>
-          <input type="number" id="proc-reqQuantity" min="1">
+        <div class="form-group" style="margin:0;min-width:140px;">
+          <label>To</label>
+          <input type="date" id="histTo" onchange="loadTenderHistory()">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <button class="ghost-btn" onclick="clearHistoryFilters()">Clear</button>
         </div>
       </div>
-      <div class="form-group">
-        <label>Reason: <span class="req">*</span></label>
-        <textarea id="proc-reqReason" rows="2"></textarea>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <button class="primary-btn" onclick="submitTenderRequest('proc')">Submit Request</button>
-        <div id="proc-requestMessage" style="font-weight:600;font-size:13px;"></div>
-      </div>
-    </div>
 
-    <div class="card">
-      <div class="card-head">
-        <h3>My Department Tenders <span class="lock-badge">LOCKED TO YOUR DEPARTMENT</span></h3>
-        <div class="card-head-actions">
-          <input type="text" class="search-input" id="proc-tenderSearch" placeholder="Search tenders..." oninput="filterTenders()">
-          <button class="pill-btn" onclick="printMyTenders()">Print</button>
-        </div>
-      </div>
-      <div class="tender-filters" id="proc-tenderFilters">
-        <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this)">All</button>
-        <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this)">Pending</button>
-        <button class="filter-btn" data-filter="awaiting_quotation" onclick="setTenderFilter(this)">Awaiting Quotation</button>
-        <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this)">Ordered</button>
-        <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this)">Received</button>
-      </div>
-      <div id="proc-tenderTrackerList" class="tender-tracker"></div>
+      <div class="muted" id="histCount" style="margin-bottom:8px;"></div>
+      <div id="proc-tenderHistoryList" class="tender-tracker" style="max-height: 400px; overflow-y: auto;"></div>
     </div>
   </div>
 </div>

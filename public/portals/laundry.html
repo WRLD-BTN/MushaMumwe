@@ -1,0 +1,87 @@
+<div class="portal active" data-dept="Laundry">
+  <h2>Laundry Department</h2>
+  <p class="muted">Track linen sent to wards and received back for washing.</p>
+
+  <!-- SUMMARY STRIP -->
+  <div class="disc-summary" style="margin-bottom: 20px;">
+    <div class="disc-summary-item" style="border-bottom: 3px solid var(--primary);">
+      <div class="disc-summary-num" id="lau-sentToday" style="color: var(--primary);">0</div>
+      <div class="disc-summary-lbl">Sent Today</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid var(--warning);">
+      <div class="disc-summary-num" id="lau-receivedToday" style="color: var(--warning);">0</div>
+      <div class="disc-summary-lbl">Received Today</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid var(--error);">
+      <div class="disc-summary-num" id="lau-damagedToday" style="color: var(--error);">0</div>
+      <div class="disc-summary-lbl">Damaged Today</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid var(--success);">
+      <div class="disc-summary-num" id="lau-netBalance" style="color: var(--success);">0</div>
+      <div class="disc-summary-lbl">Net Balance</div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 20px; align-items: start;">
+    
+    <!-- LOG MOVEMENT -->
+    <div class="card" style="margin: 0; background: var(--surface-alt);">
+      <div class="card-head">
+        <h3>Log Linen Movement</h3>
+      </div>
+      <p class="muted" style="margin-bottom: 16px;">Record a batch of linen sent out or received back.</p>
+
+      <!-- TYPE -->
+      <div class="form-group">
+        <label>Movement Type: <span class="req">*</span></label>
+        <select id="lau-type">
+          <option value="sent">Sent to Ward (Clean)</option>
+          <option value="received">Received from Ward (Dirty)</option>
+        </select>
+      </div>
+
+      <!-- WARD -->
+      <div class="form-group" style="position: relative;">
+        <label>Ward: <span class="req">*</span></label>
+        <input type="text" id="lau-wardSearch" placeholder="Type ward name..." oninput="searchLauWards()" onfocus="showLauWardResults()" autocomplete="off">
+        <div id="lau-wardResults" style="display: none; position: absolute; z-index: 100; top: 100%; left: 0; right: 0; background: var(--surface); border: 1.5px solid var(--border); border-top: none; border-radius: 0 0 var(--radius-sm) var(--radius-sm); max-height: 200px; overflow-y: auto; box-shadow: var(--shadow);"></div>
+        <div id="lau-selectedWard" style="display: none; margin-top: 8px; padding: 8px 12px; background: var(--success-bg); border: 1.5px solid #bbf7d0; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; color: var(--success);"></div>
+      </div>
+
+      <!-- ITEMS BATCH BUILDER -->
+      <div class="form-group" style="margin-top: 20px;">
+        <label>Linen Items: <span class="req">*</span></label>
+        <div id="lau-itemBatchList" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;"></div>
+        <button class="ghost-btn" onclick="addLinenItemRow()" style="width: 100%;">+ Add Another Linen Item</button>
+      </div>
+
+      <div class="form-group">
+        <label>Batch Notes:</label>
+        <textarea id="lau-notes" rows="2" placeholder="e.g. Some items torn"></textarea>
+      </div>
+      <button class="primary-btn block" onclick="submitLinenBatch()">Log Movement</button>
+      <div id="lau-message" style="margin-top: 10px; font-weight: 600; font-size: 13px;"></div>
+    </div>
+
+    <!-- TODAY'S MOVEMENTS -->
+    <div class="card" style="margin: 0;">
+      <div class="card-head">
+        <h3>Today's Movements</h3>
+        <div class="card-head-actions">
+          <input type="text" class="search-input" id="lau-search" placeholder="Search ward, item..." oninput="renderLauMovements()">
+          <button class="pill-btn" onclick="printLauMovements()">Print</button>
+        </div>
+      </div>
+
+      <div class="tender-filters" id="lau-filters" style="margin-bottom: 12px;">
+        <button class="filter-btn active" data-filter="all" onclick="setLauFilter(this)">All</button>
+        <button class="filter-btn" data-filter="sent" onclick="setLauFilter(this)">Sent</button>
+        <button class="filter-btn" data-filter="received" onclick="setLauFilter(this)">Received</button>
+        <button class="filter-btn" data-filter="damaged" onclick="setLauFilter(this)">Damaged</button>
+      </div>
+
+      <!-- 5 ROW SCROLLABLE TABLE -->
+      <div id="lau-movementList" class="table-wrap roster-scroll" style="max-height: 400px; overflow-y: auto;"></div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,77 @@
+<div class="portal active" data-dept="Catering">
+  <h2>Catering Department</h2>
+  <p class="muted">Log meal deliveries, manage ward counts, and track kitchen output.</p>
+
+  <!-- SUMMARY STRIP -->
+  <div class="disc-summary" style="margin-bottom: 20px;">
+    <div class="disc-summary-item" style="border-bottom: 3px solid var(--primary);">
+      <div class="disc-summary-num" id="cat-totalMeals" style="color: var(--primary);">0</div>
+      <div class="disc-summary-lbl">Total Plates Today</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid #d97706;">
+      <div class="disc-summary-num" id="cat-breakfastCount" style="color: #d97706;">0</div>
+      <div class="disc-summary-lbl">Breakfast</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid #16a34a;">
+      <div class="disc-summary-num" id="cat-lunchCount" style="color: #16a34a;">0</div>
+      <div class="disc-summary-lbl">Lunch</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid #4f46e5;">
+      <div class="disc-summary-num" id="cat-dinnerCount" style="color: #4f46e5;">0</div>
+      <div class="disc-summary-lbl">Dinner</div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns: 1.2fr 1fr; gap: 20px; margin-bottom: 20px; align-items: start;">
+    
+    <!-- LOG DELIVERY -->
+    <div class="card" style="margin: 0; background: var(--surface-alt);">
+      <div class="card-head">
+        <h3>Log Delivery Batch</h3>
+      </div>
+      <p class="muted" style="margin-bottom: 16px;">Select a ward, then add all meals going there in one batch.</p>
+
+      <!-- WARD SEARCH -->
+      <div class="form-group" style="position: relative;">
+        <label>Ward / Department: <span class="req">*</span></label>
+        <input type="text" id="cat-wardSearch" placeholder="Type ward name..." oninput="searchWards()" onfocus="showWardResults()" onblur="onWardBlur()" autocomplete="off">
+        <div id="cat-wardResults" style="display: none; position: absolute; z-index: 100; top: 100%; left: 0; right: 0; background: var(--surface); border: 1.5px solid var(--border); border-top: none; border-radius: 0 0 var(--radius-sm) var(--radius-sm); max-height: 200px; overflow-y: auto; box-shadow: var(--shadow);"></div>
+        <div id="cat-selectedWard" style="display: none; margin-top: 8px; padding: 8px 12px; background: var(--success-bg); border: 1.5px solid #bbf7d0; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; color: var(--success);"></div>
+      </div>
+
+      <!-- MEAL BATCH BUILDER -->
+      <div class="form-group" style="margin-top: 20px;">
+        <label>Meals in this batch: <span class="req">*</span></label>
+        <div id="cat-mealBatchList" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;"></div>
+        <button class="ghost-btn" onclick="addMealRow()" style="width: 100%;">+ Add Another Meal</button>
+      </div>
+
+      <div class="form-group">
+        <label>Batch Notes:</label>
+        <textarea id="cat-notes" rows="2" placeholder="e.g. Extra portions for matron"></textarea>
+      </div>
+      <button class="primary-btn block" onclick="submitBatchDelivery()">Submit Delivery Batch</button>
+      <div id="cat-deliveryMessage" style="margin-top: 10px; font-weight: 600; font-size: 13px;"></div>
+    </div>
+
+    <!-- TODAY'S BATCHES -->
+    <div class="card" style="margin: 0;">
+      <div class="card-head">
+        <h3>Today's Batches</h3>
+        <div class="card-head-actions">
+          <button class="pill-btn" onclick="printDeliverySlips()">Print Slips</button>
+          <button class="pill-btn" onclick="printProductionSheet()">Print Production</button>
+        </div>
+      </div>
+
+      <div class="tender-filters" id="cat-batchFilters" style="margin-bottom: 12px;">
+        <button class="filter-btn active" data-filter="all" onclick="setBatchFilter(this)">All</button>
+        <button class="filter-btn" data-filter="prepared" onclick="setBatchFilter(this)">Prepared</button>
+        <button class="filter-btn" data-filter="delivered" onclick="setBatchFilter(this)">Delivered</button>
+      </div>
+
+      <!-- 5 ROW SCROLLABLE TABLE -->
+      <div id="cat-batchList" class="table-wrap roster-scroll" style="max-height: 400px; overflow-y: auto;"></div>
+    </div>
+  </div>
+</div>

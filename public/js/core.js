@@ -14,6 +14,12 @@ let systemSettings = {
 function token() { return localStorage.getItem('token'); }
 
 const DEPT_MAP = {
+  Mortuary: { key: 'mortuary', fragment: 'portals/mortuary.html', script: 'js/mortuary.js', url: '/mortuary' },
+  Laundry: { key: 'laundry', fragment: 'portals/laundry.html', script: 'js/laundry.js', url: '/laundry' },
+  Catering: { key: 'catering', fragment: 'portals/catering.html', script: 'js/catering.js', url: '/catering' },
+  Radiography: { key: 'radiography', fragment: 'portals/radiography.html', script: 'js/radiography.js', url: '/radiography' },
+  Security:    { key: 'security', fragment: 'portals/security.html',    script: 'js/security.js',    url: '/security' },
+  Medical: { key: 'medical', fragment: 'portals/medical.html', script: 'js/medical.js', url: '/medical' },
   Nurses:      { key: 'nurses',   fragment: 'portals/nurses.html',      script: 'js/nurses.js',      url: '/nurses' },
   IT:          { key: 'it',       fragment: 'portals/it.html',          script: 'js/it.js',          url: '/it' },
   Procurement: { key: 'proc',     fragment: 'portals/procurement.html', script: 'js/procurement.js', url: '/procurement' },
@@ -27,6 +33,12 @@ const URL_TO_DEPT = {
   '/dashboard': null,
   '/portal': null,
   '/login': null,
+  '/mortuary': 'Mortuary',
+  '/laundry': 'Laundry',
+  '/catering': 'Catering',
+  '/radiography': 'Radiography',
+  '/security': 'Security',
+  '/medical': 'Medical',
   '/nurses': 'Nurses',
   '/it': 'IT',
   '/procurement': 'Procurement',
@@ -426,7 +438,10 @@ function _dispatch(event, handler) {
     handler(p);
   });
 }
-
+_dispatch('mortuary:updated', (p) => window.onMortuaryUpdated?.(p));
+_dispatch('laundry:updated', (p) => window.onLaundryUpdated?.(p));
+_dispatch('catering:updated', (p) => window.onCateringUpdated?.(p));
+_dispatch('radiography:updated', (p) => window.onRadiographyUpdated?.(p));
 _dispatch('patient:updated',       (p) => window.onPatientUpdated?.(p));
 _dispatch('patient:created',       (p) => window.onPatientCreated?.(p));
 _dispatch('order:updated',         (p) => window.onOrderUpdated?.(p));

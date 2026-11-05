@@ -1,0 +1,102 @@
+<div class="portal active" data-dept="Mortuary">
+  <h2>Mortuary Department</h2>
+  <p class="muted">Manage body intake and release records with full audit trails.</p>
+
+  <!-- DATE FILTERS -->
+  <div class="tender-filters" style="margin-bottom: 16px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+    <button class="filter-btn active" id="mor-date-today" onclick="setMorDate('today')">Today</button>
+    <button class="filter-btn" id="mor-date-week" onclick="setMorDate('week')">This Week</button>
+    <button class="filter-btn" id="mor-date-month" onclick="setMorDate('month')">This Month</button>
+    <button class="filter-btn" id="mor-date-all" onclick="setMorDate('all')">All Time</button>
+    
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+      <input type="date" id="mor-from" onchange="setMorDate('custom')" style="min-height: 30px; padding: 4px 8px; font-size: 12px; width: 115px;">
+      <span class="muted">to</span>
+      <input type="date" id="mor-to" onchange="setMorDate('custom')" style="min-height: 30px; padding: 4px 8px; font-size: 12px; width: 115px;">
+    </div>
+  </div>
+
+  <!-- SUMMARY STRIP -->
+  <div class="disc-summary" style="margin-bottom: 20px;">
+    <div class="disc-summary-item" style="border-bottom: 3px solid var(--primary);">
+      <div class="disc-summary-num" id="mor-inPeriod" style="color: var(--primary);">0</div>
+      <div class="disc-summary-lbl">Bodies Received</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid var(--success);">
+      <div class="disc-summary-num" id="mor-releasedPeriod" style="color: var(--success);">0</div>
+      <div class="disc-summary-lbl">Bodies Released</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid #dc2626;">
+      <div class="disc-summary-num" id="mor-current" style="color: #dc2626;">0</div>
+      <div class="disc-summary-lbl">Currently in Mortuary</div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 20px; align-items: start;">
+    
+    <!-- LOG INTAKE -->
+    <div class="card" style="margin: 0; background: var(--surface-alt);">
+      <div class="card-head">
+        <h3>Log Body Intake</h3>
+      </div>
+      <p class="muted" style="margin-bottom: 16px;">Record a new arrival into the mortuary.</p>
+
+      <div class="form-group">
+        <label>Patient / Deceased Name: <span class="req">*</span></label>
+        <input type="text" id="mor-patientName" placeholder="Full name">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Age:</label>
+          <input type="number" id="mor-age" min="0" max="120">
+        </div>
+        <div class="form-group">
+          <label>Gender:</label>
+          <select id="mor-gender">
+            <option value="">Unknown</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Date of Death: <span class="req">*</span></label>
+        <input type="datetime-local" id="mor-dateOfDeath">
+      </div>
+      <div class="form-group">
+        <label>Cause of Death: <span class="req">*</span></label>
+        <input type="text" id="mor-causeOfDeath" placeholder="e.g. Cardiac arrest">
+      </div>
+      <div class="form-group">
+        <label>Next of Kin:</label>
+        <input type="text" id="mor-nextOfKin" placeholder="Full name">
+      </div>
+      <div class="form-group">
+        <label>Contact Phone:</label>
+        <input type="text" id="mor-contactPhone" placeholder="+263 ...">
+      </div>
+      <button class="primary-btn block" onclick="submitMortuaryIntake()">Record Intake</button>
+      <div id="mor-intakeMessage" style="margin-top: 10px; font-weight: 600; font-size: 13px;"></div>
+    </div>
+
+    <!-- RECORDS -->
+    <div class="card" style="margin: 0;">
+      <div class="card-head">
+        <h3>Mortuary Records</h3>
+        <div class="card-head-actions">
+          <input type="text" class="search-input" id="mor-search" placeholder="Search name, body ID..." oninput="renderMortuaryRecords()">
+          <button class="pill-btn" onclick="printMortuaryRecords()">Print</button>
+        </div>
+      </div>
+
+      <div class="tender-filters" id="mor-filters" style="margin-bottom: 12px;">
+        <button class="filter-btn active" data-filter="all" onclick="setMorFilter(this)">All</button>
+        <button class="filter-btn" data-filter="in_mortuary" onclick="setMorFilter(this)">In Mortuary</button>
+        <button class="filter-btn" data-filter="released" onclick="setMorFilter(this)">Released</button>
+      </div>
+
+      <!-- 5 ROW SCROLLABLE TABLE -->
+      <div id="mor-recordList" class="table-wrap roster-scroll" style="max-height: 400px; overflow-y: auto;"></div>
+    </div>
+  </div>
+</div>

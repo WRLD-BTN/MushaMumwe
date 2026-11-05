@@ -1,7 +1,5 @@
 let allPatients = [];
-let allTenders = [];
 let allDischarges = [];
-let tenderFilter = 'all';
 let patientSearchTimer = null;
 let dischargeSearchTimer = null;
 let selectedPatientIdForDischarge = null;
@@ -13,7 +11,6 @@ let patientToPrint = null;
 async function init_nurses() {
   await loadWards();
   await runPatientSearch();
-  await loadMyTenders();
   await loadDischargeRecords();
   registerNursesSocketHandlers();
   await checkFollowups();
@@ -87,83 +84,6 @@ function filterTodayFollowups() {
       }, 100);
     })
     .catch(e => console.error('Failed to fetch followups:', e));
-}
-
-// ============================================================
-// TENDER SUBMISSION
-// ============================================================
-async function submitNursesTender() {
-  const originatorDepartment = document.getElementById('nurses-reqOriginator').value;
-  const itemName = document.getElementById('nurses-reqItemName').value.trim();
-  const quantity = document.getElementById('nurses-reqQuantity').value;
-  const reason = document.getElementById('nurses-reqReason').value.trim();
-  const msg = document.getElementById('nurses-requestMessage');
-
-  if (!itemName || !quantity || !reason) {
-    msg.innerHTML = '<span style="color: var(--error);">All fields required</span>';
-    return;
-  }
-
-  const btn = document.querySelector('button[onclick="submitNursesTender()"]');
-  if (btn && btn.disabled) return;
-  if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
-
-  try {
-    const res = await fetch('/api/orders/request', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() },
-      body: JSON.stringify({ itemName, quantity: parseInt(quantity), reason, originatorDepartment }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-
-    msg.innerHTML = '<span style="color: var(--success);">Request submitted</span>';
-    document.getElementById('nurses-reqItemName').value = '';
-    document.getElementById('nurses-reqQuantity').value = '';
-    document.getElementById('nurses-reqReason').value = '';
-    await loadMyTenders();
-  } catch (e) {
-    msg.innerHTML = '<span style="color: var(--error);">' + e.message + '</span>';
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Submit Request'; }
-  }
-}
-
-async function loadMyTenders() {
-  const res = await fetch('/api/orders/my', { headers: { Authorization: 'Bearer ' + token() } });
-  if (!res.ok) return;
-  allTenders = await res.json();
-  renderTenderTracker();
-}
-
-function setTenderFilter(btn) {
-  const parent = btn.closest('.filter-bar');
-  if (parent) {
-    parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  }
-  btn.classList.add('active');
-  tenderFilter = btn.dataset.filter;
-  renderTenderTracker();
-}
-
-function filterTenders() { renderTenderTracker(); }
-
-function renderTenderTracker() {
-  const el = document.getElementById('nurses-tenderTrackerList');
-  const q = (document.getElementById('nurses-tenderSearch')?.value || '').toLowerCase();
-  let list = allTenders;
-  if (tenderFilter !== 'all') list = list.filter(t => t.status === tenderFilter);
-  if (q) list = list.filter(t => String(t.itemName).toLowerCase().includes(q));
-
-  if (list.length === 0) {
-    el.innerHTML = '<div class="empty-state">No Tenders</div>';
-    return;
-  }
-
-  el.innerHTML = list.map(t => {
-    const supplier = t.procurementOrder && t.procurementOrder.supplierName ? '<p><em>Supplier:</em> ' + escapeHtml(t.procurementOrder.supplierName) + '</p>' : '';
-    return '<div class="tender-card"><div class="tender-head"><div><strong>#' + t.id + ' - ' + escapeHtml(t.itemName) + ' x' + t.quantity + '</strong></div><div>' + statusBadge(t.status) + '</div></div><div class="tender-body"><p><em>Reason:</em> ' + escapeHtml(t.reason) + '</p>' + supplier + '</div></div>';
-  }).join('');
 }
 
 // ============================================================
@@ -592,21 +512,6 @@ function printDischarges() {
   printContent(html);
 }
 
-function printMyTenders() {
-  if (allTenders.length === 0) { alert('No tenders to print.'); return; }
-  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
-  const now = new Date();
-  let html = '<div class="print-page a4"><div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Department Tenders</h2></div>';
-  html += '<div class="print-meta"><p><strong>Total:</strong> ' + allTenders.length + '</p><p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p></div>';
-  html += '<table class="print-table"><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Status</th><th>Supplier</th><th>Date</th></tr></thead><tbody>';
-  allTenders.forEach((t, i) => {
-    const supplier = t.procurementOrder ? t.procurementOrder.supplierName : '-';
-    html += '<tr><td>' + (i + 1) + '</td><td>' + escapeHtml(t.itemName) + '</td><td>' + t.quantity + '</td><td>' + String(t.status).toUpperCase() + '</td><td>' + escapeHtml(supplier) + '</td><td>' + fmtDate(t.createdAt) + '</td></tr>';
-  });
-  html += '</tbody></table><div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div></div>';
-  printContent(html);
-}
-
 // ============================================================
 // DISCHARGE PRINT OPTIONS
 // ============================================================
@@ -689,10 +594,4 @@ function buildDischargePrintHTML(p, paperSize, copies) {
 function registerNursesSocketHandlers() {
   window.onPatientUpdated = () => { runPatientSearch(); checkFollowups(); };
   window.onPatientCreated = () => { runPatientSearch(); checkFollowups(); };
-  window.onOrderUpdated = (payload) => {
-    const myDept = String(currentDeptName || '').toLowerCase();
-    const sub = String(payload?.department || '').toLowerCase();
-    const orig = String(payload?.originator || '').toLowerCase();
-    if (sub === myDept || orig === myDept) loadMyTenders();
-  };
 }

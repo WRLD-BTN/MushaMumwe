@@ -1,10 +1,6 @@
 <div class="portal active" data-dept="Stores">
-  
-  <!-- HEADER -->
-  <div style="margin-bottom: 24px;">
-    <h2>Stores Management</h2>
-    <p class="muted">Track inventory, receive approved orders, and submit procurement requests.</p>
-  </div>
+  <h2>Stores Management</h2>
+  <p class="muted">Track inventory, receive approved orders, and manage stock levels.</p>
 
   <!-- SUMMARY STRIP -->
   <div class="disc-summary" style="margin-bottom: 24px;">
@@ -74,82 +70,7 @@
   </div>
 
   <!-- ============================================================ -->
-  <!-- ROW 2: ORDER A TENDER (LEFT) & MY TENDERS (RIGHT)            -->
-  <!-- ============================================================ -->
-  <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; align-items: start;">
-    
-    <!-- ORDER A TENDER (Left) -->
-    <div class="card" style="margin: 0;">
-      <div class="card-head">
-        <h3>Order a Tender</h3>
-        <span class="badge badge-pending">New Request</span>
-      </div>
-      <p class="muted" style="margin-bottom: 16px;">Submit a new tender request to Procurement.</p>
-
-      <div class="form-group">
-        <label>Originator Department:</label>
-        <select id="stores-reqOriginator">
-          <option value="Stores">Stores</option>
-          <option value="Medical">Medical</option>
-          <option value="Nurses">Nurses</option>
-          <option value="Mortuary">Mortuary</option>
-          <option value="School of Nursing">School of Nursing</option>
-          <option value="School of Midwifery">School of Midwifery</option>
-          <option value="Biomedical Equipment">Biomedical Equipment</option>
-          <option value="Radiography">Radiography</option>
-          <option value="Catering">Catering</option>
-          <option value="Security">Security</option>
-          <option value="Laundry">Laundry</option>
-          <option value="Health Information">Health Information</option>
-          <option value="Accounts">Accounts</option>
-          <option value="HR">HR</option>
-          <option value="Procurement">Procurement</option>
-          <option value="IT">IT</option>
-        </select>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Item Name: <span class="req">*</span></label>
-          <input type="text" id="stores-reqItemName" placeholder="e.g. Medical Gloves">
-        </div>
-        <div class="form-group" style="max-width: 120px;">
-          <label>Qty: <span class="req">*</span></label>
-          <input type="number" id="stores-reqQuantity" min="1">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Reason: <span class="req">*</span></label>
-        <textarea id="stores-reqReason" rows="2" placeholder="Why is this needed?"></textarea>
-      </div>
-      <button class="primary-btn block" onclick="submitTenderRequest('stores')">Submit Request</button>
-      <div id="stores-requestMessage" style="margin-top: 10px; font-weight: 600; font-size: 13px;"></div>
-    </div>
-
-    <!-- MY TENDERS (Right) -->
-    <div class="card" style="margin: 0;">
-      <div class="card-head">
-        <h3>My Department Tenders <span class="lock-badge" style="font-size: 9px; padding: 2px 6px;">LOCKED</span></h3>
-        <div class="card-head-actions">
-          <input type="text" class="search-input" id="stores-tenderSearch" placeholder="Search..." oninput="filterTenders()" style="width: 140px;">
-        </div>
-      </div>
-
-      <div class="tender-filters" id="stores-tenderFilters" style="margin-bottom: 12px;">
-        <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this)">All</button>
-        <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this)">Pending</button>
-        <button class="filter-btn" data-filter="awaiting_quotation" onclick="setTenderFilter(this)">Awaiting</button>
-        <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this)">Ordered</button>
-        <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this)">Received</button>
-      </div>
-
-      <div class="muted" id="stores-tenderResultCount" style="margin-bottom: 8px; font-size: 11px;"></div>
-      <div id="stores-tenderTrackerList" style="max-height: 350px; overflow-y: auto;"></div>
-    </div>
-
-  </div>
-
-  <!-- ============================================================ -->
-  <!-- ROW 3: INVENTORY STATUS (Full Width)                         -->
+  <!-- ROW 2: INVENTORY STATUS                                      -->
   <!-- ============================================================ -->
   <div class="card">
     <div class="card-head">
@@ -159,7 +80,7 @@
         <button class="pill-btn" onclick="printInventory()">Print Inventory</button>
       </div>
     </div>
-    <div id="stores-inventoryList" style="max-height: 400px; overflow-y: auto;"></div>
+    <div id="stores-inventoryList" class="table-wrap roster-scroll" style="max-height: 350px; overflow-y: auto;"></div>
   </div>
 
 </div>
