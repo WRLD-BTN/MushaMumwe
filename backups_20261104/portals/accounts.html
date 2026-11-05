@@ -1,0 +1,143 @@
+<div class="portal active" data-dept="Accounts">
+  <h2>Accounts & Finance</h2>
+  <p class="muted">Manage cash flow and track procurement spending.</p>
+
+  <!-- CASH FLOW DATE FILTERS -->
+  <div class="tender-filters" style="margin-bottom: 20px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+    <span class="muted" style="font-size: 11px; font-weight: 700; width: 100%; margin-bottom: 4px;">CASH FLOW PERIOD</span>
+    <button class="filter-btn active" id="acc-range-today" onclick="setAccountRange('today')">Today</button>
+    <button class="filter-btn" id="acc-range-week" onclick="setAccountRange('week')">This Week</button>
+    <button class="filter-btn" id="acc-range-month" onclick="setAccountRange('month')">This Month</button>
+    
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; background: var(--surface-alt); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);">
+      <span class="muted" style="font-size: 11px; font-weight: 700;">CUSTOM:</span>
+      <input type="date" id="acc-from" onchange="setAccountRange('custom')" style="min-height: 30px; padding: 4px 8px; font-size: 12px; width: 120px;">
+      <span class="muted">to</span>
+      <input type="date" id="acc-to" onchange="setAccountRange('custom')" style="min-height: 30px; padding: 4px 8px; font-size: 12px; width: 120px;">
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+    
+    <!-- Add Cash Flow -->
+    <div class="card" style="margin: 0; background: var(--surface-alt);">
+      <div class="card-head">
+        <h3>Record Transaction</h3>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>Type:</label>
+          <select id="acc-type">
+            <option value="in">Money In (Revenue)</option>
+            <option value="out">Money Out (Expense)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Currency:</label>
+          <select id="acc-currency">
+            <option value="USD">USD</option>
+            <option value="ZWG">ZWG</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Amount: <span class="req">*</span></label>
+        <input type="number" id="acc-amount" step="0.01" min="0.01" placeholder="e.g. 150.00">
+      </div>
+
+      <div class="form-group">
+        <label>Source (Where is it from?):</label>
+        <select id="acc-source" onchange="handleSourceChange(this)">
+          <option value="OPD Fees">OPD Fees</option>
+          <option value="IPD Fees">IPD Fees</option>
+          <option value="Maternity Fees">Maternity Fees</option>
+          <option value="Pharmacy">Pharmacy</option>
+          <option value="Laboratory">Laboratory</option>
+          <option value="Radiology">Radiology</option>
+          <option value="Grants / Donations">Grants / Donations</option>
+          <option value="Staff Payments">Staff Payments</option>
+          <option value="Other">+ Add New Source...</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Specific Note:</label>
+        <input type="text" id="acc-reason" placeholder="e.g. Receipt #4021">
+      </div>
+
+      <button class="primary-btn block" onclick="saveCashFlow()">Save Transaction</button>
+      <div id="acc-message" style="margin-top: 10px; font-weight: 600; font-size: 13px;"></div>
+    </div>
+
+    <!-- Daily Summary -->
+    <div class="card" style="margin: 0;">
+      <div class="card-head">
+        <h3 id="acc-summary-title">Today's Cash Flow</h3>
+      </div>
+      <div class="disc-summary" style="margin-bottom: 20px;">
+        <div class="disc-summary-item" style="border-bottom: 3px solid #16a34a;">
+          <div class="disc-summary-num" id="acc-usdTotal" style="color: #16a34a;">$0.00</div>
+          <div class="disc-summary-lbl">USD Net</div>
+        </div>
+        <div class="disc-summary-item" style="border-bottom: 3px solid #16a34a;">
+          <div class="disc-summary-num" id="acc-zwgTotal" style="color: #16a34a;">Z$0.00</div>
+          <div class="disc-summary-lbl">ZWG Net</div>
+        </div>
+      </div>
+      
+      <!-- Revenue by Source -->
+      <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Revenue by Source</div>
+      <div id="acc-sourceBreakdown" class="table-wrap" style="max-height: 150px; overflow-y: auto; margin-bottom: 16px; border: none;"></div>
+
+      <div class="card-head" style="margin-bottom: 6px;">
+        <div class="muted" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Transactions</div>
+        <button class="pill-btn" style="padding: 2px 8px; font-size: 10px;" onclick="printCashFlow()">Print</button>
+      </div>
+      
+      <!-- TYPE AND SEARCH FILTERS FOR CASH FLOW -->
+      <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+        <div class="tender-filters" id="acc-cashTypeFilters" style="margin-bottom: 0; flex: 1;">
+          <button class="filter-btn active" data-type="all" onclick="setCashFlowTypeFilter(this)">All</button>
+          <button class="filter-btn" data-type="in" onclick="setCashFlowTypeFilter(this)">Money In</button>
+          <button class="filter-btn" data-type="out" onclick="setCashFlowTypeFilter(this)">Money Out</button>
+        </div>
+        <input type="text" id="acc-cashSearch" placeholder="Search source, notes..." oninput="renderCashFlows()" style="flex: 1; min-height: 32px; font-size: 12px;">
+      </div>
+
+      <!-- 5 ROW SCROLLABLE LIST -->
+      <div id="acc-recentList" class="table-wrap roster-scroll" style="max-height: 220px; overflow-y: auto;"></div>
+    </div>
+  </div>
+
+  <!-- PROCUREMENT SECTION -->
+  <div class="card">
+    <div class="card-head">
+      <h3>Procurement Spending (Approved Orders)</h3>
+      <div class="card-head-actions">
+        <input type="text" class="search-input" id="acc-procSearch" placeholder="Search item, supplier..." oninput="renderProcurementOrders()">
+        <button class="pill-btn" onclick="printProcurement()">Print</button>
+      </div>
+    </div>
+
+    <!-- PROCUREMENT DATE FILTERS -->
+    <div class="tender-filters" style="margin-bottom: 20px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+      <button class="filter-btn active" id="proc-range-today" onclick="setProcRange('today')">Today</button>
+      <button class="filter-btn" id="proc-range-week" onclick="setProcRange('week')">This Week</button>
+      <button class="filter-btn" id="proc-range-month" onclick="setProcRange('month')">This Month</button>
+      <button class="filter-btn" id="proc-range-year" onclick="setProcRange('year')">This Year</button>
+      <button class="filter-btn" id="proc-range-all" onclick="setProcRange('all')">All Time</button>
+      
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; background: var(--surface-alt); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);">
+        <span class="muted" style="font-size: 11px; font-weight: 700;">CUSTOM:</span>
+        <input type="date" id="proc-from" onchange="setProcRange('custom')" style="min-height: 30px; padding: 4px 8px; font-size: 12px; width: 120px;">
+        <span class="muted">to</span>
+        <input type="date" id="proc-to" onchange="setProcRange('custom')" style="min-height: 30px; padding: 4px 8px; font-size: 12px; width: 120px;">
+      </div>
+    </div>
+
+    <!-- 5 ROW SCROLLABLE LIST -->
+    <div id="acc-procurementList" class="table-wrap roster-scroll" style="max-height: 220px; overflow-y: auto;"></div>
+  </div>
+</div>

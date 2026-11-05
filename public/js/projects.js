@@ -1,42 +1,111 @@
-// Project tracker. Auto-injects the projects card into the current portal.
-// Loaded by core.js after the portal fragment is injected.
+// Global injection for Tenders and Projects.
+// Loaded by core.js after any portal fragment is injected.
 
 let allProjects = [];
 let projectSearchTimer = null;
 let currentOpenProjectId = null;
 
-// Insert projects card, load summary, run initial search, wire forms.
+// ============================================================
+// INITIALIZATION & INJECTION
+// ============================================================
 async function init_projects() {
   const portalContainer = document.getElementById('portalContainer');
   if (!portalContainer) return;
+  const targetPortal = portalContainer.querySelector('.portal.active');
+  if (!targetPortal) return;
 
-  // Skip if card already injected.
-  if (document.getElementById('projectsCard')) {
-    await loadProjectsSummary();
-    await runProjectSearch();
-    wireProjectForms();
-    return;
+  // 1. Inject Global Tenders Card (if not already there)
+  if (!document.getElementById('globalTenderCard')) {
+    const tenderHtml = `
+      <div class="card" id="globalTenderCard" style="margin-bottom: 20px;">
+        <div class="card-head">
+          <h3>Submit Tender Request</h3>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Item Name: <span class="req">*</span></label>
+            <input type="text" id="global-reqItemName" placeholder="e.g. Medical Gloves">
+          </div>
+          <div class="form-group" style="max-width: 120px;">
+            <label>Qty: <span class="req">*</span></label>
+            <input type="number" id="global-reqQuantity" min="1">
+          </div>
+          <div class="form-group">
+            <label>Originator:</label>
+            <select id="global-reqOriginator">
+              <option value="${currentDeptName}">${currentDeptName}</option>
+              <option value="Medical">Medical</option>
+              <option value="Nurses">Nurses</option>
+              <option value="Mortuary">Mortuary</option>
+              <option value="School of Nursing">School of Nursing</option>
+              <option value="School of Midwifery">School of Midwifery</option>
+              <option value="Biomedical Equipment">Biomedical Equipment</option>
+              <option value="Radiography">Radiography</option>
+              <option value="Catering">Catering</option>
+              <option value="Security">Security</option>
+              <option value="Laundry">Laundry</option>
+              <option value="Health Information">Health Information</option>
+              <option value="Accounts">Accounts</option>
+              <option value="HR">HR</option>
+              <option value="Stores">Stores</option>
+              <option value="Procurement">Procurement</option>
+              <option value="IT">IT</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Reason: <span class="req">*</span></label>
+          <textarea id="global-reqReason" rows="2" placeholder="Why is this needed?"></textarea>
+        </div>
+        <button class="primary-btn block" onclick="submitGlobalTender()">Submit Request</button>
+        <div id="global-requestMessage" style="margin-top: 10px; font-weight: 600; font-size: 13px;"></div>
+      </div>
+
+      <div class="card" id="globalMyTendersCard" style="margin-bottom: 20px;">
+        <div class="card-head">
+          <h3>My Department Tenders <span class="lock-badge" style="font-size: 9px; padding: 2px 6px;">LOCKED</span></h3>
+          <div class="card-head-actions">
+            <input type="text" class="search-input" id="global-tenderSearch" placeholder="Search..." oninput="renderGlobalTenders()" style="width: 120px;">
+            <button class="pill-btn" onclick="printGlobalTenders()">Print</button>
+          </div>
+        </div>
+        <div class="tender-filters" id="global-tenderFilters" style="margin-bottom: 12px;">
+          <button class="filter-btn active" data-filter="all" onclick="setGlobalTenderFilter(this)">All</button>
+          <button class="filter-btn" data-filter="pending" onclick="setGlobalTenderFilter(this)">Pending</button>
+          <button class="filter-btn" data-filter="ordered" onclick="setGlobalTenderFilter(this)">Ordered</button>
+          <button class="filter-btn" data-filter="received" onclick="setGlobalTenderFilter(this)">Received</button>
+        </div>
+        <div class="muted" id="global-tenderResultCount" style="margin-bottom: 8px; font-size: 11px;"></div>
+        <div id="global-tenderList" class="table-wrap roster-scroll" style="max-height: 220px; overflow-y: auto;"></div>
+      </div>
+    `;
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = tenderHtml.trim();
+    
+    // Append tender form and tender list
+    targetPortal.appendChild(wrapper.children[0]);
+    targetPortal.appendChild(wrapper.children[0]); 
+    
+    await loadGlobalTenders();
   }
 
-  // Inject the card HTML.
-  try {
-    const res = await fetch('portals/projects.html');
-    if (!res.ok) return;
-    const html = await res.text();
+  // 2. Inject Global Projects Card (if not already there)
+  if (!document.getElementById('projectsCard')) {
+    try {
+      const res = await fetch('portals/projects.html');
+      if (!res.ok) return;
+      const html = await res.text();
 
-    const targetPortal = portalContainer.querySelector('.portal.active');
-    if (!targetPortal) return;
-
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = html.trim();
-    const card = wrapper.firstElementChild;
-    if (card) {
-      card.dataset.dept = currentDeptName || '';
-      targetPortal.appendChild(card);
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = html.trim();
+      const card = wrapper.firstElementChild;
+      if (card) {
+        card.dataset.dept = currentDeptName || '';
+        targetPortal.appendChild(card);
+      }
+    } catch (e) {
+      console.error('Failed to inject projects card:', e);
     }
-  } catch (e) {
-    console.error('Failed to inject projects card:', e);
-    return;
   }
 
   await loadProjectsSummary();
@@ -49,20 +118,138 @@ async function init_projects() {
   };
 }
 
+// ============================================================
+// GLOBAL TENDERS LOGIC
+// ============================================================
+let globalTenders = [];
+let globalTenderFilter = 'all';
+
+async function loadGlobalTenders() {
+  try {
+    const res = await fetch('/api/orders/my', { headers: { Authorization: 'Bearer ' + token() } });
+    if (!res.ok) return;
+    globalTenders = await res.json();
+    renderGlobalTenders();
+  } catch (e) { console.error(e); }
+}
+
+function setGlobalTenderFilter(btn) {
+  const bar = document.getElementById('global-tenderFilters');
+  if (bar) bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  globalTenderFilter = btn.dataset.filter;
+  renderGlobalTenders();
+}
+
+function renderGlobalTenders() {
+  const el = document.getElementById('global-tenderList');
+  if (!el) return;
+
+  const q = (document.getElementById('global-tenderSearch')?.value || '').toLowerCase();
+  let filtered = globalTenders;
+
+  if (globalTenderFilter !== 'all') {
+    if (globalTenderFilter === 'received') {
+      filtered = filtered.filter(t => t.status === 'received' || t.status === 'in_storage');
+    } else {
+      filtered = filtered.filter(t => t.status === globalTenderFilter);
+    }
+  }
+
+  if (q) {
+    filtered = filtered.filter(t => String(t.itemName || '').toLowerCase().includes(q));
+  }
+
+  const countEl = document.getElementById('global-tenderResultCount');
+  if (countEl) countEl.textContent = filtered.length + ' tender(s)';
+
+  if (filtered.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding: 20px;">No tenders</div>';
+    return;
+  }
+
+  el.innerHTML = '<table class="data-table"><thead><tr><th>Item</th><th>Qty</th><th>Status</th><th>Date</th></tr></thead><tbody>' +
+    filtered.map(t => {
+      return '<tr>' +
+        '<td><strong>' + escapeHtml(t.itemName) + '</strong></td>' +
+        '<td>' + t.quantity + '</td>' +
+        '<td>' + statusBadge(t.status) + '</td>' +
+        '<td>' + fmtDate(t.createdAt) + '</td>' +
+        '</tr>';
+    }).join('') + '</tbody></table>';
+}
+
+async function submitGlobalTender() {
+  const itemName = document.getElementById('global-reqItemName').value.trim();
+  const quantity = document.getElementById('global-reqQuantity').value;
+  const originatorDepartment = document.getElementById('global-reqOriginator').value;
+  const reason = document.getElementById('global-reqReason').value.trim();
+  const msg = document.getElementById('global-requestMessage');
+
+  if (!itemName || !quantity || !reason) {
+    msg.innerHTML = '<span style="color: var(--error);">All fields required</span>';
+    return;
+  }
+
+  const btn = document.querySelector('button[onclick="submitGlobalTender()"]');
+  if (btn && btn.disabled) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
+
+  try {
+    const res = await fetch('/api/orders/request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() },
+      body: JSON.stringify({ itemName, quantity: parseInt(quantity), reason, originatorDepartment }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    msg.innerHTML = '<span style="color: var(--success);">Request submitted</span>';
+    document.getElementById('global-reqItemName').value = '';
+    document.getElementById('global-reqQuantity').value = '';
+    document.getElementById('global-reqReason').value = '';
+    await loadGlobalTenders();
+  } catch (e) {
+    msg.innerHTML = '<span style="color: var(--error);">' + e.message + '</span>';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Submit Request'; }
+  }
+}
+
+function printGlobalTenders() {
+  if (globalTenders.length === 0) { alert('No tenders to print.'); return; }
+  const hospitalName = (systemSettings.hospitalName || 'Hospital').toUpperCase();
+  const now = new Date();
+  
+  let html = '<div class="print-page a4">';
+  html += '<div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Department Tenders</h2></div>';
+  html += '<div class="print-meta"><p><strong>Total:</strong> ' + globalTenders.length + '</p><p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p></div>';
+  html += '<table class="print-table"><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+  
+  globalTenders.forEach((t, i) => {
+    html += '<tr><td>' + (i + 1) + '</td><td>' + escapeHtml(t.itemName) + '</td><td>' + t.quantity + '</td><td>' + String(t.status).toUpperCase() + '</td><td>' + fmtDate(t.createdAt) + '</td></tr>';
+  });
+  
+  html += '</tbody></table><div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div></div>';
+  printContent(html);
+}
+
+// ============================================================
+// PROJECTS LOGIC (Matches existing)
+// ============================================================
 function debouncedProjectSearch() {
   clearTimeout(projectSearchTimer);
   projectSearchTimer = setTimeout(runProjectSearch, 300);
 }
 
-// Fetch projects matching filters.
 async function runProjectSearch() {
   const el = document.getElementById('projectsList');
   if (!el) return;
 
   const params = new URLSearchParams();
-  const search = document.getElementById('projectsSearchBox').value.trim();
-  const status = document.getElementById('projectsStatusFilter').value;
-  const scope = document.getElementById('projectsScopeFilter').value;
+  const search = document.getElementById('projectsSearchBox')?.value.trim() || '';
+  const status = document.getElementById('projectsStatusFilter')?.value || 'all';
+  const scope = document.getElementById('projectsScopeFilter')?.value || 'own';
 
   if (search) params.set('search', search);
   if (status && status !== 'all') params.set('status', status);
@@ -80,7 +267,6 @@ async function runProjectSearch() {
   }
 }
 
-// Summary counts for the header.
 async function loadProjectsSummary() {
   try {
     const res = await fetch('/api/projects/summary', {
@@ -103,7 +289,6 @@ async function loadProjectsSummary() {
   }
 }
 
-// Status pill for project rows.
 function projectStatusPill(status) {
   const map = {
     ongoing: 'badge-approved',
@@ -114,7 +299,6 @@ function projectStatusPill(status) {
   return '<span class="badge ' + cls + '">' + String(status).toUpperCase() + '</span>';
 }
 
-// Render project list.
 function renderProjects() {
   const el = document.getElementById('projectsList');
   if (!el) return;
@@ -168,7 +352,6 @@ function renderProjects() {
   }).join('');
 }
 
-// Open project history detail modal.
 async function openProjectDetail(projectId) {
   try {
     const res = await fetch('/api/projects/' + projectId, {
@@ -218,9 +401,6 @@ function closeProjectDetail() {
   currentOpenProjectId = null;
 }
 
-// ============================================================
-// NEW PROJECT MODAL
-// ============================================================
 function openProjectNewModal() {
   ['projectNewName', 'projectNewDescription', 'projectNewHead', 'projectNewStart',
    'projectNewTarget', 'projectNewNote', 'projectNewObstacle'].forEach(id => {
@@ -240,7 +420,6 @@ function closeProjectNewModal() {
   document.getElementById('modalBackdrop').classList.remove('active');
 }
 
-// Show/hide obstacle field based on status.
 function toggleProjectNewObstacle() {
   const status = document.getElementById('projectNewStatus').value;
   const row = document.getElementById('projectNewObstacleRow');
@@ -309,9 +488,6 @@ async function submitProjectNew() {
   }
 }
 
-// ============================================================
-// UPDATE PROJECT MODAL
-// ============================================================
 async function openProjectUpdateModal(projectId) {
   try {
     const res = await fetch('/api/projects/' + projectId, {
@@ -403,82 +579,28 @@ async function submitProjectUpdate() {
   }
 }
 
-// ============================================================
-// PRINT PROJECTS
-// ============================================================
 function printProjects() {
   if (!allProjects || allProjects.length === 0) {
     alert('No projects to print.');
     return;
   }
 
-  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
-  const phone = systemSettings.contactPhone || '';
-  const address = systemSettings.contactAddress || '';
+  const hospitalName = (systemSettings.hospitalName || 'Hospital').toUpperCase();
   const now = new Date();
 
-  const filterParts = [];
-  const search = document.getElementById('projectsSearchBox').value.trim();
-  const status = document.getElementById('projectsStatusFilter').value;
-  const scope = document.getElementById('projectsScopeFilter').value;
-
-  if (search) filterParts.push('Search="' + search + '"');
-  if (status && status !== 'all') filterParts.push('Status=' + status);
-  if (scope === 'own') filterParts.push('Scope=My Department');
-  else filterParts.push('Scope=All Departments');
-
-  const filterLine = 'Filters: ' + filterParts.join(', ');
-
   let html = '<div class="print-page a4">';
-  html += '<div class="print-header">';
-  html += '<h1>' + escapeHtml(hospitalName) + '</h1>';
-  html += '<h2>Projects Report</h2>';
-  html += '</div>';
-
-  if (phone || address) {
-    html += '<div class="print-contact">';
-    if (address) html += '<p>' + escapeHtml(address) + '</p>';
-    if (phone) html += '<p>Tel: ' + escapeHtml(phone) + '</p>';
-    html += '</div>';
-  }
-
-  html += '<div class="print-meta">';
-  html += '<p><strong>Total Projects:</strong> ' + allProjects.length + '</p>';
-  html += '<p><strong>Report Generated:</strong> ' + fmtDateTime(now) + '</p>';
-  html += '<p style="grid-column: span 2;"><strong>' + escapeHtml(filterLine) + '</strong></p>';
-  html += '</div>';
-
-  html += '<table class="print-table">';
-  html += '<thead><tr>';
-  html += '<th>#</th><th>Project</th><th>Department</th><th>Head</th><th>Status</th><th>Latest Update</th>';
-  html += '</tr></thead><tbody>';
+  html += '<div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Projects Report</h2></div>';
+  html += '<div class="print-meta"><p><strong>Total Projects:</strong> ' + allProjects.length + '</p><p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p></div>';
+  html += '<table class="print-table"><thead><tr><th>#</th><th>Project</th><th>Department</th><th>Head</th><th>Status</th></tr></thead><tbody>';
 
   allProjects.forEach((p, i) => {
-    const latest = p.updates && p.updates[0];
-    const latestText = latest ? latest.note : 'No updates';
-    html += '<tr>';
-    html += '<td>' + (i + 1) + '</td>';
-    html += '<td>' + escapeHtml(p.name) + '</td>';
-    html += '<td>' + escapeHtml(p.department) + '</td>';
-    html += '<td>' + escapeHtml(p.projectHead) + '</td>';
-    html += '<td>' + String(p.status).toUpperCase() + '</td>';
-    html += '<td>' + escapeHtml(latestText) + '</td>';
-    html += '</tr>';
+    html += '<tr><td>' + (i + 1) + '</td><td>' + escapeHtml(p.name) + '</td><td>' + escapeHtml(p.department) + '</td><td>' + escapeHtml(p.projectHead) + '</td><td>' + String(p.status).toUpperCase() + '</td></tr>';
   });
 
-  html += '</tbody></table>';
-  html += '<div class="print-footer">';
-  html += escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now);
-  html += '</div>';
-  html += '</div>';
-
-  document.getElementById('printArea').innerHTML = html;
-  setTimeout(() => window.print(), 200);
+  html += '</tbody></table><div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div></div>';
+  printContent(html);
 }
 
-// ============================================================
-// FORM WIRING
-// ============================================================
 function wireProjectForms() {
   const newStatus = document.getElementById('projectNewStatus');
   if (newStatus && !newStatus.dataset.wired) {
@@ -492,53 +614,3 @@ function wireProjectForms() {
     updateStatus.dataset.wired = '1';
   }
 }
-// OVERRIDE submitProjectNew to prevent double submissions
-const originalSubmitProjectNew = window.submitProjectNew;
-window.submitProjectNew = async function() {
-  const btn = document.querySelector('button[onclick="submitProjectNew()"]');
-  const msg = document.getElementById('projectNewMessage');
-  
-  // 1. If the button is already disabled, ignore the click
-  if (btn && btn.disabled) return;
-  
-  // 2. Disable the button and show a loading state
-  if (btn) {
-    btn.disabled = true;
-    btn.dataset.originalText = btn.textContent;
-    btn.textContent = 'Creating...';
-  }
-  
-  try {
-    // Run the original logic
-    await originalSubmitProjectNew();
-  } finally {
-    // 3. Re-enable the button after the request finishes (success or fail)
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = btn.dataset.originalText || 'Create Project';
-    }
-  }
-};
-
-// OVERRIDE submitProjectUpdate to prevent double submissions
-const originalSubmitProjectUpdate = window.submitProjectUpdate;
-window.submitProjectUpdate = async function() {
-  const btn = document.querySelector('button[onclick="submitProjectUpdate()"]');
-  
-  if (btn && btn.disabled) return;
-  
-  if (btn) {
-    btn.disabled = true;
-    btn.dataset.originalText = btn.textContent;
-    btn.textContent = 'Saving...';
-  }
-  
-  try {
-    await originalSubmitProjectUpdate();
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = btn.dataset.originalText || 'Add Update';
-    }
-  }
-};

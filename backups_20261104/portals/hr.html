@@ -1,0 +1,362 @@
+<div class="portal active">
+  <div class="portal-header">
+    <h2>HR - Staff Management</h2>
+  </div>
+
+  <div class="grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
+    <div class="card">
+      <h3>Add New Employee</h3>
+      <div class="form-group">
+        <label for="hr-empName">Employee Name:</label>
+        <input type="text" id="hr-empName">
+      </div>
+      <div class="form-group">
+        <label for="hr-empDept">Department:</label>
+        <select id="hr-empDept">
+          <option value="Medical">Medical</option>
+          <option value="Nurses">Nurses</option>
+          <option value="Mortuary">Mortuary</option>
+          <option value="School of Nursing">School of Nursing</option>
+          <option value="School of Midwifery">School of Midwifery</option>
+          <option value="Biomedical Equipment">Biomedical Equipment</option>
+          <option value="Radiography">Radiography</option>
+          <option value="Catering">Catering</option>
+          <option value="Security">Security</option>
+          <option value="Laundry">Laundry</option>
+          <option value="Health Information">Health Information</option>
+          <option value="Accounts">Accounts</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="hr-empRole">Role:</label>
+        <input type="text" id="hr-empRole" placeholder="e.g. Chef, Radiographer, Tutor">
+      </div>
+      <div class="form-group">
+        <label for="hr-empWard">Assigned Ward:</label>
+        <select id="hr-empWard"></select>
+      </div>
+      <div class="form-group">
+        <label for="hr-empHireDate">Hire Date:</label>
+        <input type="date" id="hr-empHireDate">
+      </div>
+      <button onclick="addEmployee()" class="primary-btn block">Hire Employee</button>
+      <div id="hr-empAddMessage"></div>
+    </div>
+
+    <div class="card">
+      <h3>Staffing Summary</h3>
+      <div class="emp-summary" style="margin-bottom:16px;">
+        <p><strong>On Duty:</strong> <span id="hr-empOnDuty">-</span></p>
+        <p><strong>On Leave:</strong> <span id="hr-empOnLeave">-</span></p>
+        <p><strong>Sick:</strong> <span id="hr-empSick">-</span></p>
+        <p><strong>Terminated:</strong> <span id="hr-empTerminated">-</span></p>
+        <p class="total-row"><strong>Total Active:</strong> <span id="hr-empTotal">-</span></p>
+      </div>
+      <button onclick="loadStaffingSummary()" class="ghost-btn block">Refresh</button>
+    </div>
+
+    <div class="card">
+      <h3>Submit Tender Request</h3>
+      <div class="form-group">
+        <label for="hr-reqOriginator">This tender is for:</label>
+        <select id="hr-reqOriginator">
+          <option value="HR">HR</option>
+          <option value="Medical">Medical</option>
+          <option value="Nurses">Nurses</option>
+          <option value="Mortuary">Mortuary</option>
+          <option value="School of Nursing">School of Nursing</option>
+          <option value="School of Midwifery">School of Midwifery</option>
+          <option value="Biomedical Equipment">Biomedical Equipment</option>
+          <option value="Radiography">Radiography</option>
+          <option value="Catering">Catering</option>
+          <option value="Security">Security</option>
+          <option value="Laundry">Laundry</option>
+          <option value="Health Information">Health Information</option>
+          <option value="Accounts">Accounts</option>
+          <option value="Stores">Stores</option>
+          <option value="Procurement">Procurement</option>
+          <option value="IT">IT</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="hr-reqItemName">Item Name:</label>
+        <input type="text" id="hr-reqItemName">
+      </div>
+      <div class="form-group">
+        <label for="hr-reqQuantity">Quantity:</label>
+        <input type="number" id="hr-reqQuantity" min="1">
+      </div>
+      <div class="form-group">
+        <label for="hr-reqReason">Reason:</label>
+        <textarea id="hr-reqReason"></textarea>
+      </div>
+      <button onclick="submitTenderRequest('hr')" class="primary-btn block">Submit Request</button>
+      <div id="hr-requestMessage"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-head">
+      <h3>Labour Relations</h3>
+      <div class="card-head-actions">
+        <button class="primary-btn small" onclick="openDisciplinaryNewModal()">File New Case</button>
+        <button class="pill-btn" onclick="printDisciplinaryCases()">Print</button>
+      </div>
+    </div>
+
+    <div class="disc-summary" id="discSummary">
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="discSummaryTotal">0</div>
+        <div class="disc-summary-lbl">Total</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="discSummaryOpen">0</div>
+        <div class="disc-summary-lbl">Open</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="discSummaryInvestigation">0</div>
+        <div class="disc-summary-lbl">Investigating</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="discSummaryResolved">0</div>
+        <div class="disc-summary-lbl">Resolved</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="discSummaryDismissed">0</div>
+        <div class="disc-summary-lbl">Dismissed</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="discSummary30Days">0</div>
+        <div class="disc-summary-lbl">Last 30 Days</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <input type="text" id="discSearchBox" placeholder="Search by case, employee, offense, description..." oninput="debouncedDisciplinarySearch()">
+    </div>
+
+    <div class="form-row" style="margin-bottom:12px;">
+      <div class="form-group">
+        <label>Status</label>
+        <select id="discFilterStatus" onchange="runDisciplinarySearch()">
+          <option value="all">All</option>
+          <option value="open">Open</option>
+          <option value="under_investigation">Under Investigation</option>
+          <option value="resolved">Resolved</option>
+          <option value="dismissed">Dismissed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Offense</label>
+        <select id="discFilterOffense" onchange="runDisciplinarySearch()">
+          <option value="all">All</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Department</label>
+        <select id="discFilterDept" onchange="runDisciplinarySearch()">
+          <option value="all">All</option>
+          <option value="Medical">Medical</option>
+          <option value="Nurses">Nurses</option>
+          <option value="Mortuary">Mortuary</option>
+          <option value="School of Nursing">School of Nursing</option>
+          <option value="School of Midwifery">School of Midwifery</option>
+          <option value="Biomedical Equipment">Biomedical Equipment</option>
+          <option value="Radiography">Radiography</option>
+          <option value="Catering">Catering</option>
+          <option value="Security">Security</option>
+          <option value="Laundry">Laundry</option>
+          <option value="Health Information">Health Information</option>
+          <option value="Accounts">Accounts</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>From</label>
+        <input type="date" id="discFilterFrom" onchange="runDisciplinarySearch()">
+      </div>
+      <div class="form-group">
+        <label>To</label>
+        <input type="date" id="discFilterTo" onchange="runDisciplinarySearch()">
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button onclick="clearDisciplinaryFilters()" class="ghost-btn block">Clear</button>
+      </div>
+    </div>
+
+    <div id="discCaseList" class="table-wrap disc-case-scroll"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-head">
+      <h3>Establishment</h3>
+      <div class="card-head-actions">
+        <button class="primary-btn small" onclick="openTransferModal()">Record Transfer</button>
+        <button class="primary-btn small" onclick="openRetirementModal()">Record Retirement</button>
+        <button class="primary-btn small" onclick="openResignationModal()">Record Resignation</button>
+        <button class="pill-btn" onclick="openHeadcountModal()">Headcount Settings</button>
+      </div>
+    </div>
+
+    <div class="disc-summary" id="estSummary">
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="estSummaryTotal">0</div>
+        <div class="disc-summary-lbl">Total (30d)</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="estSummaryTransfers">0</div>
+        <div class="disc-summary-lbl">Transfers</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="estSummaryRetirements">0</div>
+        <div class="disc-summary-lbl">Retirements</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="estSummaryResignations">0</div>
+        <div class="disc-summary-lbl">Resignations</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="estSummaryUnder" style="color:#dc2626;">0</div>
+        <div class="disc-summary-lbl">Understaffed</div>
+      </div>
+      <div class="disc-summary-item">
+        <div class="disc-summary-num" id="estSummaryOver" style="color:#ea580c;">0</div>
+        <div class="disc-summary-lbl">Overstaffed</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <input type="text" id="estSearchBox" placeholder="Search by employee, department, reason..." oninput="debouncedEstMovementSearch()">
+    </div>
+
+    <div class="form-row" style="margin-bottom:12px;">
+      <div class="form-group">
+        <label>Type</label>
+        <select id="estFilterType" onchange="runEstMovementSearch()">
+          <option value="all">All</option>
+          <option value="transfer">Transfers</option>
+          <option value="retirement">Retirements</option>
+          <option value="resignation">Resignations</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Department</label>
+        <select id="estFilterDept" onchange="runEstMovementSearch()">
+          <option value="all">All</option>
+          <option value="Medical">Medical</option>
+          <option value="Nurses">Nurses</option>
+          <option value="Mortuary">Mortuary</option>
+          <option value="School of Nursing">School of Nursing</option>
+          <option value="School of Midwifery">School of Midwifery</option>
+          <option value="Biomedical Equipment">Biomedical Equipment</option>
+          <option value="Radiography">Radiography</option>
+          <option value="Catering">Catering</option>
+          <option value="Security">Security</option>
+          <option value="Laundry">Laundry</option>
+          <option value="Health Information">Health Information</option>
+          <option value="Accounts">Accounts</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>From</label>
+        <input type="date" id="estFilterFrom" onchange="runEstMovementSearch()">
+      </div>
+      <div class="form-group">
+        <label>To</label>
+        <input type="date" id="estFilterTo" onchange="runEstMovementSearch()">
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button onclick="clearEstFilters()" class="ghost-btn block">Clear</button>
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button onclick="printMovementsReport()" class="pill-btn block">Print Report</button>
+      </div>
+    </div>
+
+    <div id="estMovementList" class="table-wrap disc-case-scroll"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-head">
+      <h3>Staff Roster</h3>
+      <div class="card-head-actions">
+        <button class="pill-btn" onclick="toggleAdvancedStaffFilters()">Filters</button>
+        <button class="pill-btn" onclick="printStaffRoster()">Print</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <input type="text" id="hr-empSearchBox" placeholder="Search by name, department, or role..." oninput="debouncedStaffSearch()">
+    </div>
+    <div id="hr-advancedFilters" class="advanced-filters" style="display:none;">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Department</label>
+          <select id="hr-filterDept">
+            <option value="all">All</option>
+            <option value="Medical">Medical</option>
+            <option value="Nurses">Nurses</option>
+            <option value="Mortuary">Mortuary</option>
+            <option value="School of Nursing">School of Nursing</option>
+            <option value="School of Midwifery">School of Midwifery</option>
+            <option value="Biomedical Equipment">Biomedical Equipment</option>
+            <option value="Radiography">Radiography</option>
+            <option value="Catering">Catering</option>
+            <option value="Security">Security</option>
+            <option value="Laundry">Laundry</option>
+            <option value="Health Information">Health Information</option>
+            <option value="Accounts">Accounts</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="hr-filterStatus">
+            <option value="all">All</option>
+            <option value="active">Active (On Duty)</option>
+            <option value="on_leave">On Leave</option>
+            <option value="sick">Sick</option>
+            <option value="terminated">Terminated</option>
+            <option value="retired">Retired</option>
+            <option value="resigned">Resigned</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Hired From</label>
+          <input type="date" id="hr-filterFrom">
+        </div>
+        <div class="form-group">
+          <label>Hired To</label>
+          <input type="date" id="hr-filterTo">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <input type="text" id="hr-filterRole" placeholder="e.g. Chef, Radiographer">
+      </div>
+      <button onclick="runStaffSearch()" class="primary-btn block">Search</button>
+      <button onclick="clearStaffFilters()" class="ghost-btn block" style="margin-top:8px;">Clear Filters</button>
+    </div>
+    <div id="hr-empRosterTable" class="table-wrap roster-scroll" style="margin-top:12px;"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h3>My Tender Tracker <span class="lock-badge">LOCKED TO YOUR DEPARTMENT</span></h3>
+      <div class="card-head-actions">
+        <input type="text" class="search-input" id="hr-tenderSearch" placeholder="Search tenders..." oninput="filterTenders('hr')">
+        <button class="pill-btn" onclick="printMyTenders()">Print</button>
+      </div>
+    </div>
+    <div class="tender-filters" id="hr-tenderFilters">
+      <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this,'hr')">All</button>
+      <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this,'hr')">Pending</button>
+      <button class="filter-btn" data-filter="awaiting_quotation" onclick="setTenderFilter(this,'hr')">Awaiting Quotation</button>
+      <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this,'hr')">Ordered</button>
+      <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this,'hr')">Received</button>
+    </div>
+    <div id="hr-tenderTrackerList" class="tender-tracker"></div>
+  </div>
+</div>

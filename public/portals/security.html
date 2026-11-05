@@ -1,0 +1,127 @@
+<div class="portal active" data-dept="Security">
+  <h2>Security Management</h2>
+  <p class="muted">Log incidents, track gate access, and manage shift operations.</p>
+
+  <!-- SUMMARY STRIP -->
+  <div class="disc-summary" style="margin-bottom: 20px;">
+    <div class="disc-summary-item" style="border-bottom: 3px solid #dc2626;">
+      <div class="disc-summary-num" id="sec-incidentCount" style="color: #dc2626;">0</div>
+      <div class="disc-summary-lbl">Open Incidents</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid var(--primary);">
+      <div class="disc-summary-num" id="sec-gateCount" style="color: var(--primary);">0</div>
+      <div class="disc-summary-lbl">Active Visitors</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid var(--success);">
+      <div class="disc-summary-num" id="sec-resolvedCount" style="color: var(--success);">0</div>
+      <div class="disc-summary-lbl">Resolved Incidents</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="dept-tabs" style="margin-bottom: 20px;">
+    <button class="dept-tab active" onclick="switchSecTab(this, 'sec-tab-incidents')">Incidents</button>
+    <button class="dept-tab" onclick="switchSecTab(this, 'sec-tab-gate')">Gate Access</button>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TAB 1: INCIDENTS                                             -->
+  <!-- ============================================================ -->
+  <div id="sec-tab-incidents" class="proc-tab-panel active" style="display: block;">
+    <div class="grid" style="grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 20px;">
+      
+      <!-- REPORT INCIDENT -->
+      <div class="card" style="margin: 0; background: var(--surface-alt);">
+        <div class="card-head">
+          <h3>Report Incident</h3>
+        </div>
+        <div class="form-group">
+          <label>Incident Type: <span class="req">*</span></label>
+          <select id="sec-incType">
+            <option value="Theft">Theft</option>
+            <option value="Trespassing">Trespassing</option>
+            <option value="Patient Wandering">Patient Wandering</option>
+            <option value="Equipment Damage">Equipment Damage</option>
+            <option value="Assault">Assault</option>
+            <option value="Fire">Fire</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Location: <span class="req">*</span></label>
+          <input type="text" id="sec-incLocation" placeholder="e.g. Ward A, Main Gate">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Severity: <span class="req">*</span></label>
+            <select id="sec-incSeverity">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description: <span class="req">*</span></label>
+          <textarea id="sec-incDescription" rows="3" placeholder="Describe what happened..."></textarea>
+        </div>
+        <button class="primary-btn block" onclick="submitIncident()">File Incident</button>
+        <div id="sec-incMessage" style="margin-top: 10px; font-weight: 600; font-size: 13px;"></div>
+      </div>
+
+      <!-- INCIDENTS LOG -->
+      <div class="card" style="margin: 0;">
+        <div class="card-head">
+          <h3>Incident Log</h3>
+          <div class="card-head-actions">
+            <input type="text" class="search-input" id="sec-incSearch" placeholder="Search..." oninput="filterIncidents()">
+            <button class="pill-btn" onclick="printIncidents()">Print</button>
+          </div>
+        </div>
+        <div id="sec-incidentList" class="table-wrap roster-scroll" style="max-height: 400px; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TAB 2: GATE ACCESS                                           -->
+  <!-- ============================================================ -->
+  <div id="sec-tab-gate" class="proc-tab-panel" style="display: none;">
+    <div class="grid" style="grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 20px;">
+      
+      <!-- LOG VISITOR -->
+      <div class="card" style="margin: 0; background: var(--surface-alt);">
+        <div class="card-head">
+          <h3>Log Visitor</h3>
+        </div>
+        <div class="form-group">
+          <label>Full Name: <span class="req">*</span></label>
+          <input type="text" id="sec-gateName">
+        </div>
+        <div class="form-group">
+          <label>ID Number: <span class="req">*</span></label>
+          <input type="text" id="sec-gateId">
+        </div>
+        <div class="form-group">
+          <label>Purpose: <span class="req">*</span></label>
+          <input type="text" id="sec-gatePurpose" placeholder="e.g. Visiting patient">
+        </div>
+        <button class="primary-btn block" onclick="submitGateLog()">Log Entry</button>
+        <div id="sec-gateMessage" style="margin-top: 10px; font-weight: 600; font-size: 13px;"></div>
+      </div>
+
+      <!-- ACTIVE VISITORS -->
+      <div class="card" style="margin: 0;">
+        <div class="card-head">
+          <h3>Gate Log</h3>
+          <div class="card-head-actions">
+            <input type="text" class="search-input" id="sec-gateSearch" placeholder="Search..." oninput="filterGateLogs()">
+            <button class="pill-btn" onclick="printGateLogs()">Print</button>
+          </div>
+        </div>
+        <div id="sec-gateList" class="table-wrap roster-scroll" style="max-height: 400px; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+
+</div>

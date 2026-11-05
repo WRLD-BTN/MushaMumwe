@@ -33,7 +33,7 @@ const staticOptions = {
 
 app.use(express.static('public', staticOptions));
 
-const CLEAN_ROUTES = ['/dashboard', '/login', '/nurses', '/it', '/procurement', '/stores', '/hr', '/admin', '/accounts'];
+const CLEAN_ROUTES = ['/dashboard', '/login', '/nurses', '/medical', '/it', '/procurement', '/stores', '/hr', '/admin', '/accounts', '/security', '/radiography', '/catering', '/laundry', '/mortuary'];
 
 CLEAN_ROUTES.forEach(route => {
   app.get(route, (req, res) => {
@@ -60,6 +60,11 @@ const establishmentRoutes = require('./routes/establishment');
 const projectRoutes       = require('./routes/projects');
 const auditRoutes         = require('./routes/audit');
 const accountRoutes       = require('./routes/accounts');
+const securityRoutes      = require('./routes/security');
+const radiographyRoutes   = require('./routes/radiography');
+const cateringRoutes      = require('./routes/catering');
+const laundryRoutes       = require('./routes/laundry');
+const mortuaryRoutes      = require('./routes/mortuary');
 
 app.use('/api/auth',           authRoutes);
 app.use('/api/patients',       patientRoutes);
@@ -73,7 +78,11 @@ app.use('/api/establishment',  establishmentRoutes);
 app.use('/api/projects',       projectRoutes);
 app.use('/api/audit',          auditRoutes);
 app.use('/api/accounts',       accountRoutes);
-
+app.use('/api/security',       securityRoutes);
+app.use('/api/radiography',    radiographyRoutes);
+app.use('/api/catering',      cateringRoutes);
+app.use('/api/laundry',       laundryRoutes);
+app.use('/api/mortuary',      mortuaryRoutes);
 app.locals.io = io;
 app.locals.emit = (event, payload) => io.emit(event, payload);
 

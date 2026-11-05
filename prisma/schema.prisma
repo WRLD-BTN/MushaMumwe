@@ -46,6 +46,7 @@ model Patient {
   causeOfDeath        String?
 
   statusLogs          StatusLog[]
+  scans       ScanRequest[]
 }
 
 model StatusLog {
@@ -344,4 +345,95 @@ model CashFlow {
   source    String   // <-- ADDED THIS
   reason    String
   addedBy   String
+}
+
+model SecurityIncident {
+  id          Int      @id @default(autoincrement())
+  type        String   
+  location    String   
+  description String
+  severity    String   
+  reportedBy  String
+  status      String   @default("open")
+  createdAt   DateTime @default(now())
+}
+
+model GateLog {
+  id        Int      @id @default(autoincrement())
+  name      String
+  idNumber  String
+  purpose   String
+  timeIn    DateTime @default(now())
+  timeOut   DateTime?
+  loggedBy  String
+}
+
+model ScanRequest {
+  id          Int      @id @default(autoincrement())
+  patientId   Int
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  scanType    String   
+  requestedBy String
+  status      String   @default("pending") 
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CateringWard {
+  id         Int             @id @default(autoincrement())
+  name       String          @unique
+  deliveries MealDelivery[]
+}
+
+model CateringMealType {
+  id         Int             @id @default(autoincrement())
+  name       String          @unique
+  deliveries MealDelivery[]
+}
+
+model MealDelivery {
+  id          Int               @id @default(autoincrement())
+  batchId     String
+  wardId      Int
+  ward        CateringWard      @relation(fields: [wardId], references: [id])
+  mealTypeId  Int
+  mealType    CateringMealType  @relation(fields: [mealTypeId], references: [id])
+  quantity    Int
+  notes       String?
+  deliveredBy String
+  status      String            @default("prepared")
+  createdAt   DateTime          @default(now())
+}
+
+model LinenMovement {
+  id          Int      @id @default(autoincrement())
+  type        String   // "sent" (clean out) or "received" (dirty in)
+  itemType    String   // "Bed Sheets", "Towels", "Pillow Cases", "Gowns", "Blankets"
+  ward        String
+  quantity    Int
+  condition   String   @default("good") // "good", "damaged", "lost"
+  notes       String?
+  loggedBy    String
+  createdAt   DateTime @default(now())
+}
+
+model MortuaryRecord {
+  id              Int       @id @default(autoincrement())
+  bodyId          String    @unique
+  patientName     String
+  age             Int?
+  gender          String?
+  dateOfDeath     DateTime
+  causeOfDeath    String
+  nextOfKin       String?
+  contactPhone    String?
+  status          String    @default("in_mortuary")
+  receivedBy      String
+  releasedTo      String?
+  releasedBy      String?
+  releaseNotes    String?
+  releasedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }

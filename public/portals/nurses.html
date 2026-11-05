@@ -3,7 +3,7 @@
   <p class="muted">Manage patients, discharges, and ward inventory.</p>
 
   <!-- FOLLOW-UP ALERT BANNER -->
-  <div id="nurses-followupAlert" style="display: none !important; background: #fef2f2; border: 1.5px solid #fecaca; border-left: 6px solid #dc2626; padding: 16px; border-radius: 8px; margin-bottom: 20px; justify-content:space-between; align-items:center; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.1);">
+  <div id="nurses-followupAlert" style="display: none; background: #fef2f2; border: 1.5px solid #fecaca; border-left: 6px solid #dc2626; padding: 16px; border-radius: 8px; margin-bottom: 20px; justify-content:space-between; align-items:center; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.1);">
     <div>
       <h3 style="color: #991b1b; margin: 0 0 4px 0; font-size: 16px;">⚠️ Action Required</h3>
       <p style="color: #7f1d1d; margin: 0; font-size: 14px;">You have <strong id="nurses-followupCount">0</strong> patient follow-ups due today.</p>
@@ -11,18 +11,19 @@
     <button class="primary-btn" style="background: #dc2626; border-color: #dc2626;" onclick="filterTodayFollowups()">View Patients</button>
   </div>
 
+  <!-- PATIENT SEARCH & UPDATE -->
   <div class="card">
     <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
       <h3>Patient Search <span id="nurses-resultCount" class="muted" style="font-size:14px; font-weight:400;">(0 found)</span></h3>
       <button class="primary-btn" onclick="openDischargeModal()">Discharge Selected Patient</button>
     </div>
-    
+
     <div class="filter-bar" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;">
       <input type="text" id="nurses-patientSearch" placeholder="Search name or ID..." style="flex:1;" onkeyup="debouncedPatientSearch()">
       <button class="ghost-btn" id="nurses-filterToggleBtn" onclick="toggleAdvancedPatientFilters()">Filters (0)</button>
       <button class="pill-btn" onclick="printPatientList()">Print Report</button>
     </div>
-    
+
     <div id="nurses-advancedFilters" style="display:none; background:var(--surface-alt); padding:12px; border-radius:6px; border:1px solid var(--border); margin-bottom:15px; gap:10px; flex-wrap:wrap;">
       <div class="form-group" style="flex:1; min-width:150px; margin:0;">
         <label>Status</label>
@@ -55,11 +56,10 @@
       </div>
     </div>
 
-    <!-- Hidden select for backend logic compatibility -->
     <select id="nurses-patientSelect" style="display:none;"></select>
 
-    <!-- Patient List Table -->
-    <div id="nurses-patientTableWrap" class="table-wrap" style="max-height:300px; overflow-y:auto;">
+    <!-- 5 ROW SCROLLABLE TABLE -->
+    <div id="nurses-patientTableWrap" class="table-wrap roster-scroll" style="max-height: 250px; overflow-y: auto;">
       <table class="data-table" id="nurses-patientTable">
         <thead>
           <tr>
@@ -92,6 +92,7 @@
     </div>
   </div>
 
+  <!-- REGISTER NEW PATIENT -->
   <div class="card">
     <h3>Register New Patient</h3>
     <div class="form-row">
@@ -111,6 +112,7 @@
     <div id="nurses-patientMessage" style="margin-top:10px;"></div>
   </div>
 
+  <!-- DISCHARGE RECORDS -->
   <div class="card">
     <h3>Discharge Records</h3>
     <div class="filter-bar" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;">
@@ -124,57 +126,6 @@
       <label>To: <input type="date" id="nurses-reviewTo" onchange="loadDischargeRecords()"></label>
       <button class="pill-btn" onclick="printDischarges()">Print Report</button>
     </div>
-    <div id="nurses-dischargeList"></div>
-  </div>
-
-  <div class="card">
-    <h3>New Tender Request</h3>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Originator Department:</label>
-        <select id="nurses-reqOriginator">
-          <option value="Nurses">Nurses</option>
-          <option value="Medical">Medical</option>
-          <option value="Pharmacy">Pharmacy</option>
-          <option value="Laboratory">Laboratory</option>
-          <option value="Admin">Admin</option>
-          <option value="Support">Support</option>
-          <option value="Maintenance">Maintenance</option>
-          <option value="Security">Security</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Item Name: <span class="req">*</span></label>
-        <input type="text" id="nurses-reqItemName">
-      </div>
-      <div class="form-group">
-        <label>Quantity: <span class="req">*</span></label>
-        <input type="number" id="nurses-reqQuantity" min="1">
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Reason: <span class="req">*</span></label>
-      <textarea id="nurses-reqReason" rows="2"></textarea>
-    </div>
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <!-- Pointed exactly to submitNursesTender -->
-      <button class="primary-btn" onclick="submitNursesTender()">Submit Request</button>
-      <div id="nurses-requestMessage" style="font-weight:600; font-size:13px;"></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-header" style="display:flex; justify-content:space-between;">
-      <h3>My Department Tenders</h3>
-      <button class="pill-btn" onclick="printMyTenders()">Print Report</button>
-    </div>
-    <div class="filter-bar" style="display:flex; gap:8px; margin-bottom:15px; flex-wrap:wrap;">
-      <button class="filter-btn active" id="nurses-tenderFilters" data-filter="all" onclick="setTenderFilter(this)">All</button>
-      <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this)">Pending</button>
-      <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this)">Ordered</button>
-      <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this)">Received</button>
-      <input type="text" id="nurses-tenderSearch" placeholder="Search..." onkeyup="filterTenders()" style="margin-left:auto;">
-    </div>
-    <div id="nurses-tenderTrackerList"></div>
+    <div id="nurses-dischargeList" class="table-wrap roster-scroll" style="max-height: 250px; overflow-y: auto;"></div>
   </div>
 </div>

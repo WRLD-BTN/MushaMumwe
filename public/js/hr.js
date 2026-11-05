@@ -1,24 +1,37 @@
 // HR Department - staff, labour relations, establishment.
 
 let allEmployees = [];
-let allTenders = [];
 let allDisciplinaryCases = [];
 let allEstMovements = [];
 let disciplinaryMetadata = { offenses: [], actions: [], statuses: [] };
 let establishmentMetadata = { movementTypes: [], resignationReasons: [] };
 let currentOpenCaseId = null;
-let tenderFilter = 'all';
 let staffSearchTimer = null;
 let discSearchTimer = null;
 let estSearchTimer = null;
 let selectedEmployeeId = null;
 
-// Atomic establishment summary state — single object, single render.
+// Atomic establishment summary state
 let estSummaryState = {
   total: 0, transfers: 0, retirements: 0, resignations: 0,
   understaffed: 0, overstaffed: 0,
 };
 let estSummaryInFlight = null;
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function switchHRTab(btn, tabId) {
+  const tabs = btn.parentElement.querySelectorAll('.dept-tab');
+  tabs.forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+
+  const panels = document.querySelectorAll('.portal[data-dept="HR"] .proc-tab-panel');
+  panels.forEach(p => p.style.display = 'none');
+
+  const target = document.getElementById(tabId);
+  if (target) target.style.display = 'block';
+}
 
 // ============================================================
 // INIT
@@ -27,7 +40,6 @@ async function init_hr() {
   await loadWards();
   await runStaffSearch();
   await loadStaffingSummary();
-  await loadMyTenders();
 
   await loadDisciplinaryMetadata();
   await loadDisciplinarySummary();
@@ -44,12 +56,6 @@ async function init_hr() {
   window.onEmployeeUpdated = () => {
     runStaffSearch();
     loadStaffingSummary();
-  };
-  window.onOrderUpdated = (payload) => {
-    const myDept = String(currentDeptName || '').toLowerCase();
-    const sub = String(payload && payload.department || '').toLowerCase();
-    const orig = String(payload && payload.originator || '').toLowerCase();
-    if (sub === myDept || orig === myDept) loadMyTenders();
   };
   window.onDisciplinaryUpdated = () => {
     loadDisciplinarySummary();
@@ -259,7 +265,6 @@ async function loadStaffingSummary() {
     document.getElementById('hr-empOnDuty').textContent = s.active || 0;
     document.getElementById('hr-empOnLeave').textContent = s.on_leave || 0;
     document.getElementById('hr-empSick').textContent = s.sick || 0;
-    document.getElementById('hr-empTerminated').textContent = s.terminated || 0;
     document.getElementById('hr-empTotal').textContent = s.total || 0;
   } catch (e) {
     console.error(e);
@@ -276,50 +281,12 @@ function printStaffRoster() {
   }
 
   const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
-  const phone = systemSettings.contactPhone || '';
-  const address = systemSettings.contactAddress || '';
   const now = new Date();
 
-  const filterParts = [];
-  const search = document.getElementById('hr-empSearchBox').value.trim();
-  const department = document.getElementById('hr-filterDept').value;
-  const status = document.getElementById('hr-filterStatus').value;
-  const role = document.getElementById('hr-filterRole').value.trim();
-  const from = document.getElementById('hr-filterFrom').value;
-  const to = document.getElementById('hr-filterTo').value;
-
-  if (search) filterParts.push('Search="' + search + '"');
-  if (department && department !== 'all') filterParts.push('Department=' + department);
-  if (status && status !== 'all') filterParts.push('Status=' + status);
-  if (role) filterParts.push('Role="' + role + '"');
-  if (from) filterParts.push('Hired From=' + from);
-  if (to) filterParts.push('Hired To=' + to);
-
-  const filterLine = filterParts.length > 0
-    ? 'Filters: ' + filterParts.join(', ')
-    : 'Filters: none (all employees)';
-
   let html = '<div class="print-page a4">';
-  html += '<div class="print-header">';
-  html += '<h1>' + escapeHtml(hospitalName) + '</h1>';
-  html += '<h2>Staff Roster</h2>';
-  html += '</div>';
-
-  if (phone || address) {
-    html += '<div class="print-contact">';
-    if (address) html += '<p>' + escapeHtml(address) + '</p>';
-    if (phone) html += '<p>Tel: ' + escapeHtml(phone) + '</p>';
-    html += '</div>';
-  }
-
-  html += '<div class="print-meta">';
-  html += '<p><strong>Total Employees:</strong> ' + allEmployees.length + '</p>';
-  html += '<p><strong>Report Generated:</strong> ' + fmtDateTime(now) + '</p>';
-  html += '<p style="grid-column: span 2;"><strong>' + escapeHtml(filterLine) + '</strong></p>';
-  html += '</div>';
-
-  html += '<table class="print-table">';
-  html += '<thead><tr>';
+  html += '<div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Staff Roster</h2></div>';
+  html += '<div class="print-meta"><p><strong>Total Employees:</strong> ' + allEmployees.length + '</p><p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p></div>';
+  html += '<table class="print-table"><thead><tr>';
   html += '<th>#</th><th>Name</th><th>Department</th><th>Role</th><th>Ward</th><th>Status</th><th>Hired</th>';
   html += '</tr></thead><tbody>';
 
@@ -338,180 +305,8 @@ function printStaffRoster() {
   });
 
   html += '</tbody></table>';
-  html += '<div class="print-footer">';
-  html += escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now);
-  html += '</div>';
-  html += '</div>';
-
-  document.getElementById('printArea').innerHTML = html;
-  setTimeout(() => window.print(), 200);
-}
-
-// ============================================================
-// TENDERS - SUBMIT
-// ============================================================
-async function submitTenderRequest(deptKey) {
-  const originatorDepartment = document.getElementById(deptKey + '-reqOriginator') ?
-    document.getElementById(deptKey + '-reqOriginator').value : currentDeptName;
-  const itemName = document.getElementById(deptKey + '-reqItemName').value.trim();
-  const quantity = document.getElementById(deptKey + '-reqQuantity').value;
-  const reason = document.getElementById(deptKey + '-reqReason').value.trim();
-  const msg = document.getElementById(deptKey + '-requestMessage');
-
-  if (!itemName || !quantity || !reason) {
-    msg.innerHTML = '<div class="error">All fields required</div>';
-    return;
-  }
-
-  try {
-    const res = await fetch('/api/orders/request', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() },
-      body: JSON.stringify({ itemName, quantity: parseInt(quantity), reason, originatorDepartment }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-
-    msg.innerHTML = '<div class="success">Request submitted</div>';
-    document.getElementById(deptKey + '-reqItemName').value = '';
-    document.getElementById(deptKey + '-reqQuantity').value = '';
-    document.getElementById(deptKey + '-reqReason').value = '';
-    await loadMyTenders();
-  } catch (e) {
-    msg.innerHTML = '<div class="error">' + e.message + '</div>';
-  }
-}
-
-// ============================================================
-// TENDERS - TRACKER
-// ============================================================
-async function loadMyTenders() {
-  const res = await fetch('/api/orders/my', { headers: { Authorization: 'Bearer ' + token() } });
-  if (!res.ok) return;
-  allTenders = await res.json();
-  renderTenderTracker();
-}
-
-function setTenderFilter(btn) {
-  const parent = btn.closest('.filter-bar');
-  if (parent) {
-    parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  }
-  btn.classList.add('active');
-  tenderFilter = btn.dataset.filter;
-  renderTenderTracker();
-}
-
-function filterTenders() { renderTenderTracker(); }
-
-function renderTenderTracker() {
-  const el = document.getElementById('hr-tenderTrackerList');
-  const q = (document.getElementById('hr-tenderSearch') ?
-    document.getElementById('hr-tenderSearch').value : '').toLowerCase();
-
-  let list = allTenders;
-  if (tenderFilter !== 'all') list = list.filter(t => t.status === tenderFilter);
-  if (q) list = list.filter(t => String(t.itemName).toLowerCase().includes(q));
-
-  if (list.length === 0) {
-    el.innerHTML = '<div class="empty-state">No tenders</div>';
-    return;
-  }
-
-  const myDept = String(currentDeptName || '').toLowerCase();
-
-  el.innerHTML = list.map(t => {
-    const submitter = t.requestingDepartment || '';
-    const originator = t.originatorDepartment || submitter;
-    const submittedByMe = String(submitter).toLowerCase() === myDept;
-    const submittedForMe = String(originator).toLowerCase() === myDept;
-
-    let meta = 'Requested by: ' + escapeHtml(submitter);
-    if (!submittedByMe && submittedForMe) {
-      meta = 'Requested FOR your department by ' + escapeHtml(submitter);
-    } else if (submittedByMe && originator.toLowerCase() !== submitter.toLowerCase()) {
-      meta = 'Submitted by you FOR ' + escapeHtml(originator);
-    }
-
-    return '<div class="tender-card">' +
-      '<div class="tender-head">' +
-      '<div>' +
-      '<strong>#' + t.id + ' - ' + escapeHtml(t.itemName) + ' x' + t.quantity + '</strong>' +
-      '<div class="muted">' + meta + '</div>' +
-      '</div>' +
-      '<div>' + statusBadge(t.status) + '</div>' +
-      '</div>' +
-      '<div class="tender-body"><p><em>Reason:</em> ' + escapeHtml(t.reason) + '</p></div>' +
-      '</div>';
-  }).join('');
-}
-
-// ============================================================
-// PRINT - MY TENDERS
-// ============================================================
-function printMyTenders() {
-  if (!allTenders || allTenders.length === 0) {
-    alert('No tenders to print.');
-    return;
-  }
-
-  const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
-  const phone = systemSettings.contactPhone || '';
-  const address = systemSettings.contactAddress || '';
-  const now = new Date();
-
-  const filterParts = [];
-  const q = (document.getElementById('hr-tenderSearch') ?
-    document.getElementById('hr-tenderSearch').value : '').trim();
-  if (tenderFilter && tenderFilter !== 'all') filterParts.push('Status=' + tenderFilter);
-  if (q) filterParts.push('Search="' + q + '"');
-  const filterLine = filterParts.length > 0 ? 'Filters: ' + filterParts.join(', ') : 'Filters: none';
-
-  let html = '<div class="print-page a4">';
-  html += '<div class="print-header">';
-  html += '<h1>' + escapeHtml(hospitalName) + '</h1>';
-  html += '<h2>My Department Tenders - ' + escapeHtml(currentDeptName || '') + '</h2>';
-  html += '</div>';
-
-  if (phone || address) {
-    html += '<div class="print-contact">';
-    if (address) html += '<p>' + escapeHtml(address) + '</p>';
-    if (phone) html += '<p>Tel: ' + escapeHtml(phone) + '</p>';
-    html += '</div>';
-  }
-
-  html += '<div class="print-meta">';
-  html += '<p><strong>Total:</strong> ' + allTenders.length + '</p>';
-  html += '<p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p>';
-  html += '<p style="grid-column: span 2;"><strong>' + escapeHtml(filterLine) + '</strong></p>';
-  html += '</div>';
-
-  html += '<table class="print-table">';
-  html += '<thead><tr>';
-  html += '<th>#</th><th>Item</th><th>Qty</th><th>Reason</th><th>Status</th><th>Requested By</th><th>Date</th>';
-  html += '</tr></thead><tbody>';
-
-  allTenders.forEach((t, i) => {
-    const statusLabel = String(t.status || '').replace('_', ' ').toUpperCase();
-    html += '<tr>';
-    html += '<td>' + (i + 1) + '</td>';
-    html += '<td>' + escapeHtml(t.itemName || '') + '</td>';
-    html += '<td>' + t.quantity + '</td>';
-    html += '<td>' + escapeHtml(t.reason || '') + '</td>';
-    html += '<td>' + escapeHtml(statusLabel) + '</td>';
-    html += '<td>' + escapeHtml(t.requestingBy || '') + '</td>';
-    html += '<td>' + fmtDate(t.createdAt) + '</td>';
-    html += '</tr>';
-  });
-
-  html += '</tbody></table>';
-  html += '<div class="print-footer">';
-  html += escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now);
-  html += '</div>';
-  html += '</div>';
-
-  document.getElementById('printArea').innerHTML = html;
-  setTimeout(() => window.print(), 200);
+  html += '<div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div></div>';
+  printContent(html);
 }
 
 // ============================================================
@@ -560,7 +355,6 @@ async function loadDisciplinarySummary() {
     document.getElementById('discSummaryInvestigation').textContent = s.byStatus.under_investigation || 0;
     document.getElementById('discSummaryResolved').textContent = s.byStatus.resolved || 0;
     document.getElementById('discSummaryDismissed').textContent = s.byStatus.dismissed || 0;
-    document.getElementById('discSummary30Days').textContent = s.last30Days || 0;
   } catch (e) {
     console.error(e);
   }
@@ -598,15 +392,11 @@ async function runDisciplinarySearch() {
   const status = document.getElementById('discFilterStatus').value;
   const offense = document.getElementById('discFilterOffense').value;
   const department = document.getElementById('discFilterDept').value;
-  const from = document.getElementById('discFilterFrom').value;
-  const to = document.getElementById('discFilterTo').value;
 
   if (search) params.set('search', search);
   if (status && status !== 'all') params.set('status', status);
   if (offense && offense !== 'all') params.set('offense', offense);
   if (department && department !== 'all') params.set('department', department);
-  if (from) params.set('from', from);
-  if (to) params.set('to', to);
 
   try {
     const res = await fetch('/api/disciplinary?' + params, {
@@ -625,8 +415,6 @@ function clearDisciplinaryFilters() {
   document.getElementById('discFilterStatus').value = 'all';
   document.getElementById('discFilterOffense').value = 'all';
   document.getElementById('discFilterDept').value = 'all';
-  document.getElementById('discFilterFrom').value = '';
-  document.getElementById('discFilterTo').value = '';
   runDisciplinarySearch();
 }
 
@@ -682,71 +470,13 @@ function printDisciplinaryCases() {
   }
 
   const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
-  const phone = systemSettings.contactPhone || '';
-  const address = systemSettings.contactAddress || '';
   const now = new Date();
 
-  const filterParts = [];
-  const search = document.getElementById('discSearchBox').value.trim();
-  const status = document.getElementById('discFilterStatus').value;
-  const offense = document.getElementById('discFilterOffense').value;
-  const department = document.getElementById('discFilterDept').value;
-  const from = document.getElementById('discFilterFrom').value;
-  const to = document.getElementById('discFilterTo').value;
-
-  if (search) filterParts.push('Search="' + search + '"');
-  if (status && status !== 'all') filterParts.push('Status=' + status.replace('_', ' '));
-  if (offense && offense !== 'all') filterParts.push('Offense=' + offense);
-  if (department && department !== 'all') filterParts.push('Department=' + department);
-  if (from) filterParts.push('From=' + from);
-  if (to) filterParts.push('To=' + to);
-
-  const filterLine = filterParts.length > 0
-    ? 'Filters: ' + filterParts.join(', ')
-    : 'Filters: none (all cases)';
-
-  const statusCounts = { open: 0, under_investigation: 0, resolved: 0, dismissed: 0 };
-  allDisciplinaryCases.forEach(c => {
-    statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
-  });
-
   let html = '<div class="print-page a4">';
-  html += '<div class="print-header">';
-  html += '<h1>' + escapeHtml(hospitalName) + '</h1>';
-  html += '<h2>Labour Relations - Disciplinary Cases</h2>';
-  html += '</div>';
-
-  if (phone || address) {
-    html += '<div class="print-contact">';
-    if (address) html += '<p>' + escapeHtml(address) + '</p>';
-    if (phone) html += '<p>Tel: ' + escapeHtml(phone) + '</p>';
-    html += '</div>';
-  }
-
-  html += '<div class="print-meta">';
-  html += '<p><strong>Total Cases:</strong> ' + allDisciplinaryCases.length + '</p>';
-  html += '<p><strong>Report Generated:</strong> ' + fmtDateTime(now) + '</p>';
-  html += '<p style="grid-column: span 2;"><strong>' + escapeHtml(filterLine) + '</strong></p>';
-  html += '</div>';
-
-  html += '<div class="print-section">';
-  html += '<h3>Status Summary</h3>';
-  html += '<p><strong>Open:</strong> ' + statusCounts.open +
-          ' &nbsp;&nbsp; <strong>Under Investigation:</strong> ' + statusCounts.under_investigation +
-          ' &nbsp;&nbsp; <strong>Resolved:</strong> ' + statusCounts.resolved +
-          ' &nbsp;&nbsp; <strong>Dismissed:</strong> ' + statusCounts.dismissed +
-          '</p>';
-  html += '</div>';
-
-  html += '<table class="print-table">';
-  html += '<thead><tr>';
-  html += '<th>#</th>';
-  html += '<th>Case #</th>';
-  html += '<th>Employee</th>';
-  html += '<th>Dept</th>';
-  html += '<th>Offense</th>';
-  html += '<th>Status</th>';
-  html += '<th>Reported</th>';
+  html += '<div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Labour Relations - Disciplinary Cases</h2></div>';
+  html += '<div class="print-meta"><p><strong>Total Cases:</strong> ' + allDisciplinaryCases.length + '</p><p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p></div>';
+  html += '<table class="print-table"><thead><tr>';
+  html += '<th>#</th><th>Case #</th><th>Employee</th><th>Dept</th><th>Offense</th><th>Status</th><th>Reported</th>';
   html += '</tr></thead><tbody>';
 
   allDisciplinaryCases.forEach((c, i) => {
@@ -767,13 +497,8 @@ function printDisciplinaryCases() {
   });
 
   html += '</tbody></table>';
-  html += '<div class="print-footer">';
-  html += escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now);
-  html += '</div>';
-  html += '</div>';
-
-  document.getElementById('printArea').innerHTML = html;
-  setTimeout(() => window.print(), 200);
+  html += '<div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div></div>';
+  printContent(html);
 }
 
 // ============================================================
@@ -1126,7 +851,6 @@ async function loadEstablishmentMetadata() {
 
 // ============================================================
 // ESTABLISHMENT - ATOMIC SUMMARY
-// Single state object, parallel fetch, in-flight dedupe, one render.
 // ============================================================
 function renderEstSummary() {
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -1184,14 +908,10 @@ async function runEstMovementSearch() {
   const search = document.getElementById('estSearchBox').value.trim();
   const type = document.getElementById('estFilterType').value;
   const department = document.getElementById('estFilterDept').value;
-  const from = document.getElementById('estFilterFrom').value;
-  const to = document.getElementById('estFilterTo').value;
 
   if (search) params.set('search', search);
   if (type && type !== 'all') params.set('type', type);
   if (department && department !== 'all') params.set('department', department);
-  if (from) params.set('from', from);
-  if (to) params.set('to', to);
 
   try {
     const res = await fetch('/api/establishment/movements?' + params, {
@@ -1209,8 +929,6 @@ function clearEstFilters() {
   document.getElementById('estSearchBox').value = '';
   document.getElementById('estFilterType').value = 'all';
   document.getElementById('estFilterDept').value = 'all';
-  document.getElementById('estFilterFrom').value = '';
-  document.getElementById('estFilterTo').value = '';
   runEstMovementSearch();
 }
 
@@ -1268,48 +986,12 @@ function printMovementsReport() {
   }
 
   const hospitalName = (systemSettings.hospitalName || 'Sally Mugabe Central Hospital').toUpperCase();
-  const phone = systemSettings.contactPhone || '';
-  const address = systemSettings.contactAddress || '';
   const now = new Date();
 
-  const filterParts = [];
-  const search = document.getElementById('estSearchBox').value.trim();
-  const type = document.getElementById('estFilterType').value;
-  const department = document.getElementById('estFilterDept').value;
-  const from = document.getElementById('estFilterFrom').value;
-  const to = document.getElementById('estFilterTo').value;
-
-  if (search) filterParts.push('Search="' + search + '"');
-  if (type && type !== 'all') filterParts.push('Type=' + type);
-  if (department && department !== 'all') filterParts.push('Department=' + department);
-  if (from) filterParts.push('From=' + from);
-  if (to) filterParts.push('To=' + to);
-
-  const filterLine = filterParts.length > 0
-    ? 'Filters: ' + filterParts.join(', ')
-    : 'Filters: none (all movements)';
-
   let html = '<div class="print-page a4">';
-  html += '<div class="print-header">';
-  html += '<h1>' + escapeHtml(hospitalName) + '</h1>';
-  html += '<h2>Establishment - Movement Report</h2>';
-  html += '</div>';
-
-  if (phone || address) {
-    html += '<div class="print-contact">';
-    if (address) html += '<p>' + escapeHtml(address) + '</p>';
-    if (phone) html += '<p>Tel: ' + escapeHtml(phone) + '</p>';
-    html += '</div>';
-  }
-
-  html += '<div class="print-meta">';
-  html += '<p><strong>Total Movements:</strong> ' + allEstMovements.length + '</p>';
-  html += '<p><strong>Report Generated:</strong> ' + fmtDateTime(now) + '</p>';
-  html += '<p style="grid-column: span 2;"><strong>' + escapeHtml(filterLine) + '</strong></p>';
-  html += '</div>';
-
-  html += '<table class="print-table">';
-  html += '<thead><tr>';
+  html += '<div class="print-header"><h1>' + escapeHtml(hospitalName) + '</h1><h2>Establishment - Movement Report</h2></div>';
+  html += '<div class="print-meta"><p><strong>Total Movements:</strong> ' + allEstMovements.length + '</p><p><strong>Generated:</strong> ' + fmtDateTime(now) + '</p></div>';
+  html += '<table class="print-table"><thead><tr>';
   html += '<th>#</th><th>Date</th><th>Employee</th><th>Type</th><th>Details</th><th>Approved By</th>';
   html += '</tr></thead><tbody>';
 
@@ -1337,13 +1019,8 @@ function printMovementsReport() {
   });
 
   html += '</tbody></table>';
-  html += '<div class="print-footer">';
-  html += escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now);
-  html += '</div>';
-  html += '</div>';
-
-  document.getElementById('printArea').innerHTML = html;
-  setTimeout(() => window.print(), 200);
+  html += '<div class="print-footer">' + escapeHtml(hospitalName) + ' - Generated ' + fmtDateTime(now) + '</div></div>';
+  printContent(html);
 }
 
 // ============================================================
@@ -1665,7 +1342,7 @@ async function loadHeadcountSettings() {
       map[t.department].max = t.maxHeadcount;
     });
 
-    const allDepts = ['Medical', 'Nurses', 'Pharmacy', 'Laboratory', 'Admin', 'Support', 'Maintenance', 'Security'];
+    const allDepts = ['Medical', 'Nurses', 'Mortuary', 'School of Nursing', 'School of Midwifery', 'Biomedical Equipment', 'Radiography', 'Catering', 'Security', 'Laundry', 'Health Information', 'Accounts'];
     allDepts.forEach(d => {
       if (!map[d]) map[d] = { current: 0, status: 'no_target' };
     });
