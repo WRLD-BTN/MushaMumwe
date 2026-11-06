@@ -1,0 +1,111 @@
+<div class="portal active" data-dept="Health Information">
+  <h2>Health Information (Medical Records)</h2>
+  <p class="muted">Track patient file checkouts, returns, and overdue files.</p>
+
+  <!-- SUMMARY STRIP -->
+  <div class="disc-summary" style="margin-bottom: 20px;">
+    <div class="disc-summary-item" style="border-bottom: 3px solid var(--primary);">
+      <div class="disc-summary-num" id="hi-outToday" style="color: var(--primary);">0</div>
+      <div class="disc-summary-lbl">Checked Out Today</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid var(--success);">
+      <div class="disc-summary-num" id="hi-returnedToday" style="color: var(--success);">0</div>
+      <div class="disc-summary-lbl">Returned Today</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid var(--warning);">
+      <div class="disc-summary-num" id="hi-currentlyOut" style="color: var(--warning);">0</div>
+      <div class="disc-summary-lbl">Currently Out</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid #dc2626;">
+      <div class="disc-summary-num" id="hi-overdue" style="color: #dc2626;">0</div>
+      <div class="disc-summary-lbl">Overdue (&gt;48h)</div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 20px; align-items: start;">
+    
+    <!-- CHECKOUT FILE -->
+    <div class="card" style="margin: 0; background: var(--surface-alt);">
+      <div class="card-head">
+        <h3>Checkout Patient File</h3>
+      </div>
+      <p class="muted" style="margin-bottom: 16px;">Record when a file leaves the records room.</p>
+
+      <div class="form-group">
+        <label>Patient Name: <span class="req">*</span></label>
+        <input type="text" id="hi-patientName" placeholder="Full name">
+      </div>
+      <div class="form-group">
+        <label>Patient ID (optional):</label>
+        <input type="text" id="hi-patientId" placeholder="National ID or record number">
+      </div>
+      <div class="form-group">
+        <label>Ward / Department: <span class="req">*</span></label>
+        <select id="hi-ward">
+          <option value="Ward A">Ward A</option>
+          <option value="Ward B">Ward B</option>
+          <option value="ICU">ICU</option>
+          <option value="Maternity">Maternity</option>
+          <option value="Surgical">Surgical</option>
+          <option value="Paediatrics">Paediatrics</option>
+          <option value="Outpatient">Outpatient</option>
+          <option value="Theatre">Theatre</option>
+          <option value="Radiology">Radiology</option>
+          <option value="Laboratory">Laboratory</option>
+          <option value="Pharmacy">Pharmacy</option>
+          <option value="Accounts">Accounts</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Requested By: <span class="req">*</span></label>
+        <input type="text" id="hi-requestedBy" placeholder="Doctor, nurse, or staff name">
+      </div>
+      <div class="form-group">
+        <label>Purpose:</label>
+        <input type="text" id="hi-purpose" placeholder="e.g. Clinical review, billing, audit">
+      </div>
+      <div class="form-group">
+        <label>Notes:</label>
+        <textarea id="hi-notes" rows="2" placeholder="Any additional notes"></textarea>
+      </div>
+      <button class="primary-btn block" onclick="checkoutFile()">Checkout File</button>
+      <div id="hi-message" style="margin-top: 10px; font-weight: 600; font-size: 13px;"></div>
+    </div>
+
+    <!-- FILE LOG -->
+    <div class="card" style="margin: 0;">
+      <div class="card-head">
+        <h3>File Movement Log</h3>
+        <div class="card-head-actions">
+          <input type="text" class="search-input" id="hi-search" placeholder="Search patient, file #, ward..." oninput="renderFiles()">
+          <button class="pill-btn" onclick="printFiles()">Print</button>
+        </div>
+      </div>
+
+      <!-- DATE FILTERS -->
+      <div class="tender-filters" style="margin-bottom: 12px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+        <button class="filter-btn active" id="hi-date-today" onclick="setHiDate('today')">Today</button>
+        <button class="filter-btn" id="hi-date-week" onclick="setHiDate('week')">This Week</button>
+        <button class="filter-btn" id="hi-date-month" onclick="setHiDate('month')">This Month</button>
+        <button class="filter-btn" id="hi-date-all" onclick="setHiDate('all')">All Time</button>
+        
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+          <input type="date" id="hi-from" onchange="setHiDate('custom')" style="min-height: 30px; padding: 4px 8px; font-size: 12px; width: 115px;">
+          <span class="muted">to</span>
+          <input type="date" id="hi-to" onchange="setHiDate('custom')" style="min-height: 30px; padding: 4px 8px; font-size: 12px; width: 115px;">
+        </div>
+      </div>
+
+      <!-- STATUS FILTERS -->
+      <div class="tender-filters" id="hi-statusFilters" style="margin-bottom: 12px;">
+        <button class="filter-btn active" data-filter="all" onclick="setHiStatusFilter(this)">All Files</button>
+        <button class="filter-btn" data-filter="out" onclick="setHiStatusFilter(this)">Currently Out</button>
+        <button class="filter-btn" data-filter="returned" onclick="setHiStatusFilter(this)">Returned</button>
+        <button class="filter-btn" data-filter="overdue" onclick="setHiStatusFilter(this)">Overdue</button>
+      </div>
+
+      <!-- 5 ROW SCROLLABLE TABLE -->
+      <div id="hi-fileList" class="table-wrap roster-scroll" style="max-height: 400px; overflow-y: auto;"></div>
+    </div>
+  </div>
+</div>

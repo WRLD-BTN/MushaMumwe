@@ -437,3 +437,74 @@ model MortuaryRecord {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
+
+model SchoolStudent {
+  id            Int      @id @default(autoincrement())
+  studentNumber String   @unique
+  name          String
+  school        String   // "Nursing" or "Midwifery"
+  intakeYear    Int
+  currentClass  String
+  currentWard   String?
+  status        String   @default("active")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ClassSchedule {
+  id          Int      @id @default(autoincrement())
+  school      String   // "Nursing" or "Midwifery"
+  title       String
+  tutor       String
+  location    String?
+  dayOfWeek   String
+  startTime   String
+  endTime     String
+  createdAt   DateTime @default(now())
+}
+
+model PatientFile {
+  id            Int       @id @default(autoincrement())
+  fileNumber    String    @unique
+  patientName   String
+  patientId     String?
+  ward          String
+  requestedBy   String
+  purpose       String?
+  status        String    @default("out") // "out" or "returned"
+  checkedOutAt  DateTime  @default(now())
+  checkedOutBy  String
+  returnedAt    DateTime?
+  returnedBy    String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Equipment {
+  id            Int      @id @default(autoincrement())
+  equipmentId   String   @unique
+  name          String
+  category      String   // "Life Support", "Diagnostic", "Surgical", "Lab", "Other"
+  location      String   // "Ward A", "ICU", "Radiology", etc.
+  status        String   @default("operational") // "operational", "maintenance", "out_of_order"
+  lastServiced  DateTime?
+  nextService   DateTime?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  logs          MaintenanceLog[]
+}
+
+model MaintenanceLog {
+  id            Int       @id @default(autoincrement())
+  equipmentId   Int
+  equipment     Equipment @relation(fields: [equipmentId], references: [id])
+  logType       String    // "routine", "repair", "inspection", "calibration"
+  description   String
+  performedBy   String
+  cost          Float?
+  statusBefore  String?
+  statusAfter   String?
+  loggedAt      DateTime  @default(now())
+}

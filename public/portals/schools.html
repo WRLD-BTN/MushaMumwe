@@ -1,0 +1,162 @@
+<div class="portal active" data-dept="Schools">
+  <h2 id="schoolTitle">School</h2>
+  <p class="muted">Manage students, class schedules, and clinical rotations.</p>
+
+  <!-- SUMMARY STRIP -->
+  <div class="disc-summary" style="margin-bottom: 20px;">
+    <div class="disc-summary-item" style="border-bottom: 3px solid var(--primary);">
+      <div class="disc-summary-num" id="school-totalStudents" style="color: var(--primary);">0</div>
+      <div class="disc-summary-lbl">Total Students</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid #16a34a;">
+      <div class="disc-summary-num" id="school-activeStudents" style="color: #16a34a;">0</div>
+      <div class="disc-summary-lbl">Active</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid #d97706;">
+      <div class="disc-summary-num" id="school-graduatedStudents" style="color: #d97706;">0</div>
+      <div class="disc-summary-lbl">Graduated</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid var(--text-muted);">
+      <div class="disc-summary-num" id="school-withdrawnStudents" style="color: var(--text-muted);">0</div>
+      <div class="disc-summary-lbl">Withdrawn</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="dept-tabs" style="margin-bottom: 20px;">
+    <button class="dept-tab active" onclick="switchSchoolTab(this, 'school-tab-students')">Students</button>
+    <button class="dept-tab" onclick="switchSchoolTab(this, 'school-tab-schedule')">Class Schedule</button>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TAB 1: STUDENTS                                              -->
+  <!-- ============================================================ -->
+  <div id="school-tab-students" class="proc-tab-panel active" style="display: block;">
+    <div class="grid" style="grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 20px; align-items: start;">
+      
+      <!-- ADD STUDENT -->
+      <div class="card" style="margin: 0; background: var(--surface-alt);">
+        <div class="card-head">
+          <h3>Add New Student</h3>
+        </div>
+        <p class="muted" style="margin-bottom: 16px;">Register a student into the current cohort.</p>
+
+        <div class="form-group">
+          <label>Full Name: <span class="req">*</span></label>
+          <input type="text" id="school-studentName" placeholder="e.g. Rudo Moyo">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Intake Year: <span class="req">*</span></label>
+            <input type="number" id="school-intakeYear" min="2020" max="2030" value="2026">
+          </div>
+          <div class="form-group">
+            <label>Class: <span class="req">*</span></label>
+            <select id="school-currentClass">
+              <option value="Year 1">Year 1</option>
+              <option value="Year 2">Year 2</option>
+              <option value="Year 3">Year 3</option>
+              <option value="Year 4">Year 4</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Assigned Ward (Clinical Rotation):</label>
+          <select id="school-currentWard">
+            <option value="">None</option>
+            <option value="Ward A">Ward A</option>
+            <option value="Ward B">Ward B</option>
+            <option value="ICU">ICU</option>
+            <option value="Maternity">Maternity</option>
+            <option value="Surgical">Surgical</option>
+            <option value="Paediatrics">Paediatrics</option>
+          </select>
+        </div>
+        <button class="primary-btn block" onclick="submitStudent()">Register Student</button>
+        <div id="school-studentMessage" style="margin-top: 10px; font-weight: 600; font-size: 13px;"></div>
+      </div>
+
+      <!-- STUDENT ROSTER -->
+      <div class="card" style="margin: 0;">
+        <div class="card-head">
+          <h3>Student Roster</h3>
+          <div class="card-head-actions">
+            <input type="text" class="search-input" id="school-studentSearch" placeholder="Search name, ID, ward..." oninput="renderStudents()">
+            <button class="pill-btn" onclick="printStudents()">Print</button>
+          </div>
+        </div>
+
+        <div class="tender-filters" id="school-studentFilters" style="margin-bottom: 12px;">
+          <button class="filter-btn active" data-filter="all" onclick="setStudentFilter(this)">All</button>
+          <button class="filter-btn" data-filter="active" onclick="setStudentFilter(this)">Active</button>
+          <button class="filter-btn" data-filter="graduated" onclick="setStudentFilter(this)">Graduated</button>
+          <button class="filter-btn" data-filter="withdrawn" onclick="setStudentFilter(this)">Withdrawn</button>
+        </div>
+
+        <!-- 5 ROW SCROLLABLE TABLE -->
+        <div id="school-studentList" class="table-wrap roster-scroll" style="max-height: 400px; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TAB 2: CLASS SCHEDULE                                        -->
+  <!-- ============================================================ -->
+  <div id="school-tab-schedule" class="proc-tab-panel" style="display: none;">
+    <div class="grid" style="grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 20px; align-items: start;">
+      
+      <!-- ADD CLASS -->
+      <div class="card" style="margin: 0; background: var(--surface-alt);">
+        <div class="card-head">
+          <h3>Add Class to Schedule</h3>
+        </div>
+        <div class="form-group">
+          <label>Class Title: <span class="req">*</span></label>
+          <input type="text" id="school-classTitle" placeholder="e.g. Anatomy & Physiology">
+        </div>
+        <div class="form-group">
+          <label>Tutor: <span class="req">*</span></label>
+          <input type="text" id="school-classTutor" placeholder="e.g. Principal Tutor">
+        </div>
+        <div class="form-group">
+          <label>Location:</label>
+          <input type="text" id="school-classLocation" placeholder="e.g. Lecture Room 1">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Day: <span class="req">*</span></label>
+            <select id="school-classDay">
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+              <option value="Saturday">Saturday</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Start: <span class="req">*</span></label>
+            <input type="time" id="school-classStart">
+          </div>
+          <div class="form-group">
+            <label>End: <span class="req">*</span></label>
+            <input type="time" id="school-classEnd">
+          </div>
+        </div>
+        <button class="primary-btn block" onclick="submitClass()">Add to Schedule</button>
+        <div id="school-classMessage" style="margin-top: 10px; font-weight: 600; font-size: 13px;"></div>
+      </div>
+
+      <!-- SCHEDULE -->
+      <div class="card" style="margin: 0;">
+        <div class="card-head">
+          <h3>Weekly Class Schedule</h3>
+          <div class="card-head-actions">
+            <button class="pill-btn" onclick="printSchedule()">Print</button>
+          </div>
+        </div>
+        <div id="school-scheduleList" class="table-wrap roster-scroll" style="max-height: 400px; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+</div>

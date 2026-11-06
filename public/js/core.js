@@ -14,6 +14,10 @@ let systemSettings = {
 function token() { return localStorage.getItem('token'); }
 
 const DEPT_MAP = {
+  'Biomedical Equipment': { key: 'biomedical', fragment: 'portals/biomedical.html', script: 'js/biomedical.js', url: '/biomedical' },
+  'Health Information': { key: 'healthinfo', fragment: 'portals/healthinfo.html', script: 'js/healthinfo.js', url: '/healthinfo' },
+  'School of Nursing':   { key: 'schools', fragment: 'portals/schools.html', script: 'js/schools.js', url: '/son' },
+  'School of Midwifery': { key: 'schools', fragment: 'portals/schools.html', script: 'js/schools.js', url: '/som' },
   Mortuary: { key: 'mortuary', fragment: 'portals/mortuary.html', script: 'js/mortuary.js', url: '/mortuary' },
   Laundry: { key: 'laundry', fragment: 'portals/laundry.html', script: 'js/laundry.js', url: '/laundry' },
   Catering: { key: 'catering', fragment: 'portals/catering.html', script: 'js/catering.js', url: '/catering' },
@@ -33,6 +37,10 @@ const URL_TO_DEPT = {
   '/dashboard': null,
   '/portal': null,
   '/login': null,
+  '/healthinfo': 'Health Information',
+  '/biomedical': 'Biomedical Equipment',
+  '/son': 'School of Nursing',
+  '/som': 'School of Midwifery',
   '/mortuary': 'Mortuary',
   '/laundry': 'Laundry',
   '/catering': 'Catering',
@@ -438,6 +446,9 @@ function _dispatch(event, handler) {
     handler(p);
   });
 }
+_dispatch('biomedical:updated', (p) => window.onBiomedicalUpdated?.(p));
+_dispatch('healthinfo:updated', (p) => window.onHealthInfoUpdated?.(p));
+_dispatch('schools:updated', (p) => window.onSchoolsUpdated?.(p));
 _dispatch('mortuary:updated', (p) => window.onMortuaryUpdated?.(p));
 _dispatch('laundry:updated', (p) => window.onLaundryUpdated?.(p));
 _dispatch('catering:updated', (p) => window.onCateringUpdated?.(p));

@@ -1,0 +1,154 @@
+<div class="portal active" data-dept="Biomedical Equipment">
+  <h2>Biomedical Equipment</h2>
+  <p class="muted">Register machines, track maintenance, and flag out-of-order equipment.</p>
+
+  <!-- SUMMARY STRIP -->
+  <div class="disc-summary" style="margin-bottom: 20px;">
+    <div class="disc-summary-item" style="border-bottom: 3px solid var(--primary);">
+      <div class="disc-summary-num" id="bio-total" style="color: var(--primary);">0</div>
+      <div class="disc-summary-lbl">Total Equipment</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid #16a34a;">
+      <div class="disc-summary-num" id="bio-operational" style="color: #16a34a;">0</div>
+      <div class="disc-summary-lbl">Operational</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid #d97706;">
+      <div class="disc-summary-num" id="bio-maintenance" style="color: #d97706;">0</div>
+      <div class="disc-summary-lbl">Under Maintenance</div>
+    </div>
+    <div class="disc-summary-item" style="border-bottom: 3px solid #dc2626;">
+      <div class="disc-summary-num" id="bio-outOfOrder" style="color: #dc2626;">0</div>
+      <div class="disc-summary-lbl">Out of Order</div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 20px; align-items: start;">
+    
+    <!-- REGISTER EQUIPMENT -->
+    <div class="card" style="margin: 0; background: var(--surface-alt);">
+      <div class="card-head">
+        <h3>Register Equipment</h3>
+      </div>
+      <p class="muted" style="margin-bottom: 16px;">Add a new machine to the hospital register.</p>
+
+      <div class="form-group">
+        <label>Equipment Name: <span class="req">*</span></label>
+        <input type="text" id="bio-name" placeholder="e.g. Ventilator, X-Ray Machine">
+      </div>
+      <div class="form-group">
+        <label>Category: <span class="req">*</span></label>
+        <select id="bio-category">
+          <option value="Life Support">Life Support (Ventilator, Defibrillator)</option>
+          <option value="Diagnostic">Diagnostic (X-Ray, CT, MRI, Ultrasound)</option>
+          <option value="Surgical">Surgical (Anesthesia, Electrosurgical)</option>
+          <option value="Laboratory">Laboratory (Centrifuge, Microscope)</option>
+          <option value="Monitoring">Monitoring (ECG, Patient Monitor)</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Location: <span class="req">*</span></label>
+        <select id="bio-location">
+          <option value="Ward A">Ward A</option>
+          <option value="Ward B">Ward B</option>
+          <option value="ICU">ICU</option>
+          <option value="Maternity">Maternity</option>
+          <option value="Surgical">Surgical</option>
+          <option value="Paediatrics">Paediatrics</option>
+          <option value="Radiology">Radiology</option>
+          <option value="Laboratory">Laboratory</option>
+          <option value="Theatre">Theatre</option>
+          <option value="Outpatient">Outpatient</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Last Serviced:</label>
+          <input type="date" id="bio-lastServiced">
+        </div>
+        <div class="form-group">
+          <label>Next Service Due:</label>
+          <input type="date" id="bio-nextService">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes:</label>
+        <textarea id="bio-notes" rows="2" placeholder="Serial number, model, etc."></textarea>
+      </div>
+      <button class="primary-btn block" onclick="registerEquipment()">Register Equipment</button>
+      <div id="bio-registerMessage" style="margin-top: 10px; font-weight: 600; font-size: 13px;"></div>
+    </div>
+
+    <!-- EQUIPMENT LIST -->
+    <div class="card" style="margin: 0;">
+      <div class="card-head">
+        <h3>Equipment Register</h3>
+        <div class="card-head-actions">
+          <input type="text" class="search-input" id="bio-search" placeholder="Search equipment, ID, location..." oninput="renderEquipment()">
+          <button class="pill-btn" onclick="printEquipment()">Print</button>
+        </div>
+      </div>
+
+      <div class="tender-filters" id="bio-statusFilters" style="margin-bottom: 12px;">
+        <button class="filter-btn active" data-filter="all" onclick="setBioFilter(this)">All</button>
+        <button class="filter-btn" data-filter="operational" onclick="setBioFilter(this)">Operational</button>
+        <button class="filter-btn" data-filter="maintenance" onclick="setBioFilter(this)">Maintenance</button>
+        <button class="filter-btn" data-filter="out_of_order" onclick="setBioFilter(this)">Out of Order</button>
+      </div>
+
+      <!-- 5 ROW SCROLLABLE TABLE -->
+      <div id="bio-equipmentList" class="table-wrap roster-scroll" style="max-height: 400px; overflow-y: auto;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MAINTENANCE LOG MODAL -->
+<div id="bioLogModal" class="modal">
+  <div class="modal-content modal-wide">
+    <h3>Maintenance Log — <span id="bioLogEquipmentName"></span></h3>
+    <p class="muted" id="bioLogEquipmentId" style="margin-bottom: 16px;"></p>
+
+    <div class="form-group">
+      <label>Log Type: <span class="req">*</span></label>
+      <select id="bio-logType">
+        <option value="routine">Routine Service</option>
+        <option value="calibration">Calibration</option>
+        <option value="repair">Repair</option>
+        <option value="inspection">Inspection</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Description: <span class="req">*</span></label>
+      <textarea id="bio-logDescription" rows="2" placeholder="What was done?"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Performed By: <span class="req">*</span></label>
+        <input type="text" id="bio-logPerformedBy" placeholder="Technician name">
+      </div>
+      <div class="form-group">
+        <label>Cost:</label>
+        <input type="number" id="bio-logCost" step="0.01" min="0" placeholder="Optional">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Status After Service:</label>
+      <select id="bio-logStatusAfter">
+        <option value="">Leave unchanged</option>
+        <option value="operational">Operational</option>
+        <option value="maintenance">Under Maintenance</option>
+        <option value="out_of_order">Out of Order</option>
+      </select>
+    </div>
+
+    <div id="bio-logMessage"></div>
+
+    <h4 style="margin-top: 20px; margin-bottom: 10px; font-size: 13px; font-weight: 700;">Recent Logs</h4>
+    <div id="bio-logsList" style="max-height: 200px; overflow-y: auto; margin-bottom: 16px; border: 1.5px solid var(--border-soft); border-radius: var(--radius-sm); padding: 8px;"></div>
+
+    <div class="modal-actions">
+      <button onclick="submitMaintenanceLog()" class="primary-btn">Add Log</button>
+      <button onclick="closeBioLogModal()" class="ghost-btn">Close</button>
+    </div>
+  </div>
+</div>
