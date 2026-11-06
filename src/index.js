@@ -33,7 +33,7 @@ const staticOptions = {
 
 app.use(express.static('public', staticOptions));
 
-const CLEAN_ROUTES = ['/dashboard', '/login', '/nurses', '/medical', '/it', '/procurement', '/stores', '/hr', '/admin', '/accounts', '/security', '/radiography', '/catering', '/laundry', '/mortuary'];
+const CLEAN_ROUTES = ['/dashboard', '/login', '/nurses', '/medical', '/it', '/procurement', '/stores', '/hr', '/admin', '/accounts', '/security', '/radiography', '/catering', '/laundry', '/mortuary', '/son', '/som', '/healthinfo', '/biomedical'];
 
 CLEAN_ROUTES.forEach(route => {
   app.get(route, (req, res) => {
@@ -65,6 +65,10 @@ const radiographyRoutes   = require('./routes/radiography');
 const cateringRoutes      = require('./routes/catering');
 const laundryRoutes       = require('./routes/laundry');
 const mortuaryRoutes      = require('./routes/mortuary');
+const schoolsRoutes       = require('./routes/schools');
+const healthInfoRoutes    = require('./routes/healthinfo');
+const biomedicalRoutes    = require('./routes/biomedical');
+const dashboardRoutes     = require('./routes/dashboard');
 
 app.use('/api/auth',           authRoutes);
 app.use('/api/patients',       patientRoutes);
@@ -83,6 +87,10 @@ app.use('/api/radiography',    radiographyRoutes);
 app.use('/api/catering',      cateringRoutes);
 app.use('/api/laundry',       laundryRoutes);
 app.use('/api/mortuary',      mortuaryRoutes);
+app.use('/api/schools',       schoolsRoutes);
+app.use('/api/healthinfo',    healthInfoRoutes);
+app.use('/api/biomedical',    biomedicalRoutes);
+app.use('/api/dashboard',     dashboardRoutes);
 app.locals.io = io;
 app.locals.emit = (event, payload) => io.emit(event, payload);
 

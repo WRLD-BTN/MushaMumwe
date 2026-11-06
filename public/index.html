@@ -1,80 +1,103 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sally Mugabe Central Hospital - Live Board</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hospital Command Center</title>
 
-<!-- PWA Manifest and Icon -->
-<link rel="icon" href="/logo.jpg" type="image/jpeg" alt="HOSPITAL LOGO">
-<link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/logo.jpg" type="image/jpeg">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="style.css">
 
-<link rel="stylesheet" href="style.css">
+  <style>
+    /* Glowing effect for header buttons */
+    @keyframes redGoldGlow {
+      0% { box-shadow: 0 0 2px #dc2626, 0 0 2px #d97706; border-color: #dc2626; }
+      50% { box-shadow: 0 0 10px #dc2626, 0 0 18px #d97706; border-color: #d97706; }
+      100% { box-shadow: 0 0 2px #dc2626, 0 0 2px #d97706; border-color: #dc2626; }
+    }
+    
+    .glow-btn {
+      animation: redGoldGlow 2s infinite ease-in-out;
+      border: 1.5px solid #dc2626;
+      background: transparent;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
 
-<!-- Glowing Edge Effect & Custom Install Modal -->
-<style>
-  @keyframes redGoldGlow {
-    0% { box-shadow: 0 0 2px #dc2626, 0 0 2px #d97706; border-color: #dc2626; }
-    50% { box-shadow: 0 0 12px #dc2626, 0 0 20px #d97706; border-color: #d97706; }
-    100% { box-shadow: 0 0 2px #dc2626, 0 0 2px #d97706; border-color: #dc2626; }
-  }
-  
-  .glow-btn {
-    animation: redGoldGlow 2s infinite ease-in-out;
-    border: 1px solid #dc2626;
-    background: transparent !important;
-    color: inherit !important;
-    transition: all 0.3s ease;
-    cursor: pointer;
-  }
+    [data-theme="light"] .glow-btn {
+      color: #991b1b;
+      background: #fef2f2;
+    }
 
-  [data-theme="light"] .glow-btn {
-    color: #991b1b !important;
-    background: #fef2f2 !important;
-  }
+    [data-theme="dark"] .glow-btn {
+      color: #fca5a5;
+      background: #450a0a;
+    }
 
-  [data-theme="dark"] .glow-btn {
-    color: #fca5a5 !important;
-    background: #450a0a !important;
-  }
+    .glow-btn:hover {
+      animation: none;
+      box-shadow: 0 0 15px rgba(217, 119, 6, 0.6) !important;
+      border-color: #b45309 !important;
+    }
 
-  /* Custom Install Modal */
-  #installModal {
-    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6); z-index: 9999;
-    align-items: center; justify-content: center;
-  }
-  #installModal.active { display: flex; }
-  .install-box {
-    background: white; color: #333; padding: 24px; border-radius: 12px;
-    max-width: 420px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    text-align: center;
-  }
-  .install-box h3 { margin-top: 0; color: #1e3a8a; font-size: 20px; margin-bottom: 12px; }
-  .install-box p { font-size: 14px; line-height: 1.5; margin-bottom: 16px; color: #555; }
-  .install-box ul { text-align: left; font-size: 14px; padding-left: 20px; margin-bottom: 20px; line-height: 1.6; color: #444; }
-  .install-box button {
-    background: #4f46e5; color: white; border: none; padding: 10px 24px;
-    border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;
-  }
-  .install-box button:hover { background: #4338ca; }
-</style>
+    /* Custom Install Modal */
+    #installModal {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6); z-index: 9999;
+      align-items: center; justify-content: center;
+    }
+    #installModal.active { display: flex; }
+    .install-box {
+      background: var(--surface); color: var(--text); padding: 24px; border-radius: 12px;
+      max-width: 420px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    .install-box h3 { margin-top: 0; color: var(--primary); font-size: 20px; margin-bottom: 12px; }
+    .install-box p { font-size: 14px; line-height: 1.5; margin-bottom: 16px; color: var(--text-muted); }
+    .install-box ul { text-align: left; font-size: 14px; padding-left: 20px; margin-bottom: 20px; line-height: 1.6; color: var(--text); }
+    .install-box button {
+      background: var(--primary); color: white; border: none; padding: 10px 24px;
+      border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .install-box button:hover { background: var(--primary-hover); }
+  </style>
 
-<script>
-  // Register Service Worker for PWA
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW failed:', err));
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW failed:', err));
+      });
+    }
+
+    // PWA Install logic
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
     });
-  }
-</script>
+
+    function installApp() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('User accepted the A2HS prompt');
+          }
+          deferredPrompt = null;
+        });
+      } else {
+        document.getElementById('installModal').classList.add('active');
+      }
+    }
+  </script>
 </head>
 <body class="live-board">
 
   <div class="topbar">
     <div class="brand">
       <h1 id="boardTitle">SALLY MUGABE CENTRAL HOSPITAL</h1>
-      <div class="sub" id="apiTarget">connecting...</div>
+      <div class="sub">COMMAND CENTER</div>
     </div>
     <div class="pulse-wrap">
       <span class="live-dot" id="liveDot"></span>
@@ -82,15 +105,196 @@
     </div>
     <div class="clock" id="clock">--:--:--</div>
     
-    <!-- Install App Button with Glow -->
-    <button id="installAppBtn" class="theme-toggle glow-btn" style="margin-right:8px;" onclick="installApp()">Install App</button>
-
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
       <span id="themeIcon">DARK</span>
     </button>
     
-    <!-- Staff Login Link with Glow -->
-    <a href="/dashboard" class="staff-login-link glow-btn" style="padding: 6px 12px; border-radius: 4px; text-decoration: none;">Staff Login</a>
+    <!-- GLOWING INSTALL APP BUTTON -->
+    <button class="staff-login-link glow-btn" style="margin-left: 6px; padding: 7px 13px; font-family: var(--font-mono); font-size: 11px; border-radius: 6px; font-weight: 700;" onclick="installApp()">Install App</button>
+    
+    <!-- GLOWING STAFF LOGIN BUTTON -->
+    <a href="/dashboard" class="staff-login-link glow-btn" style="margin-left: 6px; padding: 7px 13px; font-family: var(--font-mono); font-size: 11px; border-radius: 6px; text-decoration: none; font-weight: 700;">Staff Login</a>
+  </div>
+
+  <!-- TIME RANGE SELECTOR -->
+  <div style="padding: 16px 28px 0 28px;">
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+      <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--board-muted);">Time Range:</span>
+      <button class="filter-btn range-btn-period active" data-period="today" onclick="setPeriod('today')" style="padding: 6px 14px; font-size: 12px; background: var(--primary); color: white; border: 1.5px solid var(--primary); border-radius: 999px; font-weight: 700; cursor: pointer;">Today</button>
+      <button class="filter-btn range-btn-period" data-period="week" onclick="setPeriod('week')" style="padding: 6px 14px; font-size: 12px; background: var(--board-surface-2); color: var(--board-muted); border: 1.5px solid var(--board-line); border-radius: 999px; font-weight: 700; cursor: pointer;">This Week</button>
+      <button class="filter-btn range-btn-period" data-period="month" onclick="setPeriod('month')" style="padding: 6px 14px; font-size: 12px; background: var(--board-surface-2); color: var(--board-muted); border: 1.5px solid var(--board-line); border-radius: 999px; font-weight: 700; cursor: pointer;">This Month</button>
+    </div>
+  </div>
+
+  <!-- TOP STRIP: 4 TILES -->
+  <div style="padding: 20px 28px 0 28px;">
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+      <div class="widget-stat admitted" style="padding: 18px; background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 8px;">
+        <div class="widget-number" id="statPatients" style="color: var(--status-admitted);">-</div>
+        <div class="widget-label" style="margin-top: 8px;">Patients In Care</div>
+        <div id="statPatientsTrend" style="font-size: 12px; margin-top: 8px; font-weight: 700;">-</div>
+      </div>
+
+      <div class="widget-stat" style="padding: 18px; background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 8px;">
+        <div class="widget-number" id="statEmployees" style="color: var(--primary);">-</div>
+        <div class="widget-label" style="margin-top: 8px;">Employees Active</div>
+        <div id="statEmployeesTrend" style="font-size: 12px; margin-top: 8px; font-weight: 700;">-</div>
+      </div>
+
+      <div class="widget-stat pending" style="padding: 18px; background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 8px;">
+        <div class="widget-number" id="statTenders" style="color: var(--status-treatment);">-</div>
+        <div class="widget-label" style="margin-top: 8px;">Pending Tenders</div>
+        <div id="statTendersTrend" style="font-size: 12px; margin-top: 8px; font-weight: 700;">-</div>
+      </div>
+
+      <div class="widget-stat" id="alertsTile" style="padding: 18px; background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 8px; cursor: pointer;" onclick="openAlertsModal()">
+        <div class="widget-number" id="statAlerts" style="color: #dc2626;">-</div>
+        <div class="widget-label" style="margin-top: 8px;">Alerts</div>
+        <div id="statAlertsBreakdown" style="font-size: 11px; margin-top: 8px; color: var(--board-muted); font-weight: 600;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLINICAL OUTCOMES STRIP -->
+  <div style="padding: 20px 28px 0 28px;">
+    <div style="background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 10px; padding: 20px 22px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 class="section-title warning" style="margin: 0;">Clinical Outcomes</h3>
+        <span id="clinicalPeriodLabel" class="section-period-label">Today</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+        <div style="padding: 16px 18px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+              <div id="clinicalAdmitted" style="font-size: 36px; font-weight: 900; color: var(--status-admitted); line-height: 1; letter-spacing: -1px;">-</div>
+              <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">Admitted</div>
+            </div>
+            <div id="trendAdmitted" style="font-size: 13px; font-weight: 700;">-</div>
+          </div>
+        </div>
+
+        <div style="padding: 16px 18px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+              <div id="clinicalDischarged" style="font-size: 36px; font-weight: 900; color: var(--status-discharged); line-height: 1; letter-spacing: -1px;">-</div>
+              <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">Discharged</div>
+            </div>
+            <div id="trendDischarged" style="font-size: 13px; font-weight: 700;">-</div>
+          </div>
+        </div>
+
+        <div style="padding: 16px 18px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px; cursor: pointer;" onclick="openDeathsModal()" title="Click for breakdown">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+              <div id="clinicalDeceased" style="font-size: 36px; font-weight: 900; color: #991b1b; line-height: 1; letter-spacing: -1px;">-</div>
+              <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">Deceased</div>
+            </div>
+            <div id="trendDeceased" style="font-size: 13px; font-weight: 700;">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PATIENT DISTRIBUTION -->
+  <div style="padding: 20px 28px 0 28px;">
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+      <div class="stat admitted">
+        <div><span class="n" id="countAdmitted">0</span><span class="pct" id="pctAdmitted">0%</span></div>
+        <div class="l">Admitted</div>
+      </div>
+      <div class="stat treatment">
+        <div><span class="n" id="countTreatment">0</span><span class="pct" id="pctTreatment">0%</span></div>
+        <div class="l">In Treatment</div>
+      </div>
+      <div class="stat discharged">
+        <div><span class="n" id="countDischarged">0</span><span class="pct" id="pctDischarged">0%</span></div>
+        <div class="l">Discharged</div>
+      </div>
+      <div class="stat deceased">
+        <div><span class="n" id="countDeceased">0</span><span class="pct" id="pctDeceased">0%</span></div>
+        <div class="l">Deceased</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ATTENTION REQUIRED -->
+  <div style="padding: 28px 28px 0 28px;">
+    <div style="background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 10px; padding: 20px 22px;">
+      <div style="margin-bottom: 14px;">
+        <h3 class="section-title urgent" style="margin: 0;">Attention Required</h3>
+      </div>
+      <div id="attentionList">
+        <p class="muted" style="font-size: 12px; text-align: center; padding: 8px;">Loading...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEPARTMENT DIRECTORY -->
+  <div style="padding: 28px 28px 0 28px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+      <h3 class="section-title healthy" style="margin: 0;">Department Directory</h3>
+      <button id="backToCategoriesBtn" class="pill-btn" style="display: none; padding: 4px 12px; font-size: 11px;" onclick="showCategoryView()">Back to Categories</button>
+    </div>
+
+    <div id="categoryView">
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+        <div class="category-card" onclick="showDepartments('Clinical')">
+          <div class="category-title">Clinical</div>
+          <div class="category-desc">Nurses, Medical, Mortuary, Radiography, Schools</div>
+        </div>
+        <div class="category-card" onclick="showDepartments('Operations')">
+          <div class="category-title">Operations</div>
+          <div class="category-desc">Stores, Procurement, IT, Catering, Laundry, Security, Biomedical</div>
+        </div>
+        <div class="category-card" onclick="showDepartments('Admin')">
+          <div class="category-title">Admin</div>
+          <div class="category-desc">HR, Accounts, Health Information</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="departmentView" style="display: none;">
+      <div id="departmentGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px;"></div>
+    </div>
+  </div>
+
+  <!-- LIVE ACTIVITY -->
+  <div style="padding: 28px 28px 0 28px;">
+    <div style="background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 10px; padding: 20px 22px;">
+      <div style="margin-bottom: 14px;">
+        <h3 class="section-title info" style="margin: 0; color: var(--board-text); background: transparent;">Live Activity</h3>
+      </div>
+      <div id="activityFeed" style="max-height: 360px; overflow-y: auto; background: transparent;">
+        <p class="muted" style="font-size: 12px; text-align: center; padding: 8px;">Loading...</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Live data from database via REST and Socket.io — real-time updates enabled
+  </div>
+
+  <!-- ALERTS MODAL -->
+  <div id="alertsModalBackdrop" class="patient-modal-backdrop" onclick="closeAlertsModal()"></div>
+  <div id="alertsModal" class="patient-modal">
+    <div class="patient-modal-head">
+      <div><h3>Attention Required</h3><span class="modal-count" id="alertsModalCount"></span></div>
+      <button class="patient-modal-close" onclick="closeAlertsModal()">×</button>
+    </div>
+    <div class="patient-modal-body"><div id="alertsModalBody"></div></div>
+    <div class="patient-modal-footer">Click outside or press ESC to close</div>
+  </div>
+
+  <!-- DEATHS BREAKDOWN MODAL -->
+  <div id="deathsModalBackdrop" class="patient-modal-backdrop" onclick="closeDeathsModal()"></div>
+  <div id="deathsModal" class="patient-modal">
+    <div class="patient-modal-head">
+      <div><h3>Deaths Breakdown</h3><span class="modal-count" id="deathsModalCount"></span></div>
+      <button class="patient-modal-close" onclick="closeDeathsModal()">×</button>
+    </div>
+    <div class="patient-modal-body"><div id="deathsModalBody"></div></div>
+    <div class="patient-modal-footer">Aggregated data only — no patient identities shown</div>
   </div>
 
   <!-- CUSTOM INSTALL MODAL -->
@@ -109,1210 +313,7 @@
     </div>
   </div>
 
-  <div class="toast" id="toast"></div>
-
-  <div class="stats">
-    <div class="stat admitted" onclick="openDetailModal('patients', 'admitted')" title="Click to view patients">
-      <div>
-        <span class="n" id="countAdmitted">0</span>
-        <span class="pct" id="pctAdmitted">0%</span>
-      </div>
-      <div class="l">Admitted</div>
-    </div>
-    <div class="stat treatment" onclick="openDetailModal('patients', 'treatment')" title="Click to view patients">
-      <div>
-        <span class="n" id="countTreatment">0</span>
-        <span class="pct" id="pctTreatment">0%</span>
-      </div>
-      <div class="l">In Treatment</div>
-    </div>
-    <div class="stat discharged" onclick="openDetailModal('patients', 'discharged')" title="Click to view patients">
-      <div>
-        <span class="n" id="countDischarged">0</span>
-        <span class="pct" id="pctDischarged">0%</span>
-      </div>
-      <div class="l">Discharged</div>
-    </div>
-    <div class="stat deceased" onclick="openDetailModal('patients', 'deceased')" title="Click to view patients">
-      <div>
-        <span class="n" id="countDeceased">0</span>
-        <span class="pct" id="pctDeceased">0%</span>
-      </div>
-      <div class="l">Deceased</div>
-    </div>
-  </div>
-
-  <div class="distbar" id="distbar">
-    <div class="seg" id="segA" style="background:#2563eb;"></div>
-    <div class="seg" id="segT" style="background:#d97706;"></div>
-    <div class="seg" id="segD" style="background:#16a34a;"></div>
-    <div class="seg" id="segX" style="background:#64748b;"></div>
-  </div>
-  <div class="distbar-labels">
-    <span>Case mix - percent of total patients on record</span>
-    <span id="totalCount">0 total</span>
-  </div>
-
-  <div class="public-widgets">
-
-    <div class="widget" id="patientsWidget">
-      <div class="widget-head">
-        <div>
-          <h3>Today's Numbers</h3>
-          <div class="widget-caption" id="patientsCaption">-</div>
-        </div>
-      </div>
-      <div class="widget-range" id="patientsRange">
-        <button class="range-btn active" data-range="today" onclick="setWidgetRange('patients', 'today')">Today</button>
-        <button class="range-btn" data-range="week" onclick="setWidgetRange('patients', 'week')">This Week</button>
-        <button class="range-btn" data-range="month" onclick="setWidgetRange('patients', 'month')">This Month</button>
-        <button class="range-btn" data-range="custom" onclick="setWidgetRange('patients', 'custom')">Custom</button>
-      </div>
-      <div class="widget-custom" id="patientsCustom" style="display:none;">
-        <label>From: <input type="date" id="patientsFrom" onchange="onCustomDateChange('patients')"></label>
-        <label>To: <input type="date" id="patientsTo" onchange="onCustomDateChange('patients')"></label>
-      </div>
-      <div class="widget-row">
-        <div class="widget-stat admitted" onclick="openDetailModal('patients', 'admitted')" title="Click to view">
-          <div class="widget-number" id="todayAdmitted">-</div>
-          <div class="widget-label">Admitted</div>
-        </div>
-        <div class="widget-stat discharged" onclick="openDetailModal('patients', 'discharged')" title="Click to view">
-          <div class="widget-number" id="todayDischarged">-</div>
-          <div class="widget-label">Discharged</div>
-        </div>
-        <div class="widget-stat followups" id="followupWidget" onclick="openDetailModal('patients', 'followups')" title="Click to view">
-          <div class="widget-number" id="todayFollowups">-</div>
-          <div class="widget-label">Follow-ups Due</div>
-        </div>
-        <div class="widget-stat deaths" onclick="openDetailModal('patients', 'deceased')" title="Click to view">
-          <div class="widget-number" id="todayDeaths">-</div>
-          <div class="widget-label">Deaths</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="widget" id="tenderWidget">
-      <div class="widget-head">
-        <div>
-          <h3>Tender Activity</h3>
-          <div class="widget-caption" id="tenderCaption">-</div>
-        </div>
-      </div>
-      <div class="widget-range" id="tenderRange">
-        <button class="range-btn active" data-range="today" onclick="setWidgetRange('tender', 'today')">Today</button>
-        <button class="range-btn" data-range="week" onclick="setWidgetRange('tender', 'week')">This Week</button>
-        <button class="range-btn" data-range="month" onclick="setWidgetRange('tender', 'month')">This Month</button>
-        <button class="range-btn" data-range="custom" onclick="setWidgetRange('tender', 'custom')">Custom</button>
-      </div>
-      <div class="widget-custom" id="tenderCustom" style="display:none;">
-        <label>From: <input type="date" id="tenderFrom" onchange="onCustomDateChange('tender')"></label>
-        <label>To: <input type="date" id="tenderTo" onchange="onCustomDateChange('tender')"></label>
-      </div>
-      <div class="widget-row">
-        <div class="widget-stat pending" onclick="openDetailModal('tenders', 'pending')" title="Click to view">
-          <div class="widget-number" id="tenderPending">-</div>
-          <div class="widget-label">Pending</div>
-        </div>
-        <div class="widget-stat awaiting" onclick="openDetailModal('tenders', 'awaiting_quotation')" title="Click to view">
-          <div class="widget-number" id="tenderAwaiting">-</div>
-          <div class="widget-label">Awaiting Quote</div>
-        </div>
-        <div class="widget-stat ordered" onclick="openDetailModal('tenders', 'ordered')" title="Click to view">
-          <div class="widget-number" id="tenderOrdered">-</div>
-          <div class="widget-label">Ordered</div>
-        </div>
-        <div class="widget-stat received" onclick="openDetailModal('tenders', 'received')" title="Click to view">
-          <div class="widget-number" id="tenderReceived">-</div>
-          <div class="widget-label">Received</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="widget" id="disciplinaryWidget">
-      <div class="widget-head">
-        <div>
-          <h3>Labour Relations</h3>
-          <div class="widget-caption" id="discCaption">-</div>
-        </div>
-      </div>
-      <div class="widget-range" id="discRange">
-        <button class="range-btn active" data-range="today" onclick="setWidgetRange('disc', 'today')">Today</button>
-        <button class="range-btn" data-range="week" onclick="setWidgetRange('disc', 'week')">This Week</button>
-        <button class="range-btn" data-range="month" onclick="setWidgetRange('disc', 'month')">This Month</button>
-        <button class="range-btn" data-range="custom" onclick="setWidgetRange('disc', 'custom')">Custom</button>
-      </div>
-      <div class="widget-custom" id="discCustom" style="display:none;">
-        <label>From: <input type="date" id="discFrom" onchange="onCustomDateChange('disc')"></label>
-        <label>To: <input type="date" id="discTo" onchange="onCustomDateChange('disc')"></label>
-      </div>
-      <div class="widget-row">
-        <div class="widget-stat disc-open" onclick="openDetailModal('discipline', 'open')" title="Click to view">
-          <div class="widget-number" id="discOpen">-</div>
-          <div class="widget-label">Open</div>
-        </div>
-        <div class="widget-stat disc-investigation" onclick="openDetailModal('discipline', 'under_investigation')" title="Click to view">
-          <div class="widget-number" id="discInvestigation">-</div>
-          <div class="widget-label">Investigating</div>
-        </div>
-        <div class="widget-stat disc-resolved" onclick="openDetailModal('discipline', 'resolved')" title="Click to view">
-          <div class="widget-number" id="discResolved">-</div>
-          <div class="widget-label">Resolved</div>
-        </div>
-        <div class="widget-stat disc-dismissed" onclick="openDetailModal('discipline', 'dismissed')" title="Click to view">
-          <div class="widget-number" id="discDismissed">-</div>
-          <div class="widget-label">Dismissed</div>
-        </div>
-        <div class="widget-stat disc-total" onclick="openDetailModal('discipline', 'total')" title="Click to view">
-          <div class="widget-number" id="discTotal">-</div>
-          <div class="widget-label">Total</div>
-        </div>
-      </div>
-      <div class="widget-recent" id="discRecentSection">
-        <div class="widget-recent-toggle" onclick="toggleWidgetRecent('discRecentSection')">
-          Recent Cases
-        </div>
-        <div class="widget-recent-content" id="discRecentList"></div>
-      </div>
-    </div>
-
-    <div class="widget" id="establishmentWidget">
-      <div class="widget-head">
-        <div>
-          <h3>Establishment</h3>
-          <div class="widget-caption" id="estCaption">-</div>
-        </div>
-      </div>
-      <div class="widget-range" id="estRange">
-        <button class="range-btn active" data-range="today" onclick="setWidgetRange('est', 'today')">Today</button>
-        <button class="range-btn" data-range="week" onclick="setWidgetRange('est', 'week')">This Week</button>
-        <button class="range-btn" data-range="month" onclick="setWidgetRange('est', 'month')">This Month</button>
-        <button class="range-btn" data-range="custom" onclick="setWidgetRange('est', 'custom')">Custom</button>
-      </div>
-      <div class="widget-custom" id="estCustom" style="display:none;">
-        <label>From: <input type="date" id="estFrom" onchange="onCustomDateChange('est')"></label>
-        <label>To: <input type="date" id="estTo" onchange="onCustomDateChange('est')"></label>
-      </div>
-      <div class="widget-row">
-        <div class="widget-stat est-transfer" onclick="openDetailModal('establishment', 'transfer')" title="Click to view">
-          <div class="widget-number" id="estTransfers">-</div>
-          <div class="widget-label">Transfers</div>
-        </div>
-        <div class="widget-stat est-retirement" onclick="openDetailModal('establishment', 'retirement')" title="Click to view">
-          <div class="widget-number" id="estRetirements">-</div>
-          <div class="widget-label">Retirements</div>
-        </div>
-        <div class="widget-stat est-resignation" onclick="openDetailModal('establishment', 'resignation')" title="Click to view">
-          <div class="widget-number" id="estResignations">-</div>
-          <div class="widget-label">Resignations</div>
-        </div>
-        <div class="widget-stat est-under" onclick="openDetailModal('establishment', 'understaffed')" title="Click to view">
-          <div class="widget-number" id="estUnderstaffed">-</div>
-          <div class="widget-label">Understaffed</div>
-        </div>
-        <div class="widget-stat est-over" onclick="openDetailModal('establishment', 'overstaffed')" title="Click to view">
-          <div class="widget-number" id="estOverstaffed">-</div>
-          <div class="widget-label">Overstaffed</div>
-        </div>
-      </div>
-      <div class="widget-recent" id="estDeptListSection">
-        <div class="widget-recent-toggle" onclick="toggleWidgetRecent('estDeptListSection')">
-          Departments at Risk
-        </div>
-        <div class="widget-recent-content" id="estDeptList"></div>
-      </div>
-    </div>
-
-    <div class="widget" id="projectsWidget">
-      <div class="widget-head">
-        <div>
-          <h3>Projects</h3>
-          <div class="widget-caption" id="projectsCaption">-</div>
-        </div>
-      </div>
-      <div class="widget-range" id="projectsRange">
-        <button class="range-btn active" data-range="today" onclick="setWidgetRange('projects', 'today')">Today</button>
-        <button class="range-btn" data-range="week" onclick="setWidgetRange('projects', 'week')">This Week</button>
-        <button class="range-btn" data-range="month" onclick="setWidgetRange('projects', 'month')">This Month</button>
-        <button class="range-btn" data-range="custom" onclick="setWidgetRange('projects', 'custom')">Custom</button>
-      </div>
-      <div class="widget-custom" id="projectsCustom" style="display:none;">
-        <label>From: <input type="date" id="projectsFrom" onchange="onCustomDateChange('projects')"></label>
-        <label>To: <input type="date" id="projectsTo" onchange="onCustomDateChange('projects')"></label>
-      </div>
-      <div class="widget-row">
-        <div class="widget-stat proj-ongoing" onclick="openDetailModal('projects', 'ongoing')" title="Click to view">
-          <div class="widget-number" id="projectsOngoing">-</div>
-          <div class="widget-label">Ongoing</div>
-        </div>
-        <div class="widget-stat proj-pending" onclick="openDetailModal('projects', 'pending')" title="Click to view">
-          <div class="widget-number" id="projectsPending">-</div>
-          <div class="widget-label">Pending</div>
-        </div>
-        <div class="widget-stat proj-completed" onclick="openDetailModal('projects', 'completed')" title="Click to view">
-          <div class="widget-number" id="projectsCompleted">-</div>
-          <div class="widget-label">Completed</div>
-        </div>
-      </div>
-      <div class="widget-recent" id="projectsBlockedSection">
-        <div class="widget-recent-toggle" onclick="toggleWidgetRecent('projectsBlockedSection')">
-          Blocked Projects <span id="projectsBlockedCount" style="margin-left:6px; font-family:var(--font-mono); color:#dc2626;">0</span>
-        </div>
-        <div class="widget-recent-content" id="projectsBlockedList"></div>
-      </div>
-      <div class="widget-recent" id="projectsRecentSection">
-        <div class="widget-recent-toggle" onclick="toggleWidgetRecent('projectsRecentSection')">
-          Recent Updates
-        </div>
-        <div class="widget-recent-content" id="projectsRecentList"></div>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="employee-summary">
-    <div class="employee-summary-header">
-      <h2>Staff Status Overview</h2>
-      <button onclick="toggleEmployeeView()" class="toggle-btn">View Details</button>
-    </div>
-
-    <div class="employee-stats">
-      <div class="employee-stat-card on-duty">
-        <div class="employee-stat-number" id="staffOnDuty">-</div>
-        <div class="employee-stat-label">On Duty</div>
-      </div>
-      <div class="employee-stat-card on-leave">
-        <div class="employee-stat-number" id="staffOnLeave">-</div>
-        <div class="employee-stat-label">On Leave</div>
-      </div>
-      <div class="employee-stat-card sick-leave">
-        <div class="employee-stat-number" id="staffSick">-</div>
-        <div class="employee-stat-label">Sick Leave</div>
-      </div>
-      <div class="employee-stat-card total-staff">
-        <div class="employee-stat-number" id="staffTotal">-</div>
-        <div class="employee-stat-label">Total Staff</div>
-      </div>
-    </div>
-
-    <div id="deptBreakdown" class="dept-breakdown">
-      <h3>Staff by Department</h3>
-      <div id="deptList" class="dept-list">
-        <p>Loading...</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="footer-note">
-    Live data from database via REST and Socket.io - real-time updates enabled
-  </div>
-
-  <div id="detailModalBackdrop" class="patient-modal-backdrop" onclick="closeDetailModal()"></div>
-  <div id="detailModal" class="patient-modal">
-    <div class="patient-modal-head">
-      <div>
-        <h3 id="detailModalTitle">Details</h3>
-        <span class="modal-count" id="detailModalCount"></span>
-      </div>
-      <button class="patient-modal-close" onclick="closeDetailModal()" aria-label="Close">x</button>
-    </div>
-    <div class="patient-modal-body">
-      <div id="detailModalList" class="patient-modal-list"></div>
-    </div>
-    <div class="patient-modal-footer">Press ESC or click outside to close</div>
-  </div>
-
-<script src="/socket.io/socket.io.js"></script>
-<script>
-const API_BASE = "";
-const AUTH_TOKEN = localStorage.getItem("token") || "";
-
-// Refresh every widget in one call.
-function refreshAllWidgets() {
-  loadPatientSummary();
-  loadEmployeeSummary();
-  loadTodaySummary();
-  loadTenderActivity();
-  loadDisciplinarySummary();
-  loadEstablishmentSummary();
-  loadProjectsSummary();
-}
-
-// ============================================================
-// PWA INSTALLATION
-// ============================================================
-let deferredPrompt;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-});
-
-async function installApp() {
-  if (deferredPrompt) {
-    // Show the native install prompt (Desktop or Home Screen shortcut)
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log(`User response to the install prompt: ${outcome}`);
-    deferredPrompt = null;
-  } else {
-    // Browser blocked it (HTTP issue) -> Show the custom instructions modal
-    document.getElementById('installModal').classList.add('active');
-  }
-}
-
-// ============================================================
-// THEME
-// ============================================================
-function initTheme() {
-  const saved = localStorage.getItem("mushamumwe_theme") || "light";
-  applyTheme(saved);
-}
-
-function toggleTheme() {
-  const current = document.documentElement.getAttribute("data-theme") || "light";
-  const next = current === "light" ? "dark" : "light";
-  applyTheme(next);
-  localStorage.setItem("mushamumwe_theme", next);
-}
-
-function applyTheme(theme) {
-  document.documentElement.setAttribute("data-theme", theme);
-  const icon = document.getElementById("themeIcon");
-  if (icon) icon.textContent = theme === "light" ? "DARK" : "LIGHT";
-}
-
-// ============================================================
-// SETTINGS
-// ============================================================
-async function loadBoardSettings() {
-  try {
-    const res = await fetch("/api/settings/public");
-    if (!res.ok) return;
-    const data = await res.json();
-    const title = document.getElementById("boardTitle");
-    if (title) title.textContent = (data.hospitalName || "Hospital").toUpperCase() + " - LIVE BOARD";
-    document.title = (data.hospitalName || "Hospital") + " - Live Board";
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-// ============================================================
-// UTILS
-// ============================================================
-function fmtTime(iso) {
-  return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-}
-
-function fmtDateShort(d) {
-  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-function toInputDate(d) {
-  const dt = d instanceof Date ? d : new Date(d);
-  const yyyy = dt.getFullYear();
-  const mm = String(dt.getMonth() + 1).padStart(2, "0");
-  const dd = String(dt.getDate()).padStart(2, "0");
-  return yyyy + "-" + mm + "-" + dd;
-}
-
-function escapeHtml(s) {
-  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
-
-// ============================================================
-// WIDGET STATE
-// ============================================================
-const widgetState = {
-  patients: { range: "today", from: null, to: null },
-  tender: { range: "today", from: null, to: null },
-  disc: { range: "today", from: null, to: null },
-  est: { range: "today", from: null, to: null },
-  projects: { range: "today", from: null, to: null },
-};
-
-function computeRange(preset, customFrom, customTo) {
-  const now = new Date();
-  let from, to;
-
-  if (preset === "today") {
-    from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-  } else if (preset === "week") {
-    const day = now.getDay();
-    const sunday = new Date(now);
-    sunday.setDate(now.getDate() - day);
-    from = new Date(sunday.getFullYear(), sunday.getMonth(), sunday.getDate(), 0, 0, 0, 0);
-    to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-  } else if (preset === "month") {
-    from = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-    to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-  } else if (preset === "custom") {
-    if (customFrom) {
-      from = new Date(customFrom);
-      from.setHours(0, 0, 0, 0);
-    } else {
-      from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    }
-    if (customTo) {
-      to = new Date(customTo);
-      to.setHours(23, 59, 59, 999);
-    } else {
-      to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-    }
-  }
-
-  return { from, to };
-}
-
-function loadWidgetStateFromStorage() {
-  try {
-    ["patients", "tender", "disc", "est", "projects"].forEach(type => {
-      const raw = localStorage.getItem("mushamumwe_widget_" + type);
-      if (raw) widgetState[type] = JSON.parse(raw);
-    });
-  } catch (e) {
-    console.error("Failed to load widget state:", e);
-  }
-}
-
-function saveWidgetState(type) {
-  try {
-    localStorage.setItem("mushamumwe_widget_" + type, JSON.stringify(widgetState[type]));
-  } catch (e) {
-    console.error("Failed to save widget state:", e);
-  }
-}
-
-// ============================================================
-// WIDGET LOADERS
-// ============================================================
-async function loadTodaySummary() {
-  try {
-    const state = widgetState.patients;
-    const { from, to } = computeRange(state.range, state.from, state.to);
-    const params = new URLSearchParams();
-    params.set("from", toInputDate(from));
-    params.set("to", toInputDate(to));
-
-    const res = await fetch("/api/patients/today-summary?" + params);
-    if (!res.ok) return;
-    const data = await res.json();
-
-    document.getElementById("todayAdmitted").textContent = data.admittedToday ?? "-";
-    document.getElementById("todayDischarged").textContent = data.dischargedToday ?? "-";
-    const followups = data.followUpsDueToday || 0;
-    document.getElementById('todayFollowups').textContent = followups;
-    const followupWidget = document.getElementById('followupWidget');
-    if (followups > 0) {
-      document.getElementById('todayFollowups').style.color = '#dc2626';
-      followupWidget.style.background = 'rgba(220, 38, 38, 0.08)';
-      followupWidget.style.border = '1px solid rgba(220, 38, 38, 0.2)';
-    } else {
-      document.getElementById('todayFollowups').style.color = 'var(--primary)';
-      followupWidget.style.background = 'transparent';
-      followupWidget.style.border = 'none';
-    }
-    document.getElementById("todayDeaths").textContent = data.deathsToday ?? "-";
-    document.getElementById("patientsCaption").textContent = fmtDateShort(from) + " - " + fmtDateShort(to);
-  } catch (e) {
-    console.error("Failed to load today summary:", e);
-  }
-}
-
-async function loadTenderActivity() {
-  try {
-    const state = widgetState.tender;
-    const { from, to } = computeRange(state.range, state.from, state.to);
-    const params = new URLSearchParams();
-    params.set("from", toInputDate(from));
-    params.set("to", toInputDate(to));
-
-    const res = await fetch("/api/orders/summary-public?" + params);
-    if (!res.ok) return;
-    const data = await res.json();
-
-    document.getElementById("tenderPending").textContent = data.pending ?? "-";
-    document.getElementById("tenderAwaiting").textContent = data.awaitingQuotation ?? "-";
-    document.getElementById("tenderOrdered").textContent = data.ordered ?? "-";
-    document.getElementById("tenderReceived").textContent = data.received ?? "-";
-    document.getElementById("tenderCaption").textContent = fmtDateShort(from) + " - " + fmtDateShort(to);
-  } catch (e) {
-    console.error("Failed to load tender activity:", e);
-  }
-}
-
-async function loadDisciplinarySummary() {
-  try {
-    const state = widgetState.disc;
-    const { from, to } = computeRange(state.range, state.from, state.to);
-    const params = new URLSearchParams();
-    params.set("from", toInputDate(from));
-    params.set("to", toInputDate(to));
-
-    const res = await fetch("/api/disciplinary/summary-public?" + params);
-    if (!res.ok) return;
-    const data = await res.json();
-
-    document.getElementById("discOpen").textContent = data.byStatus.open || 0;
-    document.getElementById("discInvestigation").textContent = data.byStatus.under_investigation || 0;
-    document.getElementById("discResolved").textContent = data.byStatus.resolved || 0;
-    document.getElementById("discDismissed").textContent = data.byStatus.dismissed || 0;
-    document.getElementById("discTotal").textContent = data.total || 0;
-    document.getElementById("discCaption").textContent = fmtDateShort(from) + " - " + fmtDateShort(to);
-
-    const list = document.getElementById("discRecentList");
-    if (!data.recent || data.recent.length === 0) {
-      list.innerHTML = '<p class="muted" style="font-size:11px; text-align:center; padding:8px;">No cases in this range</p>';
-    } else {
-      list.innerHTML = data.recent.map(c => {
-        const statusLabel = c.status === "under_investigation" ? "INVESTIGATING" : c.status.toUpperCase();
-        const statusClass = "badge-disc-" + c.status;
-        const daysAgo = Math.floor((new Date() - new Date(c.reportedDate)) / (1000 * 60 * 60 * 24));
-        const daysLabel = daysAgo === 0 ? "today" : daysAgo === 1 ? "1 day ago" : daysAgo + " days ago";
-        return '<div class="disc-recent-item">' +
-          '<div class="disc-recent-head">' +
-          '<span class="disc-recent-case">' + escapeHtml(c.caseNumber) + '</span>' +
-          '<span class="badge ' + statusClass + '" style="font-size:9px; padding:2px 8px;">' + statusLabel + '</span>' +
-          '</div>' +
-          '<div class="disc-recent-body">' +
-          '<span>' + escapeHtml(c.offenseType) + '</span>' +
-          '<span class="disc-recent-days">' + daysLabel + '</span>' +
-          '</div>' +
-          '</div>';
-      }).join("");
-    }
-  } catch (e) {
-    console.error("Failed to load disciplinary summary:", e);
-  }
-}
-
-async function loadEstablishmentSummary() {
-  try {
-    const state = widgetState.est;
-    const { from, to } = computeRange(state.range, state.from, state.to);
-    const params = new URLSearchParams();
-    params.set("from", toInputDate(from));
-    params.set("to", toInputDate(to));
-
-    const sumRes = await fetch("/api/establishment/summary-public?" + params);
-    const headRes = await fetch("/api/establishment/headcount-public");
-    if (!sumRes.ok) return;
-    const summary = await sumRes.json();
-
-    document.getElementById("estTransfers").textContent = summary.transfers ?? 0;
-    document.getElementById("estRetirements").textContent = summary.retirements ?? 0;
-    document.getElementById("estResignations").textContent = summary.resignations ?? 0;
-    document.getElementById("estUnderstaffed").textContent = summary.understaffed ?? 0;
-    document.getElementById("estOverstaffed").textContent = summary.overstaffed ?? 0;
-    document.getElementById("estCaption").textContent = fmtDateShort(from) + " - " + fmtDateShort(to);
-
-    if (headRes.ok) {
-      const headcount = await headRes.json();
-      const atRisk = headcount.filter(d => d.status === "understaffed" || d.status === "overstaffed");
-      const list = document.getElementById("estDeptList");
-      if (atRisk.length === 0) {
-        list.innerHTML = '<p class="muted" style="font-size:11px; text-align:center; padding:8px;">All departments within target</p>';
-      } else {
-        list.innerHTML = atRisk.slice(0, 5).map(d => {
-          const statusLabel = d.status === "understaffed" ? "UNDER" : "OVER";
-          const statusClass = d.status === "understaffed" ? "badge-rejected" : "badge-awaiting_quotation";
-          const targetText = d.max ? d.current + "/" + d.min + "-" + d.max : d.current + "/min " + d.min;
-          return '<div class="disc-recent-item">' +
-            '<div class="disc-recent-head">' +
-            '<span class="disc-recent-case">' + escapeHtml(d.department) + '</span>' +
-            '<span class="badge ' + statusClass + '" style="font-size:9px; padding:2px 8px;">' + statusLabel + '</span>' +
-            '</div>' +
-            '<div class="disc-recent-body">' +
-            '<span>Current / Target</span>' +
-            '<span class="disc-recent-days">' + targetText + '</span>' +
-            '</div>' +
-            '</div>';
-        }).join("");
-      }
-    }
-  } catch (e) {
-    console.error("Failed to load establishment summary:", e);
-  }
-}
-
-async function loadProjectsSummary() {
-  try {
-    const state = widgetState.projects;
-    const { from, to } = computeRange(state.range, state.from, state.to);
-    const params = new URLSearchParams();
-    params.set("from", toInputDate(from));
-    params.set("to", toInputDate(to));
-
-    const res = await fetch("/api/projects/summary-public?" + params);
-    if (!res.ok) return;
-    const data = await res.json();
-
-    document.getElementById("projectsOngoing").textContent = (data.byStatus && data.byStatus.ongoing) || 0;
-    document.getElementById("projectsPending").textContent = (data.byStatus && data.byStatus.pending) || 0;
-    document.getElementById("projectsCompleted").textContent = (data.byStatus && data.byStatus.completed) || 0;
-    document.getElementById("projectsCaption").textContent = fmtDateShort(from) + " - " + fmtDateShort(to);
-
-    const blockedList = document.getElementById("projectsBlockedList");
-    const blockedCount = document.getElementById("projectsBlockedCount");
-    const blocked = data.blocked || [];
-
-    blockedCount.textContent = blocked.length;
-
-    if (blocked.length === 0) {
-      blockedList.innerHTML = '<p class="muted" style="font-size:11px; text-align:center; padding:8px;">No blocked projects</p>';
-    } else {
-      blockedList.innerHTML = blocked.map(p => {
-        return '<div class="disc-recent-item" style="border-left:3px solid #dc2626;">' +
-          '<div class="disc-recent-head">' +
-          '<span class="disc-recent-case">' + escapeHtml(p.name) + '</span>' +
-          '<span class="badge badge-rejected" style="font-size:9px; padding:2px 8px;">BLOCKED</span>' +
-          '</div>' +
-          '<div class="disc-recent-body">' +
-          '<span>' + escapeHtml(p.department) + '</span>' +
-          '<span class="disc-recent-days">Head: ' + escapeHtml(p.projectHead || '-') + '</span>' +
-          '</div>' +
-          '<div style="margin-top:6px; font-size:11px; color:#991b1b;">' +
-          '<strong>Reason:</strong> ' + escapeHtml(p.obstacleReason || 'Not stated') +
-          '</div>' +
-          '</div>';
-      }).join("");
-    }
-
-    const list = document.getElementById("projectsRecentList");
-    if (!data.recent || data.recent.length === 0) {
-      list.innerHTML = '<p class="muted" style="font-size:11px; text-align:center; padding:8px;">No project activity</p>';
-    } else {
-      list.innerHTML = data.recent.map(p => {
-        const statusClass = p.status === "ongoing" ? "badge-approved" : p.status === "pending" ? "badge-rejected" : "badge-received";
-        const daysAgo = Math.floor((new Date() - new Date(p.updatedAt)) / (1000 * 60 * 60 * 24));
-        const daysLabel = daysAgo === 0 ? "today" : daysAgo === 1 ? "1 day ago" : daysAgo + " days ago";
-        const obstacleLine = (p.status === "pending" && p.obstacleReason)
-          ? '<div class="disc-recent-body" style="color:#dc2626; margin-top:4px;"><span>Reason:</span><span class="disc-recent-days">' + escapeHtml(p.obstacleReason) + '</span></div>'
-          : '';
-        return '<div class="disc-recent-item">' +
-          '<div class="disc-recent-head">' +
-          '<span class="disc-recent-case">' + escapeHtml(p.name) + '</span>' +
-          '<span class="badge ' + statusClass + '" style="font-size:9px; padding:2px 8px;">' + p.status.toUpperCase() + '</span>' +
-          '</div>' +
-          '<div class="disc-recent-body">' +
-          '<span>' + escapeHtml(p.department) + '</span>' +
-          '<span class="disc-recent-days">' + daysLabel + '</span>' +
-          '</div>' +
-          obstacleLine +
-          '</div>';
-      }).join("");
-    }
-  } catch (e) {
-    console.error("Failed to load projects summary:", e);
-  }
-}
-
-// ============================================================
-// COLLAPSIBLE RECENT LIST
-// ============================================================
-function toggleWidgetRecent(sectionId) {
-  const el = document.getElementById(sectionId);
-  if (el) el.classList.toggle("expanded");
-}
-
-// ============================================================
-// WIDGET CONTROLS
-// ============================================================
-function setWidgetRange(type, range) {
-  widgetState[type].range = range;
-  saveWidgetState(type);
-
-  const rangeEl = document.getElementById(type + "Range");
-  if (rangeEl) {
-    rangeEl.querySelectorAll(".range-btn").forEach(b => {
-      b.classList.toggle("active", b.dataset.range === range);
-    });
-  }
-
-  const customEl = document.getElementById(type + "Custom");
-  if (customEl) {
-    customEl.style.display = range === "custom" ? "flex" : "none";
-  }
-
-  reloadWidget(type);
-}
-
-function onCustomDateChange(type) {
-  const fromEl = document.getElementById(type + "From");
-  const toEl = document.getElementById(type + "To");
-  widgetState[type].from = fromEl?.value || null;
-  widgetState[type].to = toEl?.value || null;
-  saveWidgetState(type);
-  reloadWidget(type);
-}
-
-function reloadWidget(type) {
-  if (type === "patients") loadTodaySummary();
-  else if (type === "tender") loadTenderActivity();
-  else if (type === "disc") loadDisciplinarySummary();
-  else if (type === "est") loadEstablishmentSummary();
-  else if (type === "projects") loadProjectsSummary();
-}
-
-function restoreWidgetUI() {
-  ["patients", "tender", "disc", "est", "projects"].forEach(type => {
-    const state = widgetState[type];
-    const rangeEl = document.getElementById(type + "Range");
-    if (rangeEl) {
-      rangeEl.querySelectorAll(".range-btn").forEach(b => {
-        b.classList.toggle("active", b.dataset.range === state.range);
-      });
-    }
-    const customEl = document.getElementById(type + "Custom");
-    if (customEl) {
-      customEl.style.display = state.range === "custom" ? "flex" : "none";
-    }
-    if (state.range === "custom") {
-      const fromEl = document.getElementById(type + "From");
-      const toEl = document.getElementById(type + "To");
-      if (fromEl && state.from) fromEl.value = state.from;
-      if (toEl && state.to) toEl.value = state.to;
-    }
-  });
-}
-
-// ============================================================
-// PATIENT SUMMARY
-// ============================================================
-async function loadPatientSummary() {
-  try {
-    const res = await fetch("/api/patients/summary");
-    if (!res.ok) throw new Error("summary fetch failed");
-    const summary = await res.json();
-
-    const c = summary.counts;
-    const p = summary.percentages;
-
-    document.getElementById("countAdmitted").textContent = c.admitted;
-    document.getElementById("countTreatment").textContent = c.treatment;
-    document.getElementById("countDischarged").textContent = c.discharged;
-    document.getElementById("countDeceased").textContent = c.deceased;
-
-    document.getElementById("pctAdmitted").textContent = p.admitted + "%";
-    document.getElementById("pctTreatment").textContent = p.treatment + "%";
-    document.getElementById("pctDischarged").textContent = p.discharged + "%";
-    document.getElementById("pctDeceased").textContent = p.deceased + "%";
-
-    document.getElementById("totalCount").textContent = summary.total + " total";
-
-    document.getElementById("segA").style.width = p.admitted + "%";
-    document.getElementById("segT").style.width = p.treatment + "%";
-    document.getElementById("segD").style.width = p.discharged + "%";
-    document.getElementById("segX").style.width = p.deceased + "%";
-
-    document.getElementById("syncText").textContent = "SYNCED";
-    document.getElementById("apiTarget").textContent = "Connected - " + window.location.host;
-  } catch (err) {
-    document.getElementById("syncText").textContent = "OFFLINE";
-    document.getElementById("apiTarget").textContent = "Could not reach API - check server";
-    console.error("Failed to load patient summary:", err);
-  }
-}
-
-// ============================================================
-// GENERIC DETAIL MODAL
-// ============================================================
-let currentDetailRequest = null;
-
-const MODAL_TITLES = {
-  patients: {
-    admitted: "Admitted Patients",
-    treatment: "Patients In Treatment",
-    discharged: "Discharged Patients",
-    followups: "Follow-ups Due Today",
-    deceased: "Deceased Patients",
-  },
-  tenders: {
-    pending: "Pending Tenders",
-    awaiting_quotation: "Tenders Awaiting Quote",
-    ordered: "Ordered Tenders",
-    received: "Received Tenders",
-  },
-  discipline: {
-    open: "Open Cases",
-    under_investigation: "Cases Under Investigation",
-    resolved: "Resolved Cases",
-    dismissed: "Dismissed Cases",
-    total: "All Cases",
-  },
-  establishment: {
-    transfer: "Recent Transfers",
-    retirement: "Recent Retirements",
-    resignation: "Recent Resignations",
-    understaffed: "Understaffed Departments",
-    overstaffed: "Overstaffed Departments",
-  },
-  projects: {
-    ongoing: "Ongoing Projects",
-    pending: "Blocked Projects",
-    completed: "Completed Projects",
-  },
-};
-
-const DETAIL_ENDPOINTS = {
-  patients: "/api/patients/detail-public",
-  tenders: "/api/orders/detail-public",
-  discipline: "/api/disciplinary/detail-public",
-  establishment: "/api/establishment/detail-public",
-  projects: "/api/projects/detail-public",
-};
-
-const WIDGET_STATE_KEY = {
-  patients: "patients",
-  tenders: "tender",
-  discipline: "disc",
-  establishment: "est",
-  projects: "projects",
-};
-
-async function openDetailModal(source, category) {
-  currentDetailRequest = { source, category };
-
-  const title = (MODAL_TITLES[source] && MODAL_TITLES[source][category]) || "Details";
-  document.getElementById("detailModalTitle").textContent = title;
-  document.getElementById("detailModalCount").textContent = "";
-  document.getElementById("detailModalList").innerHTML = '<p class="muted" style="text-align:center; padding:16px;">Loading...</p>';
-
-  document.getElementById("detailModalBackdrop").classList.add("active");
-  document.getElementById("detailModal").classList.add("active");
-
-  try {
-    const state = widgetState[WIDGET_STATE_KEY[source]];
-    const { from, to } = computeRange(state.range, state.from, state.to);
-    const params = new URLSearchParams();
-    params.set("category", category);
-    params.set("from", toInputDate(from));
-    params.set("to", toInputDate(to));
-
-    const url = DETAIL_ENDPOINTS[source] + "?" + params.toString();
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Failed to load details");
-    const rows = await res.json();
-
-    renderDetailRows(source, category, rows);
-  } catch (e) {
-    document.getElementById("detailModalList").innerHTML =
-      '<p class="error" style="text-align:center; padding:16px;">' + escapeHtml(e.message) + '</p>';
-  }
-}
-
-function renderDetailRows(source, category, rows) {
-  const list = document.getElementById("detailModalList");
-  const count = document.getElementById("detailModalCount");
-  count.textContent = "(" + rows.length + ")";
-
-  if (!rows || rows.length === 0) {
-    list.innerHTML = '<div class="patient-modal-empty">No records in this category</div>';
-    return;
-  }
-
-  if (source === "patients") {
-    list.innerHTML = rows.map(p => {
-      const wardName = p.ward ? p.ward.name : "-";
-      const time = fmtTime(p.updatedAt);
-      return '<div class="patient-modal-item">' +
-        '<span class="patient-modal-item-case">Case #' + p.id + '</span>' +
-        '<span class="patient-modal-item-ward">' + escapeHtml(wardName) + '</span>' +
-        '<span class="patient-modal-item-time">' + time + '</span>' +
-        '</div>';
-    }).join("");
-    return;
-  }
-
-  if (source === "tenders") {
-    list.innerHTML = rows.map(t => {
-      const dept = t.originatorDepartment || t.requestingDepartment || "-";
-      const time = fmtTime(t.createdAt);
-      return '<div class="patient-modal-item">' +
-        '<span class="patient-modal-item-case">#' + t.id + ' ' + escapeHtml(t.itemName) + ' x' + t.quantity + '</span>' +
-        '<span class="patient-modal-item-ward">' + escapeHtml(dept) + '</span>' +
-        '<span class="patient-modal-item-time">' + time + '</span>' +
-        '</div>';
-    }).join("");
-    return;
-  }
-
-  if (source === "discipline") {
-    list.innerHTML = rows.map(c => {
-      const dept = c.employee ? c.employee.department : "-";
-      const reported = fmtDateShort(new Date(c.reportedDate));
-      return '<div class="patient-modal-item">' +
-        '<span class="patient-modal-item-case">' + escapeHtml(c.caseNumber) + '</span>' +
-        '<span class="patient-modal-item-ward">' + escapeHtml(dept) + '</span>' +
-        '<span class="patient-modal-item-time">' + escapeHtml(c.offenseType) + '</span>' +
-        '<span class="patient-modal-item-time">' + reported + '</span>' +
-        '</div>';
-    }).join("");
-    return;
-  }
-
-  if (source === "establishment") {
-    if (category === "understaffed" || category === "overstaffed") {
-      list.innerHTML = rows.map(d => {
-        const targetText = d.max ? d.min + "-" + d.max : "min " + d.min;
-        return '<div class="patient-modal-item">' +
-          '<span class="patient-modal-item-case">' + escapeHtml(d.department) + '</span>' +
-          '<span class="patient-modal-item-ward">Current: ' + d.current + '</span>' +
-          '<span class="patient-modal-item-time">Target: ' + escapeHtml(targetText) + '</span>' +
-          '</div>';
-      }).join("");
-      return;
-    }
-    list.innerHTML = rows.map(m => {
-      const date = m.effectiveDate || m.createdAt;
-      let detail = "";
-      if (m.movementType === "transfer") {
-        detail = (m.fromDepartment || "?") + " to " + (m.toDepartment || "?");
-      } else if (m.reason) {
-        detail = m.reason;
-      }
-      return '<div class="patient-modal-item">' +
-        '<span class="patient-modal-item-case">' + escapeHtml(detail) + '</span>' +
-        '<span class="patient-modal-item-ward">' + escapeHtml(m.employee ? m.employee.department : "-") + '</span>' +
-        '<span class="patient-modal-item-time">' + fmtDateShort(new Date(date)) + '</span>' +
-        '</div>';
-    }).join("");
-    return;
-  }
-
-  if (source === "projects") {
-    list.innerHTML = rows.map(p => {
-      const updated = fmtDateShort(new Date(p.updatedAt));
-      const obstacleLine = (p.status === "pending" && p.obstacleReason)
-        ? '<div style="margin-top:8px; padding:8px 12px; background:#fef2f2; border-left:3px solid #dc2626; border-radius:4px; font-size:12px; color:#991b1b;">' +
-          '<strong>Blocked reason:</strong> ' + escapeHtml(p.obstacleReason) +
-          '</div>'
-        : '';
-
-      return '<div class="patient-modal-item" style="flex-direction:column; align-items:stretch; padding:14px;">' +
-        '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px;">' +
-        '<span class="patient-modal-item-case">' + escapeHtml(p.name) + '</span>' +
-        '<span class="patient-modal-item-time">' + updated + '</span>' +
-        '</div>' +
-        '<div style="display:flex; gap:10px; margin-top:6px; align-items:center; flex-wrap:wrap;">' +
-        '<span class="patient-modal-item-ward">' + escapeHtml(p.department) + '</span>' +
-        '<span class="patient-modal-item-time">Head: ' + escapeHtml(p.projectHead || '-') + '</span>' +
-        '</div>' +
-        obstacleLine +
-        '</div>';
-    }).join("");
-    return;
-  }
-
-  list.innerHTML = '<div class="patient-modal-empty">Unsupported category</div>';
-}
-
-function closeDetailModal() {
-  currentDetailRequest = null;
-  document.getElementById("detailModalBackdrop").classList.remove("active");
-  document.getElementById("detailModal").classList.remove("active");
-}
-
-// ============================================================
-// EMPLOYEE SUMMARY
-// ============================================================
-async function loadEmployeeSummary() {
-  try {
-    const res = await fetch("/api/employees/summary", {
-      headers: AUTH_TOKEN ? { Authorization: "Bearer " + AUTH_TOKEN } : {},
-    });
-    if (!res.ok) throw new Error("Failed to load employee summary");
-    const summary = await res.json();
-
-    document.getElementById("staffOnDuty").textContent = summary.active || 0;
-    document.getElementById("staffOnLeave").textContent = summary.on_leave || 0;
-    document.getElementById("staffSick").textContent = summary.sick || 0;
-    document.getElementById("staffTotal").textContent = (summary.total - summary.terminated) || 0;
-
-    if (summary.byDepartment && summary.byDepartment.length > 0) {
-      document.getElementById("deptList").innerHTML = summary.byDepartment
-        .map((d) => "<p>" + d.department + ": <strong>" + d.count + "</strong></p>")
-        .join("");
-    } else {
-      document.getElementById("deptList").innerHTML = "<p>No department data available</p>";
-    }
-  } catch (e) {
-    console.error("Failed to load employee summary:", e);
-    document.getElementById("deptList").innerHTML = "<p>Failed to load data</p>";
-  }
-}
-
-function toggleEmployeeView() {
-  document.getElementById("deptBreakdown").classList.toggle("active");
-}
-
-// ============================================================
-// TOAST + CLOCK
-// ============================================================
-function showToast(msg) {
-  const t = document.getElementById("toast");
-  t.innerHTML = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2500);
-}
-
-function tickClock() {
-  document.getElementById("clock").textContent = new Date().toLocaleTimeString("en-GB");
-}
-
-// ============================================================
-// INIT
-// ============================================================
-initTheme();
-loadBoardSettings();
-loadWidgetStateFromStorage();
-restoreWidgetUI();
-tickClock();
-setInterval(tickClock, 1000);
-
-// Data loads once when socket connects (see socket.on("connect")).
-
-// ============================================================
-// SOCKET
-// ============================================================
-const socket = io({
-  transports: ["websocket", "polling"],
-  reconnection: true,
-  reconnectionAttempts: Infinity,
-  reconnectionDelay: 1000,
-  reconnectionDelayMax: 10000,
-  randomizationFactor: 0.5,
-  timeout: 20000,
-});
-
-socket.on("connect", () => {
-  console.log("Socket connected");
-  document.getElementById("syncText").textContent = "CONNECTED";
-
-  // Delay initial load 800ms so the WebSocket handshake completes
-  // before the fetch burst competes for bandwidth.
-  setTimeout(refreshAllWidgets, 800);
-});
-
-socket.on("disconnect", (reason) => {
-  console.log("Socket disconnected:", reason);
-  document.getElementById("syncText").textContent = "DISCONNECTED";
-});
-
-socket.on("reconnect_attempt", (attempt) => {
-  document.getElementById("syncText").textContent = "RECONNECTING " + attempt;
-});
-
-socket.on("reconnect_failed", () => {
-  document.getElementById("syncText").textContent = "OFFLINE";
-});
-
-socket.on("patient:updated", (payload) => {
-  showToast("Case #" + payload.id + " - " + String(payload.status).toUpperCase());
-  loadPatientSummary();
-  loadTodaySummary();
-});
-
-socket.on("patient:created", (payload) => {
-  showToast("New patient registered: Case #" + payload.id);
-  loadPatientSummary();
-  loadTodaySummary();
-});
-
-socket.on("employee:updated", () => {
-  loadEmployeeSummary();
-  loadEstablishmentSummary();
-});
-
-socket.on("employee:created", (payload) => {
-  showToast("New employee added: " + payload.name);
-  loadEmployeeSummary();
-});
-
-socket.on("establishment:updated", () => {
-  loadEstablishmentSummary();
-});
-
-socket.on("inventory:updated", () => {
-  showToast("Inventory updated");
-});
-
-socket.on("order:updated", () => {
-  showToast("Order status updated");
-  loadTenderActivity();
-});
-
-socket.on("order:created", () => {
-  showToast("New tender submitted");
-  loadTenderActivity();
-});
-
-socket.on("disciplinary:created", () => {
-  showToast("New disciplinary case filed");
-  loadDisciplinarySummary();
-});
-
-socket.on("disciplinary:updated", () => {
-  showToast("Disciplinary case updated");
-  loadDisciplinarySummary();
-});
-
-socket.on("project:created", () => {
-  showToast("New project created");
-  loadProjectsSummary();
-});
-
-socket.on("project:updated", () => {
-  showToast("Project updated");
-  loadProjectsSummary();
-});
-
-socket.on("project:deleted", () => {
-  showToast("Project deleted");
-  loadProjectsSummary();
-});
-
-// ============================================================
-// FALLBACK REFRESH — only when socket is dead
-// ============================================================
-setInterval(() => {
-  const state = document.getElementById("syncText").textContent;
-  if (state === "OFFLINE" || state === "DISCONNECTED" || state.startsWith("RECONNECTING")) {
-    refreshAllWidgets();
-  }
-}, 60000);
-
-// ============================================================
-// KEYBOARD SHORTCUTS
-// ============================================================
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    const modal = document.getElementById("detailModal");
-    if (modal && modal.classList.contains("active")) {
-      closeDetailModal();
-      return;
-    }
-    document.getElementById("deptBreakdown").classList.remove("active");
-  }
-  if (e.key === "r" || e.key === "R") {
-    refreshAllWidgets();
-    showToast("Manual refresh triggered");
-  }
-  if (e.key === "t" || e.key === "T") {
-    toggleEmployeeView();
-  }
-});
-
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) {
-    refreshAllWidgets();
-  }
-});
-
-console.log("Sally Mugabe Central Hospital Live Board initialized");
-</script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/liveboard.js"></script>
 </body>
 </html>
