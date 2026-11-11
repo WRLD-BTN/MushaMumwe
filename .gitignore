@@ -34,3 +34,18 @@ mushamumwe@1.0.0
 node
 logs/
 sqlite-backup.json
+
+# Backups from fix sessions
+.backup-*/
+prisma/dev.db.bak-*
+
+# PM2 logs
+logs/*.log
+
+# SQLite journal/WAL
+prisma/*.db-journal
+prisma/*.db-wal
+prisma/*.db-shm
+
+# Local verification scripts (dev-only, not part of the app)
+verify-audit-safe.sh

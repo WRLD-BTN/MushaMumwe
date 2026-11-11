@@ -33,6 +33,10 @@ const staticOptions = {
 
 app.use(express.static('public', staticOptions));
 
+const { auditMiddleware, auditReadMiddleware } = require('./auditMiddleware');
+app.use('/api', auditMiddleware());
+app.use('/api', auditReadMiddleware());
+
 const CLEAN_ROUTES = ['/dashboard', '/login', '/nurses', '/medical', '/it', '/procurement', '/stores', '/hr', '/admin', '/accounts', '/security', '/radiography', '/catering', '/laundry', '/mortuary', '/son', '/som', '/healthinfo', '/biomedical'];
 
 CLEAN_ROUTES.forEach(route => {
