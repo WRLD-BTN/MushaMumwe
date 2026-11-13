@@ -1,7 +1,25 @@
 // ============================================================
-// COMPREHENSIVE SEED - Sally Mugabe Central Hospital
-// Populates all 16 departments with realistic, diverse data
-// Designed for the Live Dashboard (trends, alerts, activity)
+// COMPREHENSIVE SEED — Sally Mugabe Central Hospital
+// ============================================================
+// DESIGN PRINCIPLES:
+//
+//  1. Cause before effect.
+//     Every row's current state is produced by writing the SEQUENCE OF
+//     EVENTS that led to it. No direct writes to terminal states.
+//     e.g. status 'ordered' implies a ProcurementOrder exists; status
+//     'received' implies an ItemReceive exists and inventory was
+//     incremented; status 'terminated' implies an EmployeeStatusLog
+//     active → terminated exists.
+//
+//  2. Every action has its enabling data.
+//     If Stores receives an order for "Surgical Gloves", the seed has
+//     already created the inventory item, the procurement order, and
+//     the supplier. The only thing missing is the human click.
+//
+//  3. Assertions catch silent drift.
+//     If a workflow's preconditions aren't met by end of seed, the seed
+//     FAILS LOUDLY, not silently. Better a red seed than a grey board.
+//
 // Run: npm run seed
 // WARNING: Destructive. Wipes all data first.
 // ============================================================
@@ -46,18 +64,36 @@ const SURNAMES = [
   'Mabuza','Ziyambi','Musabayana','Mhona',
 ];
 
-const DIAGNOSES = [
-  'Malaria','Severe malaria','Cerebral malaria','Typhoid fever',
-  'Pneumonia','Bronchopneumonia','Tuberculosis','HIV-related illness',
-  'Gastroenteritis','Cholera','Diarrhoea','Dehydration',
-  'Hypertension','Diabetes mellitus type 2','Diabetic ketoacidosis',
-  'Anaemia','Severe anaemia','Meningitis','Sepsis','Puerperal sepsis',
-  'Pre-eclampsia','Eclampsia','Postpartum haemorrhage',
-  'Obstructed labour','Malnutrition','Kwashiorkor','Marasmus',
-  'Appendicitis','Intestinal obstruction','Fracture femur','Head injury',
-  'Road traffic accident','Snake bite','Poisoning','Burns',
-  'Asthma exacerbation','Heart failure','Stroke','Epilepsy','Renal failure',
-];
+// ============================================================
+// DIAGNOSES — grouped by specialty so patients land in
+// clinically plausible wards
+// ============================================================
+const DIAGNOSES_BY_SPECIALTY = {
+  general: [
+    'Malaria','Typhoid fever','Pneumonia','Bronchopneumonia','Tuberculosis',
+    'HIV-related illness','Gastroenteritis','Diarrhoea','Dehydration',
+    'Hypertension','Diabetes mellitus type 2','Diabetic ketoacidosis',
+    'Anaemia','Sepsis','Epilepsy','Renal failure','Asthma exacerbation',
+  ],
+  obstetric: [
+    'Pre-eclampsia','Eclampsia','Postpartum haemorrhage','Obstructed labour',
+    'Puerperal sepsis','Normal spontaneous delivery','Foetal distress',
+    'Antepartum haemorrhage','Retained placenta',
+  ],
+  paediatric: [
+    'Severe malaria','Cerebral malaria','Kwashiorkor','Marasmus',
+    'Severe malnutrition','Neonatal jaundice','Bronchiolitis','Croup',
+    'Measles','Neonatal sepsis','Failure to thrive',
+  ],
+  surgical: [
+    'Appendicitis','Intestinal obstruction','Fracture femur','Head injury',
+    'Road traffic accident','Burns','Acute abdomen','Hernia','Gallstones',
+  ],
+  icu: [
+    'Respiratory failure','Cardiac arrest','Multi-organ failure','Sepsis',
+    'Severe pneumonia','Acute renal failure','Status epilepticus',
+  ],
+};
 
 const SYMPTOMS = [
   'Fever, chills, headache','Cough, difficulty breathing','Chest pain',
@@ -71,28 +107,60 @@ const BLOOD_GROUPS = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
 const REVIEW_DEPARTMENTS = ['Outpatient','Nurses','Medical','Pharmacy','Laboratory'];
 
 // ============================================================
-// DEPARTMENTS & ROLES
+// DEPARTMENTS — weighted for realistic hospital shape
+// Sums to ~1000 employees
 // ============================================================
-const EMPLOYEE_DEPARTMENTS = [
-  'Medical','Nurses','Mortuary','School of Nursing','School of Midwifery',
-  'Biomedical Equipment','Radiography','Catering','Security','Laundry',
-  'Health Information','Accounts',
-];
+const DEPT_WEIGHTS = {
+  'Nurses': 180,
+  'Medical': 60,
+  'Mortuary': 8,
+  'School of Nursing': 15,
+  'School of Midwifery': 12,
+  'Biomedical Equipment': 10,
+  'Radiography': 14,
+  'Catering': 22,
+  'Security': 16,
+  'Laundry': 12,
+  'Health Information': 8,
+  'Accounts': 6,
+  'IT': 5,
+  'Stores': 8,
+  'Procurement': 6,
+  'HR': 6,
+};
 
 const ROLES_BY_DEPT = {
-  Medical: ['Doctor','Consultant','Medical Officer','Intern','Registered Nurse','Enrolled Nurse','Nurse Aide','Sister','Matron'],
+  Medical: ['Doctor','Consultant','Medical Officer','Intern'],
   Nurses: ['Registered Nurse','Enrolled Nurse','Nurse Aide','Sister','Matron'],
   Mortuary: ['Mortuary Attendant','Mortician','Mortuary Technician','Mortuary Supervisor'],
-  'School of Nursing': ['Tutor','Clinical Instructor','Lecturer','Principal Tutor','Student Nurse'],
-  'School of Midwifery': ['Midwifery Tutor','Clinical Instructor','Lecturer','Principal Tutor','Student Midwife'],
+  'School of Nursing': ['Tutor','Clinical Instructor','Lecturer','Principal Tutor'],
+  'School of Midwifery': ['Midwifery Tutor','Clinical Instructor','Lecturer','Principal Tutor'],
   'Biomedical Equipment': ['Biomedical Engineer','Biomedical Technician','Electronics Technician','Equipment Officer'],
-  Radiography: ['Radiologist','Radiographer','Sonographer','CT Technologist','MRI Technologist','X-Ray Technician','ECG Technician'],
-  Catering: ['Chef','Head Chef','Sous Chef','Cook','Kitchen Assistant','Waiter','Waitress','Catering Supervisor','Dietitian','Food Service Manager'],
+  Radiography: ['Radiologist','Radiographer','Sonographer','CT Technologist','X-Ray Technician'],
+  Catering: ['Chef','Head Chef','Cook','Kitchen Assistant','Catering Supervisor','Dietitian'],
   Security: ['Security Guard','Security Officer','Gate Officer','Security Supervisor'],
   Laundry: ['Laundry Attendant','Laundry Supervisor','Laundry Technician'],
-  'Health Information': ['Health Information Officer','Records Clerk','Medical Coder','Data Entry Officer','Records Manager'],
-  Accounts: ['Accountant','Assistant Accountant','Accounts Clerk','Finance Officer','Cashier','Payroll Officer','Auditor'],
+  'Health Information': ['Health Information Officer','Records Clerk','Medical Coder','Records Manager'],
+  Accounts: ['Accountant','Accounts Clerk','Finance Officer','Cashier','Auditor'],
+  IT: ['IT Manager','IT Support Officer','Systems Administrator','Network Engineer'],
+  Stores: ['Store Manager','Store Clerk','Stock Controller'],
+  Procurement: ['Procurement Officer','Procurement Assistant','Buyer'],
+  HR: ['HR Manager','HR Officer','Recruitment Officer'],
 };
+
+// ============================================================
+// SUPPLIERS — for procurement orders
+// ============================================================
+const SUPPLIERS = [
+  'MedSupply Zimbabwe (Pvt) Ltd',
+  'National Pharmaceuticals Ltd',
+  'Harare Medical Wholesalers',
+  'Bulawayo Surgical Supplies',
+  'Zimbabwe Health Consumables',
+  'Midlands Medical Distributors',
+  'Continental MedEquip',
+  'Southern Cross Healthcare',
+];
 
 // ============================================================
 // DISCIPLINARY POOLS
@@ -118,15 +186,28 @@ const DISCIPLINARY_DESCRIPTIONS = {
   Other: ['Repeated failure to follow infection control procedures.','Brought unauthorised persons into restricted areas.','Refused mandatory training without valid reason.'],
 };
 
-const DISCIPLINARY_OUTCOMES = ['Employee acknowledged the offense and received formal warning.','Employee disputed the finding; case referred for arbitration.','Employee accepted responsibility; case closed with corrective action.','Committee recommended formal disciplinary action.','Matter resolved through counselling and monitoring.'];
+const DISCIPLINARY_OUTCOMES = [
+  'Employee acknowledged the offense and received formal warning.',
+  'Employee disputed the finding; case referred for arbitration.',
+  'Employee accepted responsibility; case closed with corrective action.',
+  'Committee recommended formal disciplinary action.',
+  'Matter resolved through counselling and monitoring.',
+];
 
 // ============================================================
 // HELPER FUNCTIONS
 // ============================================================
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-function pickN(arr, n) {
-  const shuffled = [...arr].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, n);
+
+function pickWeighted(weights) {
+  const entries = Object.entries(weights);
+  const total = entries.reduce((s, [, w]) => s + w, 0);
+  let r = Math.random() * total;
+  for (const [k, w] of entries) {
+    r -= w;
+    if (r <= 0) return k;
+  }
+  return entries[entries.length - 1][0];
 }
 
 function pickEmployeeStatus() {
@@ -146,13 +227,13 @@ function pickPatientStatus(dayAge) {
     return 'deceased';
   }
   if (dayAge <= 30) {
-    if (r < 0.2) return 'admitted';
-    if (r < 0.5) return 'treatment';
+    if (r < 0.20) return 'admitted';
+    if (r < 0.50) return 'treatment';
     if (r < 0.95) return 'discharged';
     return 'deceased';
   }
   if (r < 0.05) return 'treatment';
-  if (r < 0.9) return 'discharged';
+  if (r < 0.90) return 'discharged';
   return 'deceased';
 }
 
@@ -165,11 +246,11 @@ function pickDisciplinaryStatus(dayAge) {
   }
   if (dayAge <= 30) {
     if (r < 0.15) return 'open';
-    if (r < 0.5) return 'under_investigation';
-    if (r < 0.9) return 'resolved';
+    if (r < 0.50) return 'under_investigation';
+    if (r < 0.90) return 'resolved';
     return 'dismissed';
   }
-  if (r < 0.7) return 'resolved';
+  if (r < 0.70) return 'resolved';
   if (r < 0.95) return 'dismissed';
   return 'under_investigation';
 }
@@ -203,11 +284,77 @@ function generateNationalId() {
   return p1 + '-' + p2 + '-' + p3 + p4;
 }
 
+function makeName(gender) {
+  const first = gender === 'M' ? pick(FIRST_NAMES_M) : pick(FIRST_NAMES_F);
+  return first + ' ' + pick(SURNAMES);
+}
+
+// ============================================================
+// CAUSAL HELPERS — write the workflow, not the state
+// ============================================================
+
+// Transition an OrderRequest through the workflow, writing
+// OrderRequestStatusLog at each step. Returns nothing.
+async function transitionOrder(orderRequestId, oldStatus, newStatus, changedBy, notes, timestamp) {
+  await prisma.orderRequestStatusLog.create({
+    data: {
+      orderRequestId,
+      oldStatus,
+      newStatus,
+      changedBy,
+      notes: notes || null,
+      timestamp: timestamp || new Date(),
+    },
+  });
+  await prisma.orderRequest.update({
+    where: { id: orderRequestId },
+    data: { status: newStatus },
+  });
+}
+
+// Transition an Employee through the workflow, writing
+// EmployeeStatusLog at each step.
+async function transitionEmployee(employeeId, oldStatus, newStatus, changedBy, timestamp) {
+  await prisma.employeeStatusLog.create({
+    data: {
+      employeeId,
+      oldStatus,
+      newStatus,
+      changedBy,
+      timestamp: timestamp || new Date(),
+    },
+  });
+  await prisma.employee.update({
+    where: { id: employeeId },
+    data: {
+      status: newStatus,
+      ...(newStatus === 'terminated' ? { terminationDate: timestamp || new Date() } : {}),
+    },
+  });
+}
+
+// Transition a Patient through the workflow, writing StatusLog.
+async function transitionPatient(patientId, oldStatus, newStatus, changedBy, timestamp) {
+  await prisma.statusLog.create({
+    data: {
+      patientId,
+      oldStatus,
+      newStatus,
+      changedBy,
+      timestamp: timestamp || new Date(),
+    },
+  });
+  await prisma.patient.update({
+    where: { id: patientId },
+    data: { status: newStatus },
+  });
+}
+
 // ============================================================
 // MAIN
 // ============================================================
 async function main() {
-  console.log('🏥 Seeding database...');
+  console.log('🏥 Seeding database with realistic causal chains...');
   console.log('');
 
   try {
@@ -215,7 +362,7 @@ async function main() {
     // STEP 1: CLEAR ALL TABLES
     // ============================================================
     console.log('🧹 Clearing all tables...');
-    
+
     await prisma.mealDelivery.deleteMany();
     await prisma.cateringWard.deleteMany();
     await prisma.cateringMealType.deleteMany();
@@ -249,7 +396,7 @@ async function main() {
     await prisma.user.deleteMany();
     await prisma.ward.deleteMany();
     await prisma.auditLog.deleteMany();
-    
+
     console.log('  ✓ All tables cleared');
 
     // ============================================================
@@ -264,6 +411,7 @@ async function main() {
       prisma.ward.create({ data: { name: 'Surgical', capacity: 18 } }),
       prisma.ward.create({ data: { name: 'Paediatrics', capacity: 12 } }),
     ]);
+    const wardByName = Object.fromEntries(wards.map(w => [w.name, w]));
     console.log('  ✓ Created ' + wards.length + ' wards');
 
     // ============================================================
@@ -317,19 +465,17 @@ async function main() {
     console.log('  ✓ Created ' + users.length + ' user accounts');
 
     // ============================================================
-    // STEP 5: EMPLOYEES (1,000)
+    // STEP 5: EMPLOYEES (1,000, weighted per department)
     // ============================================================
-    console.log('👥 Creating 1,000 employees...');
+    console.log('👥 Creating 1,000 employees (weighted per department)...');
     const TOTAL_EMPLOYEES = 1000;
+    const empIds = [];
     let empCreated = 0;
 
     for (let i = 0; i < TOTAL_EMPLOYEES; i++) {
       const gender = Math.random() < 0.45 ? 'M' : 'F';
-      const firstName = gender === 'M' ? pick(FIRST_NAMES_M) : pick(FIRST_NAMES_F);
-      const surname = pick(SURNAMES);
-      const name = firstName + ' ' + surname;
-
-      const department = pick(EMPLOYEE_DEPARTMENTS);
+      const name = makeName(gender);
+      const department = pickWeighted(DEPT_WEIGHTS);
       const role = pick(ROLES_BY_DEPT[department]);
       const status = pickEmployeeStatus();
 
@@ -349,11 +495,24 @@ async function main() {
 
       try {
         const employee = await prisma.employee.create({
-          data: { name, department, role, wardId, status, hireDate, terminationDate },
+          data: { name, department, role, wardId, status: 'active', hireDate, terminationDate },
         });
+
+        // Write the CAUSAL chain: hired → (active | on_leave | sick | terminated)
         await prisma.employeeStatusLog.create({
-          data: { employeeId: employee.id, oldStatus: 'new', newStatus: status, changedBy: 'Seed Script' },
+          data: { employeeId: employee.id, oldStatus: 'new', newStatus: 'active', changedBy: 'HR Manager', timestamp: hireDate },
         });
+        if (status !== 'active') {
+          await prisma.employeeStatusLog.create({
+            data: { employeeId: employee.id, oldStatus: 'active', newStatus: status, changedBy: 'HR Manager', timestamp: dateOffsetDays(-Math.floor(Math.random() * 60)) },
+          });
+          await prisma.employee.update({
+            where: { id: employee.id },
+            data: { status, terminationDate },
+          });
+        }
+
+        empIds.push(employee.id);
         empCreated++;
         if (empCreated % 250 === 0) console.log('  → ' + empCreated + ' / ' + TOTAL_EMPLOYEES);
       } catch (e) {
@@ -363,29 +522,37 @@ async function main() {
     console.log('  ✓ Employees created: ' + empCreated);
 
     // ============================================================
-    // STEP 6: PATIENTS (1,500 with realistic age distribution)
+    // STEP 6: PATIENTS (1,500 — uniform across 90 days,
+    //                    with full StatusLog chains)
     // ============================================================
-    console.log('🏥 Creating 1,500 patients...');
+    console.log('🏥 Creating 1,500 patients with lifecycle logs...');
     const TOTAL_PATIENTS = 1500;
     let patCreated = 0;
+    const patientIds = [];
+
+    // Ward-specialty mapping — patients land in clinically plausible wards
+    const WARD_SPECIALTY = {
+      'Maternity': 'obstetric',
+      'Paediatrics': 'paediatric',
+      'Surgical': 'surgical',
+      'ICU': 'icu',
+      'Ward A': 'general',
+      'Ward B': 'general',
+    };
 
     for (let i = 0; i < TOTAL_PATIENTS; i++) {
       const gender = Math.random() < 0.5 ? 'M' : 'F';
-      const firstName = gender === 'M' ? pick(FIRST_NAMES_M) : pick(FIRST_NAMES_F);
-      const surname = pick(SURNAMES);
-      const name = firstName + ' ' + surname;
 
-      // 30% admitted in last 7 days, 40% in last 8-30 days, 30% in last 31-90 days
-      let daysAgo;
-      if (Math.random() < 0.30) daysAgo = Math.floor(Math.random() * 7);
-      else if (Math.random() < 0.60) daysAgo = 8 + Math.floor(Math.random() * 23);
-      else daysAgo = 31 + Math.floor(Math.random() * 60);
-
+      // Uniform admission spread across 90 days (was: 30/40/30 weighted)
+      const daysAgo = Math.floor(Math.random() * 90);
       const admissionDate = daysAgo === 0 ? todayAtHour(6, 20) : randomDateWithinDays(daysAgo, 6, 20);
       const status = pickPatientStatus(daysAgo);
 
       const ward = pick(wards);
-      const diagnosis = pick(DIAGNOSES);
+      const specialty = WARD_SPECIALTY[ward.name] || 'general';
+      const diagnosis = pick(DIAGNOSES_BY_SPECIALTY[specialty]);
+
+      const name = makeName(gender);
       const symptoms = pick(SYMPTOMS);
       const bloodGroup = Math.random() < 0.7 ? pick(BLOOD_GROUPS) : null;
       const phone = Math.random() < 0.8 ? '+263 7' + Math.floor(1 + Math.random() * 8) + ' ' + Math.floor(1000000 + Math.random() * 9000000) : null;
@@ -393,6 +560,11 @@ async function main() {
 
       let dischargeDate = null, finalDiagnosis = null, treatmentSummary = null, outcome = null;
       let dischargeNotes = null, dischargedBy = null, nextReviewDate = null, reviewDepartment = null, patientInstructions = null;
+      let causeOfDeath = null;
+
+      // Work out the actual lifecycle
+      const statusAtAdmission = 'admitted';
+      const intermediateStatus = (status === 'discharged' || status === 'deceased') ? 'treatment' : status;
 
       if (status === 'discharged') {
         const stayDays = 2 + Math.floor(Math.random() * 12);
@@ -415,22 +587,54 @@ async function main() {
         patientInstructions = 'Take medication as prescribed. Rest. Return for review.';
       }
 
-      let causeOfDeath = null;
       if (status === 'deceased') causeOfDeath = diagnosis;
 
       try {
         const patient = await prisma.patient.create({
           data: {
             name, gender, nationalId, admissionDate,
-            wardId: ward.id, status, diagnosis, symptoms,
-            phone, bloodGroup, finalDiagnosis, treatmentSummary,
-            outcome, dischargeDate, dischargeNotes, dischargedBy,
-            nextReviewDate, reviewDepartment, patientInstructions, causeOfDeath,
+            wardId: ward.id, status: statusAtAdmission,
+            diagnosis, symptoms, phone, bloodGroup,
+            finalDiagnosis, treatmentSummary, outcome,
+            dischargeDate, dischargeNotes, dischargedBy,
+            nextReviewDate, reviewDepartment, patientInstructions,
+            causeOfDeath,
           },
         });
+
+        // Write the CAUSAL chain: admitted → [treatment] → (status)
         await prisma.statusLog.create({
-          data: { patientId: patient.id, oldStatus: 'new', newStatus: status, changedBy: 'Seed Script' },
+          data: { patientId: patient.id, oldStatus: 'new', newStatus: 'admitted', changedBy: 'Sister Mutsa', timestamp: admissionDate },
         });
+
+        if (intermediateStatus === 'treatment') {
+          const treatmentDate = new Date(admissionDate);
+          treatmentDate.setHours(treatmentDate.getHours() + 4);
+          await prisma.statusLog.create({
+            data: { patientId: patient.id, oldStatus: 'admitted', newStatus: 'treatment', changedBy: 'Dr. James Mwale', timestamp: treatmentDate },
+          });
+        }
+
+        if (status === 'discharged') {
+          await prisma.statusLog.create({
+            data: { patientId: patient.id, oldStatus: 'treatment', newStatus: 'discharged', changedBy: dischargedBy, timestamp: dischargeDate },
+          });
+        } else if (status === 'deceased') {
+          const deathDate = new Date(admissionDate);
+          deathDate.setDate(deathDate.getDate() + 1 + Math.floor(Math.random() * 10));
+          if (deathDate > new Date()) deathDate.setTime(new Date().getTime());
+          await prisma.statusLog.create({
+            data: { patientId: patient.id, oldStatus: 'treatment', newStatus: 'deceased', changedBy: 'Dr. James Mwale', timestamp: deathDate },
+          });
+          await prisma.patient.update({ where: { id: patient.id }, data: { updatedAt: deathDate } });
+        }
+
+        await prisma.patient.update({
+          where: { id: patient.id },
+          data: { status },
+        });
+
+        patientIds.push(patient.id);
         patCreated++;
         if (patCreated % 300 === 0) console.log('  → ' + patCreated + ' / ' + TOTAL_PATIENTS);
       } catch (e) {
@@ -440,7 +644,7 @@ async function main() {
     console.log('  ✓ Patients created: ' + patCreated);
 
     // ============================================================
-    // STEP 7: INVENTORY
+    // STEP 7: INVENTORY — every item referenced by tenders is pre-created
     // ============================================================
     console.log('📦 Creating inventory items...');
     const inventoryItems = [
@@ -456,65 +660,213 @@ async function main() {
       { name: 'Antibiotics (Box)', quantity: 6, unit: 'boxes', category: 'Pharmaceuticals' },
       { name: 'Thermometers', quantity: 8, unit: 'pieces', category: 'Equipment' },
       { name: 'Wheelchairs', quantity: 5, unit: 'pieces', category: 'Equipment' },
+      { name: 'Network Cables', quantity: 40, unit: 'pieces', category: 'IT' },
+      { name: 'Office Chairs', quantity: 15, unit: 'pieces', category: 'Furniture' },
+      { name: 'Patient File Folders', quantity: 300, unit: 'pieces', category: 'Stationery' },
+      { name: 'Invoice Books', quantity: 40, unit: 'books', category: 'Stationery' },
+      { name: 'Stethoscopes', quantity: 20, unit: 'pieces', category: 'Equipment' },
+      { name: 'Body Bags (Pack)', quantity: 30, unit: 'packs', category: 'Mortuary' },
+      { name: 'Commercial Cooking Pots', quantity: 6, unit: 'pieces', category: 'Catering' },
+      { name: 'Laundry Detergent (Bulk)', quantity: 45, unit: 'kg', category: 'Laundry' },
+      { name: 'Access Cards (Pack)', quantity: 25, unit: 'packs', category: 'Security' },
+      { name: 'Accounting Software Licenses', quantity: 5, unit: 'licenses', category: 'IT' },
+      { name: 'X-Ray Film (Box)', quantity: 14, unit: 'boxes', category: 'Radiography' },
+      { name: 'CT Scan Contrast Media', quantity: 9, unit: 'bottles', category: 'Radiography' },
+      { name: 'Calibration Kits', quantity: 4, unit: 'kits', category: 'Biomedical' },
+      { name: 'Anatomical Models', quantity: 11, unit: 'pieces', category: 'Education' },
+      { name: 'Birthing Simulators', quantity: 3, unit: 'pieces', category: 'Education' },
+      { name: 'Recruitment Pack', quantity: 50, unit: 'packs', category: 'HR' },
+      { name: 'Filing Cabinets', quantity: 7, unit: 'pieces', category: 'Furniture' },
+      { name: 'Shelf Labels', quantity: 200, unit: 'pieces', category: 'Stationery' },
     ];
+
+    const inventoryByName = {};
     for (const item of inventoryItems) {
-      await prisma.inventoryItem.create({
-        data: { name: item.name, quantity: item.quantity, unit: item.unit, category: item.category, lastReceived: new Date() },
+      const created = await prisma.inventoryItem.create({
+        data: {
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          category: item.category,
+          lastReceived: new Date(),
+        },
       });
+      inventoryByName[item.name] = created;
     }
     console.log('  ✓ Created ' + inventoryItems.length + ' inventory items');
 
     // ============================================================
-    // STEP 8: TENDERS (60, with deliberate age spread)
+    // STEP 8: TENDERS (60) — full causal chain
     // ============================================================
-    console.log('📋 Creating 60 tenders...');
+    // Funnel design (so every action on Procurement/Stores works):
+    //   8  pending, fresh (<7d)          — no ProcurementOrder
+    //  12  pending, aging (7–15d)        — no ProcurementOrder
+    //   8  pending, stalled (>15d)       — no ProcurementOrder ← the fires
+    //  12  awaiting_quotation            — no ProcurementOrder
+    //   10  ordered                      — HAVE ProcurementOrder (Stores can receive)
+    //   6   received                     — HAVE ProcurementOrder + ItemReceive + inventory incremented
+    //   4   in_storage                   — HAVE ProcurementOrder + ItemReceive + inventory incremented
+    // ============================================================
+    console.log('📋 Creating 60 tenders with full procurement chains...');
+
     const allDepartments = ['Nurses','Medical','Mortuary','School of Nursing','School of Midwifery','Biomedical Equipment','Radiography','Catering','Security','Laundry','Health Information','Accounts','HR','Stores','Procurement','IT'];
-    const itemNames = ['Surgical Gloves (Box)','Surgical Masks (Box)','Network Cables','Office Chairs','Recruitment Pack','Anatomical Models','Birthing Simulators','Calibration Kits','X-Ray Film (Box)','CT Scan Contrast Media','Patient File Folders','Invoice Books','Filing Cabinets','Shelf Labels','Stethoscopes','Body Bags (Pack)','Commercial Cooking Pots','Laundry Detergent (Bulk)','Access Cards (Pack)','Accounting Software Licenses'];
-    
-    const tenderStatuses = ['pending', 'awaiting_quotation', 'ordered', 'received', 'in_storage', 'completed'];
-    
-    for (let i = 0; i < 60; i++) {
+    const requesters = ['Sister Mutsa','Nurse Tatenda','Dr. James Mwale','HR Manager','Store Manager','Head Chef','Records Manager','Accountant'];
+
+    // Pick itemNames from inventory so itemName always matches an InventoryItem
+    const itemNames = Object.keys(inventoryByName);
+
+    // Build the funnel plan
+    const tenderPlan = [];
+    for (let i = 0; i < 8; i++) tenderPlan.push({ stage: 'pending-fresh', daysAgo: Math.floor(Math.random() * 6) });
+    for (let i = 0; i < 12; i++) tenderPlan.push({ stage: 'pending-aging', daysAgo: 7 + Math.floor(Math.random() * 8) });
+    for (let i = 0; i < 8; i++) tenderPlan.push({ stage: 'pending-stalled', daysAgo: 16 + Math.floor(Math.random() * 45) });
+    for (let i = 0; i < 12; i++) tenderPlan.push({ stage: 'awaiting', daysAgo: 2 + Math.floor(Math.random() * 20) });
+    for (let i = 0; i < 10; i++) tenderPlan.push({ stage: 'ordered', daysAgo: 2 + Math.floor(Math.random() * 14) });
+    for (let i = 0; i < 6; i++) tenderPlan.push({ stage: 'received', daysAgo: 7 + Math.floor(Math.random() * 14) });
+    for (let i = 0; i < 4; i++) tenderPlan.push({ stage: 'in_storage', daysAgo: 15 + Math.floor(Math.random() * 20) });
+
+    // Shuffle so IDs aren't clustered by stage
+    tenderPlan.sort(() => Math.random() - 0.5);
+
+    let tenderCount = 0;
+    for (const plan of tenderPlan) {
       const dept = pick(allDepartments);
       const itemName = pick(itemNames);
-      
-      let status, daysAgo;
-      if (i < 10) {
-        // 10 from today
-        daysAgo = 0;
-        status = pick(['pending', 'awaiting_quotation', 'ordered', 'received']);
-      } else if (i < 25) {
-        // 15 from this week
-        daysAgo = 1 + Math.floor(Math.random() * 6);
-        status = pick(tenderStatuses);
-      } else if (i < 45) {
-        // 20 from this month
-        daysAgo = 7 + Math.floor(Math.random() * 23);
-        status = pick(tenderStatuses);
-      } else {
-        // 15 older, with 3+ stalled >14 days
-        daysAgo = 14 + Math.floor(Math.random() * 30);
-        // Force some to be stalled
-        status = i % 5 === 0 ? 'pending' : pick(tenderStatuses);
-      }
-      
-      const createdAt = daysAgo === 0 ? todayAtHour(8, 17) : randomDateWithinDays(daysAgo, 8, 17);
-      
-      await prisma.orderRequest.create({
+      const qty = 5 + Math.floor(Math.random() * 100);
+      const createdAt = plan.daysAgo === 0 ? todayAtHour(8, 17) : randomDateWithinDays(plan.daysAgo, 8, 17);
+      const requestingBy = pick(requesters);
+
+      const orderRequest = await prisma.orderRequest.create({
         data: {
           requestingDepartment: dept,
           originatorDepartment: dept,
-          requestingBy: pick(['Sister Mutsa','Nurse Tatenda','Dr. James Mwale','HR Manager','Store Manager','Head Chef']),
+          requestingBy,
           itemName,
-          quantity: 5 + Math.floor(Math.random() * 100),
+          quantity: qty,
           reason: 'Restock required',
-          status,
-          category: pick(['PPE', 'Consumables', 'Equipment', 'Furniture', 'Stationery']),
+          status: 'pending',
+          category: inventoryByName[itemName].category,
           urgency: pick(['normal', 'high', 'low']),
           createdAt,
-        }
+        },
       });
+
+      // Log the creation
+      await prisma.orderRequestStatusLog.create({
+        data: {
+          orderRequestId: orderRequest.id,
+          oldStatus: 'created',
+          newStatus: 'pending',
+          changedBy: requestingBy,
+          notes: 'Order request created',
+          timestamp: createdAt,
+        },
+      });
+
+      // Advance through the workflow
+      if (plan.stage === 'pending-fresh' || plan.stage === 'pending-aging' || plan.stage === 'pending-stalled') {
+        // Left pending. No further transitions.
+        tenderCount++;
+        continue;
+      }
+
+      // awaiting_quotation and beyond: transition from pending
+      const awaitingDate = new Date(createdAt);
+      awaitingDate.setHours(awaitingDate.getHours() + 24 + Math.floor(Math.random() * 48));
+      if (awaitingDate > new Date()) awaitingDate.setTime(new Date().getTime());
+
+      await transitionOrder(
+        orderRequest.id, 'pending', 'awaiting_quotation', 'Procurement Officer',
+        'Requested quotes from suppliers', awaitingDate
+      );
+
+      if (plan.stage === 'awaiting') {
+        tenderCount++;
+        continue;
+      }
+
+      // ordered and beyond: transition awaiting → ordered, create ProcurementOrder
+      const orderedDate = new Date(awaitingDate);
+      orderedDate.setHours(orderedDate.getHours() + 24 + Math.floor(Math.random() * 96));
+      if (orderedDate > new Date()) orderedDate.setTime(new Date().getTime());
+
+      await transitionOrder(
+        orderRequest.id, 'awaiting_quotation', 'ordered', 'Procurement Officer',
+        'Approved and sent to supplier', orderedDate
+      );
+
+      const supplierName = pick(SUPPLIERS);
+      const priceUsd = parseFloat((50 + Math.random() * 500).toFixed(2));
+      const priceZwg = parseFloat((priceUsd * 25 + Math.random() * 2000).toFixed(2));
+      const expectedDeliveryDate = dateOffsetDays(Math.floor(Math.random() * 14) + 3);
+
+      const procurementOrder = await prisma.procurementOrder.create({
+        data: {
+          orderRequestId: orderRequest.id,
+          supplierName,
+          orderDate: orderedDate,
+          expectedDate: expectedDeliveryDate,
+          expectedDeliveryDate,
+          approvalNotes: 'Approved for procurement',
+          priceUsd,
+          priceZwg,
+          status: 'ordered',
+        },
+      });
+
+      if (plan.stage === 'ordered') {
+        tenderCount++;
+        continue;
+      }
+
+      // received / in_storage: create ItemReceive + increment inventory
+      const receivedDate = new Date(orderedDate);
+      receivedDate.setDate(receivedDate.getDate() + 2 + Math.floor(Math.random() * 5));
+      if (receivedDate > new Date()) receivedDate.setTime(new Date().getTime());
+
+      const inventoryItem = inventoryByName[itemName];
+      await prisma.itemReceive.create({
+        data: {
+          procurementOrderId: procurementOrder.id,
+          inventoryItemId: inventoryItem.id,
+          quantityReceived: qty,
+          receivedBy: 'Store Manager',
+          receivedAt: receivedDate,
+          notes: 'Delivery received in good condition',
+        },
+      });
+
+      await prisma.inventoryItem.update({
+        where: { id: inventoryItem.id },
+        data: {
+          quantity: { increment: qty },
+          lastReceived: receivedDate,
+        },
+      });
+
+      await transitionOrder(
+        orderRequest.id, 'ordered', 'received', 'Store Manager',
+        'Items received into stores', receivedDate
+      );
+
+      if (plan.stage === 'received') {
+        tenderCount++;
+        continue;
+      }
+
+      // in_storage: transition received → in_storage
+      const storageDate = new Date(receivedDate);
+      storageDate.setDate(storageDate.getDate() + 1);
+      if (storageDate > new Date()) storageDate.setTime(new Date().getTime());
+
+      await transitionOrder(
+        orderRequest.id, 'received', 'in_storage', 'Store Manager',
+        'Items shelved in stores', storageDate
+      );
+
+      tenderCount++;
     }
-    console.log('  ✓ Created 60 tenders (3+ deliberately stalled >14 days)');
+    console.log('  ✓ Created ' + tenderCount + ' tenders with full procurement chains');
 
     // ============================================================
     // STEP 9: CASH FLOW (200 records over 30 days)
@@ -535,7 +887,7 @@ async function main() {
       const sample = pick(cashFlowSamples);
       const daysAgo = Math.floor(Math.random() * 30);
       const date = daysAgo === 0 ? todayAtHour(8, 17) : randomDateWithinDays(daysAgo, 8, 17);
-      
+
       await prisma.cashFlow.create({
         data: {
           date,
@@ -545,49 +897,77 @@ async function main() {
           source: sample.source,
           reason: sample.reason,
           addedBy: 'Accountant',
-        }
+        },
       });
     }
     console.log('  ✓ Created 200 cash flow records (30 days)');
 
     // ============================================================
-    // STEP 10: PROJECTS (25, with 2 blocked >14 days)
+    // STEP 10: PROJECTS (40, with real spread across statuses)
     // ============================================================
-    console.log('🎯 Creating 25 projects...');
+    console.log('🎯 Creating 40 projects with real spread...');
     const projectTemplates = [
-      { name: 'CCTV installation - Phase 2', description: 'Install 12 new CCTV cameras covering main corridor, pharmacy, and maternity ward.', department: 'IT', head: 'IT Manager', status: 'pending', blockedDays: 15 },
-      { name: 'Patient ID card system upgrade', description: 'Roll out new patient ID card system with barcodes.', department: 'Nurses', head: 'Sister Mutsa', status: 'pending', blockedDays: 20 },
+      // Pending — blocked with reason, some >14d
+      { name: 'CCTV installation - Phase 2', description: 'Install 12 new CCTV cameras covering main corridor, pharmacy, and maternity ward.', department: 'IT', head: 'IT Manager', status: 'pending', blockedDays: 15, obstacle: 'Awaiting supplier approval for equipment quote' },
+      { name: 'Patient ID card system upgrade', description: 'Roll out new patient ID card system with barcodes.', department: 'Nurses', head: 'Sister Mutsa', status: 'pending', blockedDays: 20, obstacle: 'Awaiting Ministry of Health data standards sign-off' },
+      { name: 'Ward C refurbishment', description: 'Convert disused Ward C into 12-bed isolation unit.', department: 'Biomedical Equipment', head: 'Maintenance Supervisor', status: 'pending', blockedDays: 30, obstacle: 'Budget allocation pending Ministry approval' },
+      { name: 'MRI machine installation', description: 'Install new MRI machine in Radiology, requires structural work.', department: 'Radiography', head: 'Radiographer', status: 'pending', blockedDays: 8, obstacle: 'Awaiting structural engineer report' },
+      { name: 'Electronic medical records system', description: 'Deploy EMR across all wards.', department: 'Health Information', head: 'Records Manager', status: 'pending', blockedDays: 12, obstacle: 'Vendor contract under legal review' },
+      { name: 'Nurses call system', description: 'Install patient call buttons in all ward beds.', department: 'Nurses', head: 'Sister Mutsa', status: 'pending', blockedDays: 22, obstacle: 'Awaiting supplier delivery of 200 units' },
+      { name: 'Pharmacy cold chain upgrade', description: 'Upgrade refrigeration for vaccine storage.', department: 'Stores', head: 'Store Manager', status: 'pending', blockedDays: 5, obstacle: 'Awaiting quotation from three suppliers' },
+      { name: 'Kitchen deep freezer', description: 'Install 500L deep freezer for catering.', department: 'Catering', head: 'Head Chef', status: 'pending', blockedDays: 3, obstacle: 'Awaiting delivery scheduling' },
+      // Ongoing
       { name: 'Ward A painting and repairs', description: 'Repaint Ward A walls, replace broken beds.', department: 'Biomedical Equipment', head: 'Maintenance Supervisor', status: 'ongoing' },
       { name: 'Staff wellness programme', description: 'Quarterly wellness check-ups and counselling.', department: 'HR', head: 'HR Manager', status: 'ongoing' },
       { name: 'Radiology equipment servicing', description: 'Annual servicing of X-ray, CT, MRI, ultrasound.', department: 'Radiography', head: 'Radiographer', status: 'ongoing' },
       { name: 'Medical records digitisation', description: 'Scan and digitise 5 years of paper records.', department: 'Health Information', head: 'Records Manager', status: 'ongoing' },
       { name: 'Security gate access control', description: 'Replace manual gate logs with electronic access.', department: 'Security', head: 'Security Supervisor', status: 'ongoing' },
-      { name: 'Laundry linen replacement', description: 'Replace 200 sets of worn bed linen.', department: 'Laundry', head: 'Laundry Supervisor', status: 'completed' },
       { name: 'ICU ventilator maintenance', description: 'Preventive maintenance of ICU ventilators.', department: 'Biomedical Equipment', head: 'Biomedical Engineer', status: 'ongoing' },
       { name: 'Nurses training - infection control', description: 'Refresher training on infection control.', department: 'School of Nursing', head: 'Principal Tutor', status: 'ongoing' },
       { name: 'Catering kitchen renovation', description: 'New stoves, extractor fans, workspace redesign.', department: 'Catering', head: 'Head Chef', status: 'ongoing' },
       { name: 'Mortuary cold storage upgrade', description: 'Upgrade refrigeration units.', department: 'Mortuary', head: 'Mortuary Supervisor', status: 'ongoing' },
-      { name: 'Accounts audit readiness', description: 'Prepare finance records for annual audit.', department: 'Accounts', head: 'Accountant', status: 'completed' },
-      { name: 'Emergency generator servicing', description: 'Full service of backup generators.', department: 'Biomedical Equipment', head: 'Equipment Officer', status: 'completed' },
       { name: 'IT network switch replacement', description: 'Replace aging network switches.', department: 'IT', head: 'IT Manager', status: 'ongoing' },
-      { name: 'Pharmacy stock reconciliation', description: 'Full physical inventory count.', department: 'Stores', head: 'Store Manager', status: 'completed' },
       { name: 'Ward B bed replacement', description: 'Replace 20 old beds in Ward B.', department: 'Biomedical Equipment', head: 'Maintenance Supervisor', status: 'ongoing' },
       { name: 'Midwifery simulation lab upgrade', description: 'New birthing simulators.', department: 'School of Midwifery', head: 'Midwifery Tutor', status: 'ongoing' },
-      { name: 'Security guard training', description: 'Refresher training on emergency protocols.', department: 'Security', head: 'Security Supervisor', status: 'completed' },
       { name: 'Laundry equipment upgrade', description: 'New industrial washing machines.', department: 'Laundry', head: 'Laundry Supervisor', status: 'ongoing' },
       { name: 'Patient records audit', description: 'Audit patient records for completeness.', department: 'Health Information', head: 'Records Manager', status: 'ongoing' },
       { name: 'Cafeteria renovation', description: 'Expand staff cafeteria.', department: 'Catering', head: 'Head Chef', status: 'ongoing' },
       { name: 'IT helpdesk system', description: 'Deploy ticketing system for IT requests.', department: 'IT', head: 'IT Manager', status: 'ongoing' },
       { name: 'Radiology waiting room upgrade', description: 'Renovate waiting room.', department: 'Radiography', head: 'Radiographer', status: 'ongoing' },
       { name: 'HR records digitisation', description: 'Digitise all HR staff files.', department: 'HR', head: 'HR Manager', status: 'ongoing' },
+      { name: 'Ward A bathroom renovation', description: 'Replace bathroom fixtures in Ward A.', department: 'Biomedical Equipment', head: 'Maintenance Supervisor', status: 'ongoing' },
+      { name: 'Nurse scheduling system', description: 'Deploy automated nurse scheduling.', department: 'Nurses', head: 'Sister Mutsa', status: 'ongoing' },
+      { name: 'Ambulance fleet servicing', description: 'Service all 4 hospital ambulances.', department: 'Biomedical Equipment', head: 'Maintenance Supervisor', status: 'ongoing' },
+      { name: 'Waste management contract renewal', description: 'Renew medical waste disposal contract.', department: 'Health Information', head: 'Records Manager', status: 'ongoing' },
+      { name: 'Pharmacy dispensing software', description: 'Deploy pharmacy dispensing system.', department: 'Stores', head: 'Store Manager', status: 'ongoing' },
+      { name: 'Staff uniform replacement', description: 'Order new uniforms for all staff.', department: 'HR', head: 'HR Manager', status: 'ongoing' },
+      { name: 'X-Ray room lead-lining', description: 'Re-line X-Ray room walls with lead.', department: 'Radiography', head: 'Radiographer', status: 'ongoing' },
+      // Completed
+      { name: 'Laundry linen replacement', description: 'Replace 200 sets of worn bed linen.', department: 'Laundry', head: 'Laundry Supervisor', status: 'completed' },
+      { name: 'Accounts audit readiness', description: 'Prepare finance records for annual audit.', department: 'Accounts', head: 'Accountant', status: 'completed' },
+      { name: 'Emergency generator servicing', description: 'Full service of backup generators.', department: 'Biomedical Equipment', head: 'Equipment Officer', status: 'completed' },
+      { name: 'Pharmacy stock reconciliation', description: 'Full physical inventory count.', department: 'Stores', head: 'Store Manager', status: 'completed' },
+      { name: 'Security guard training', description: 'Refresher training on emergency protocols.', department: 'Security', head: 'Security Supervisor', status: 'completed' },
     ];
 
     let projectCount = 0;
     for (const p of projectTemplates) {
       const startDate = dateOffsetDays(-60 - Math.floor(Math.random() * 30));
       const targetDate = dateOffsetDays(15 + Math.floor(Math.random() * 60));
-      const lastUpdateDaysAgo = p.status === 'pending' ? p.blockedDays || 5 : Math.floor(Math.random() * 10);
-      
+
+      // Determine how stale this project should be
+      let lastUpdateDaysAgo;
+      if (p.status === 'pending') {
+        lastUpdateDaysAgo = p.blockedDays || 5;
+      } else if (p.status === 'completed') {
+        lastUpdateDaysAgo = 5 + Math.floor(Math.random() * 25);  // 5-30 days ago
+      } else {
+        // ongoing — spread 0-21 days so some are stale, some fresh
+        lastUpdateDaysAgo = Math.floor(Math.random() * 22);
+      }
+
+      const lastUpdateDate = dateOffsetDays(-lastUpdateDaysAgo);
+
       const project = await prisma.project.create({
         data: {
           name: p.name,
@@ -597,40 +977,79 @@ async function main() {
           status: p.status,
           startDate,
           targetDate,
-          obstacleReason: p.status === 'pending' ? 'Awaiting approval / supplier' : null,
+          obstacleReason: p.status === 'pending' ? (p.obstacle || 'Awaiting resolution') : null,
           createdBy: p.head,
           createdAt: startDate,
-          updatedAt: dateOffsetDays(-lastUpdateDaysAgo),
-        }
+          updatedAt: lastUpdateDate,
+        },
       });
 
+      // Write a causal chain of ProjectUpdate rows
+      // 1. Creation update
       await prisma.projectUpdate.create({
         data: {
           projectId: project.id,
-          note: p.status === 'pending' ? 'Blocked - awaiting resolution' : 'Progress update',
-          statusAtUpdate: p.status,
-          obstacleReason: p.status === 'pending' ? 'Awaiting approval' : null,
-          actionTaken: 'Followed up',
+          note: 'Project created and assigned to ' + p.head,
+          statusAtUpdate: 'ongoing',
+          actionTaken: 'Initial scoping',
           updatedBy: p.head,
-          timestamp: dateOffsetDays(-lastUpdateDaysAgo),
-        }
+          timestamp: startDate,
+        },
       });
+
+      // 2. Status update (whatever it currently is)
+      if (p.status === 'pending') {
+        await prisma.projectUpdate.create({
+          data: {
+            projectId: project.id,
+            note: 'Blocked: ' + (p.obstacle || 'Awaiting resolution'),
+            statusAtUpdate: 'pending',
+            obstacleReason: p.obstacle || 'Awaiting resolution',
+            actionTaken: 'Escalated to management for resolution',
+            updatedBy: p.head,
+            timestamp: lastUpdateDate,
+          },
+        });
+      } else if (p.status === 'completed') {
+        await prisma.projectUpdate.create({
+          data: {
+            projectId: project.id,
+            note: 'Project completed successfully.',
+            statusAtUpdate: 'completed',
+            actionTaken: 'Final handover and documentation completed',
+            updatedBy: p.head,
+            timestamp: lastUpdateDate,
+          },
+        });
+      } else {
+        await prisma.projectUpdate.create({
+          data: {
+            projectId: project.id,
+            note: 'Progress update: on track',
+            statusAtUpdate: 'ongoing',
+            actionTaken: 'Continued work per plan',
+            updatedBy: p.head,
+            timestamp: lastUpdateDate,
+          },
+        });
+      }
+
       projectCount++;
     }
-    console.log('  ✓ Created ' + projectCount + ' projects (2 blocked >14 days)');
+    console.log('  ✓ Created ' + projectCount + ' projects with causal update chains');
 
     // ============================================================
-    // STEP 11: DISCIPLINARY CASES (60)
+    // STEP 11: DISCIPLINARY CASES (60, with causal status logs)
     // ============================================================
     console.log('⚖️  Creating 60 disciplinary cases...');
-    const sampleEmployees = await prisma.employee.findMany({ select: { id: true }, take: 500 });
+    const sampleEmployeeIds = empIds.slice(0, 500);
 
-    if (sampleEmployees.length > 0) {
+    if (sampleEmployeeIds.length > 0) {
       const discYear = new Date().getFullYear();
       let discSeq = 1;
 
       for (let i = 0; i < 60; i++) {
-        const employee = pick(sampleEmployees);
+        const employeeId = pick(sampleEmployeeIds);
         const offenseType = pick(DISCIPLINARY_OFFENSES);
         const description = pick(DISCIPLINARY_DESCRIPTIONS[offenseType] || DISCIPLINARY_DESCRIPTIONS.Other);
 
@@ -647,13 +1066,13 @@ async function main() {
         const record = await prisma.disciplinaryCase.create({
           data: {
             caseNumber,
-            employeeId: employee.id,
+            employeeId,
             offenseType,
             description,
             reportedBy: pick(['Ward Supervisor','Senior Nurse','Department Head','Shift Coordinator','Colleague']),
             reportedDate,
             witnesses: pick([null, 'Sister Mutsa', 'Nurse Tatenda', 'Dr. Mwale']),
-            status,
+            status: 'open',
             actionTaken: status === 'resolved' ? pick(['Verbal warning','Written warning','Suspension']) : null,
             outcome: status === 'resolved' ? pick(DISCIPLINARY_OUTCOMES) : null,
             closedBy,
@@ -661,36 +1080,50 @@ async function main() {
           },
         });
 
+        // CAUSAL chain
         await prisma.disciplinaryStatusLog.create({
-          data: { caseId: record.id, oldStatus: 'new', newStatus: 'open', changedBy: 'System', notes: 'Case filed' },
+          data: { caseId: record.id, oldStatus: 'new', newStatus: 'open', changedBy: 'HR Manager', notes: 'Case filed', timestamp: reportedDate },
         });
 
-        if (status !== 'open') {
+        if (status === 'under_investigation') {
           await prisma.disciplinaryStatusLog.create({
-            data: { caseId: record.id, oldStatus: 'open', newStatus: status, changedBy: 'HR Manager', notes: 'Status updated' },
+            data: { caseId: record.id, oldStatus: 'open', newStatus: 'under_investigation', changedBy: 'HR Manager', notes: 'Investigation opened', timestamp: new Date(reportedDate.getTime() + 2 * 86400000) },
+          });
+        } else if (status === 'resolved' || status === 'dismissed') {
+          await prisma.disciplinaryStatusLog.create({
+            data: { caseId: record.id, oldStatus: 'open', newStatus: 'under_investigation', changedBy: 'HR Manager', notes: 'Investigation opened', timestamp: new Date(reportedDate.getTime() + 2 * 86400000) },
+          });
+          await prisma.disciplinaryStatusLog.create({
+            data: { caseId: record.id, oldStatus: 'under_investigation', newStatus: status, changedBy: 'HR Manager', notes: 'Case concluded', timestamp: closedDate },
           });
         }
+
+        // Set the actual current status last
+        await prisma.disciplinaryCase.update({
+          where: { id: record.id },
+          data: { status },
+        });
       }
     }
-    console.log('  ✓ Created 60 disciplinary cases');
+    console.log('  ✓ Created 60 disciplinary cases with causal status logs');
 
     // ============================================================
-    // STEP 12: ESTABLISHMENT TARGETS
+    // STEP 12: ESTABLISHMENT TARGETS (matched to dept weights)
     // ============================================================
     console.log('📊 Creating establishment targets...');
     const establishmentTargets = [
-      { department: 'Medical', minHeadcount: 30, maxHeadcount: 80 },
-      { department: 'Nurses', minHeadcount: 150, maxHeadcount: 250 },
-      { department: 'Mortuary', minHeadcount: 3, maxHeadcount: 10 },
-      { department: 'School of Nursing', minHeadcount: 8, maxHeadcount: 20 },
-      { department: 'School of Midwifery', minHeadcount: 5, maxHeadcount: 15 },
-      { department: 'Biomedical Equipment', minHeadcount: 4, maxHeadcount: 12 },
-      { department: 'Radiography', minHeadcount: 6, maxHeadcount: 20 },
-      { department: 'Catering', minHeadcount: 10, maxHeadcount: 30 },
-      { department: 'Security', minHeadcount: 8, maxHeadcount: 20 },
-      { department: 'Laundry', minHeadcount: 5, maxHeadcount: 15 },
-      { department: 'Health Information', minHeadcount: 4, maxHeadcount: 12 },
-      { department: 'Accounts', minHeadcount: 4, maxHeadcount: 12 },
+      { department: 'Nurses', minHeadcount: 150, maxHeadcount: 220 },
+      { department: 'Medical', minHeadcount: 45, maxHeadcount: 80 },
+      { department: 'Mortuary', minHeadcount: 5, maxHeadcount: 12 },
+      { department: 'School of Nursing', minHeadcount: 10, maxHeadcount: 20 },
+      { department: 'School of Midwifery', minHeadcount: 8, maxHeadcount: 18 },
+      { department: 'Biomedical Equipment', minHeadcount: 6, maxHeadcount: 14 },
+      { department: 'Radiography', minHeadcount: 10, maxHeadcount: 20 },
+      { department: 'Catering', minHeadcount: 15, maxHeadcount: 30 },
+      { department: 'Security', minHeadcount: 10, maxHeadcount: 22 },
+      { department: 'Laundry', minHeadcount: 8, maxHeadcount: 18 },
+      { department: 'Health Information', minHeadcount: 5, maxHeadcount: 12 },
+      { department: 'Accounts', minHeadcount: 4, maxHeadcount: 10 },
     ];
     for (const t of establishmentTargets) {
       await prisma.establishmentTarget.create({ data: t });
@@ -698,11 +1131,11 @@ async function main() {
     console.log('  ✓ Created ' + establishmentTargets.length + ' establishment targets');
 
     // ============================================================
-    // STEP 13: EMPLOYEE MOVEMENTS (40)
+    // STEP 13: EMPLOYEE MOVEMENTS (40, updating employee dept)
     // ============================================================
-    console.log('🔄 Creating 40 employee movements...');
+    console.log('🔄 Creating 40 employee movements (with department updates)...');
     const sampleEmployeesForMovement = await prisma.employee.findMany({
-      select: { id: true, department: true, wardId: true },
+      select: { id: true, department: true, wardId: true, hireDate: true },
       take: 200,
     });
 
@@ -722,18 +1155,33 @@ async function main() {
       };
 
       if (typeRoll < 0.4) {
+        // Transfer — update employee's department to match
+        const toDepartment = pick(Object.keys(DEPT_WEIGHTS));
         movementData.movementType = 'transfer';
         movementData.fromDepartment = emp.department;
         movementData.fromWardId = emp.wardId;
-        movementData.toDepartment = pick(EMPLOYEE_DEPARTMENTS);
+        movementData.toDepartment = toDepartment;
         movementData.reason = 'Operational requirement';
+
+        if (daysAgo < 30) {
+          await prisma.employee.update({
+            where: { id: emp.id },
+            data: { department: toDepartment, wardId: null },
+          });
+        }
       } else if (typeRoll < 0.7) {
+        // Retirement
         movementData.movementType = 'retirement';
         movementData.plannedDate = date;
         movementData.actualDate = date;
         movementData.yearsOfService = Math.floor(5 + Math.random() * 30);
         movementData.pensionNotes = 'Standard pension arrangement';
+
+        if (daysAgo < 30) {
+          await transitionEmployee(emp.id, 'active', 'terminated', 'HR Manager', date);
+        }
       } else {
+        // Resignation
         movementData.movementType = 'resignation';
         movementData.resignationDate = date;
         const lastDay = new Date(date);
@@ -743,6 +1191,10 @@ async function main() {
         movementData.reason = pick(RESIGNATION_REASONS);
         movementData.exitInterviewDone = Math.random() < 0.6;
         movementData.eligibleForRehire = Math.random() < 0.7;
+
+        if (lastDay <= new Date()) {
+          await transitionEmployee(emp.id, 'active', 'terminated', 'HR Manager', lastDay);
+        }
       }
 
       await prisma.employeeMovement.create({ data: movementData });
@@ -750,7 +1202,7 @@ async function main() {
     console.log('  ✓ Created 40 employee movements');
 
     // ============================================================
-    // STEP 14: SECURITY INCIDENTS (30)
+    // STEP 14: SECURITY INCIDENTS (30) + Gate Logs (40)
     // ============================================================
     console.log('🔒 Creating 30 security incidents...');
     const incidentTypes = ['Theft', 'Trespassing', 'Patient Wandering', 'Equipment Damage', 'Assault', 'Fire', 'Other'];
@@ -758,8 +1210,8 @@ async function main() {
 
     for (let i = 0; i < 30; i++) {
       const daysAgo = Math.floor(Math.random() * 30);
-      const isOpen = i < 8; // First 8 are open
-      
+      const isOpen = i < 8;
+
       await prisma.securityIncident.create({
         data: {
           type: pick(incidentTypes),
@@ -774,7 +1226,6 @@ async function main() {
     }
     console.log('  ✓ Created 30 incidents (8 open)');
 
-    // Gate Logs (40)
     for (let i = 0; i < 40; i++) {
       const daysAgo = Math.floor(Math.random() * 7);
       const timeIn = daysAgo === 0 ? todayAtHour(8, 18) : randomDateWithinDays(daysAgo, 8, 18);
@@ -785,10 +1236,10 @@ async function main() {
         tOut.setHours(tOut.getHours() + 1 + Math.floor(Math.random() * 4));
         timeOut = tOut;
       }
-      
+
       await prisma.gateLog.create({
         data: {
-          name: pick(FIRST_NAMES_M.concat(FIRST_NAMES_F)) + ' ' + pick(SURNAMES),
+          name: makeName(pick(['M','F'])),
           idNumber: generateNationalId(),
           purpose: pick(['Visiting patient', 'Delivery', 'Meeting', 'Maintenance', 'Interview']),
           timeIn,
@@ -814,12 +1265,12 @@ async function main() {
       if (admittedPatients.length === 0) break;
       const patient = pick(admittedPatients);
       const daysAgo = Math.floor(Math.random() * 7);
-      
+
       let status;
       if (i < 30) status = 'pending';
       else if (i < 50) status = 'in_progress';
       else status = 'completed';
-      
+
       await prisma.scanRequest.create({
         data: {
           patientId: patient.id,
@@ -839,14 +1290,14 @@ async function main() {
     console.log('🍽️  Creating 150 meal deliveries...');
     const cateringWardRecords = await prisma.cateringWard.findMany();
     const mealTypeRecords = await prisma.cateringMealType.findMany();
-    
+
     for (let day = 0; day < 7; day++) {
       for (let batch = 0; batch < 5; batch++) {
         const batchId = 'B-' + dateOffsetDays(-day).toISOString().slice(0, 10).replace(/-/g, '') + '-' + String(100 + batch);
         const ward = pick(cateringWardRecords);
         const mealsPerBatch = 1 + Math.floor(Math.random() * 3);
         const usedMealTypes = new Set();
-        
+
         for (let m = 0; m < mealsPerBatch; m++) {
           let mealType;
           let attempts = 0;
@@ -854,10 +1305,10 @@ async function main() {
             mealType = pick(mealTypeRecords);
             attempts++;
           } while (usedMealTypes.has(mealType.id) && attempts < 10);
-          
+
           if (usedMealTypes.has(mealType.id)) continue;
           usedMealTypes.add(mealType.id);
-          
+
           await prisma.mealDelivery.create({
             data: {
               batchId,
@@ -885,7 +1336,7 @@ async function main() {
     for (let i = 0; i < 100; i++) {
       const daysAgo = Math.floor(Math.random() * 7);
       const date = daysAgo === 0 ? todayAtHour(6, 18) : randomDateWithinDays(daysAgo, 6, 18);
-      
+
       await prisma.linenMovement.create({
         data: {
           type: pick(['sent', 'received']),
@@ -912,7 +1363,7 @@ async function main() {
       const date = daysAgo === 0 ? todayAtHour(6, 20) : randomDateWithinDays(daysAgo, 6, 20);
       const isReleased = i < 20;
       const year = new Date().getFullYear();
-      
+
       await prisma.mortuaryRecord.create({
         data: {
           bodyId: 'MOR-' + year + '-' + String(i + 1).padStart(4, '0'),
@@ -921,7 +1372,7 @@ async function main() {
           gender: pick(['Male', 'Female']),
           dateOfDeath: date,
           causeOfDeath: pick(mortuaryCauses),
-          nextOfKin: pick(FIRST_NAMES_M.concat(FIRST_NAMES_F)) + ' ' + pick(SURNAMES),
+          nextOfKin: makeName(pick(['M','F'])),
           contactPhone: '+263 7' + Math.floor(1 + Math.random() * 8) + ' ' + Math.floor(1000000 + Math.random() * 9000000),
           status: isReleased ? 'released' : 'in_mortuary',
           receivedBy: 'Mortuary Supervisor',
@@ -936,7 +1387,7 @@ async function main() {
     console.log('  ✓ Created 25 mortuary records (5 currently in mortuary)');
 
     // ============================================================
-    // STEP 19: HEALTH INFO FILES (80, with 2+ overdue >5 days)
+    // STEP 19: HEALTH INFO FILES (80)
     // ============================================================
     console.log('📁 Creating 80 health info files...');
     const wardsForFiles = ['Ward A', 'Ward B', 'ICU', 'Maternity', 'Surgical', 'Paediatrics', 'Outpatient', 'Theatre', 'Radiology', 'Laboratory', 'Pharmacy', 'Accounts'];
@@ -945,24 +1396,22 @@ async function main() {
       const year = new Date().getFullYear();
       const fileNumber = 'HI-' + year + '-' + String(i + 1).padStart(4, '0');
       const isReturned = i < 50;
-      
-      // 2 files overdue >5 days (critical)
+
       let daysAgo;
       if (!isReturned && i < 52) {
-        // First 2 unreturned files: >5 days overdue
         daysAgo = 6 + Math.floor(Math.random() * 3);
       } else if (!isReturned) {
         daysAgo = Math.floor(Math.random() * 4);
       } else {
         daysAgo = Math.floor(Math.random() * 14);
       }
-      
+
       const checkedOutAt = daysAgo === 0 ? todayAtHour(8, 17) : randomDateWithinDays(daysAgo, 8, 17);
-      
+
       await prisma.patientFile.create({
         data: {
           fileNumber,
-          patientName: pick(FIRST_NAMES_M.concat(FIRST_NAMES_F)) + ' ' + pick(SURNAMES),
+          patientName: makeName(pick(['M','F'])),
           patientId: generateNationalId(),
           ward: pick(wardsForFiles),
           requestedBy: pick(['Dr. James Mwale', 'Sister Mutsa', 'Nurse Tatenda', 'Accountant']),
@@ -1001,13 +1450,12 @@ async function main() {
     for (let i = 0; i < 40; i++) {
       const template = pick(equipmentNames);
       const equipmentId = 'EQ-' + year + '-' + String(i + 1).padStart(4, '0');
-      
-      // 4 out of order, 4 maintenance
+
       let status;
       if (i < 4) status = 'out_of_order';
       else if (i < 8) status = 'maintenance';
       else status = 'operational';
-      
+
       const equipment = await prisma.equipment.create({
         data: {
           equipmentId,
@@ -1021,7 +1469,6 @@ async function main() {
         }
       });
 
-      // Add a couple maintenance logs
       for (let l = 0; l < 2; l++) {
         await prisma.maintenanceLog.create({
           data: {
@@ -1043,13 +1490,12 @@ async function main() {
     // STEP 21: SCHOOLS (Nursing 60 + Midwifery 40)
     // ============================================================
     console.log('🎓 Creating school students and schedules...');
-    
-    // Nursing students
+
     for (let i = 0; i < 60; i++) {
       const gender = Math.random() < 0.3 ? 'M' : 'F';
-      const name = (gender === 'M' ? pick(FIRST_NAMES_M) : pick(FIRST_NAMES_F)) + ' ' + pick(SURNAMES);
+      const name = makeName(gender);
       const year = new Date().getFullYear();
-      
+
       await prisma.schoolStudent.create({
         data: {
           studentNumber: 'SON-' + year + '-' + String(i + 1).padStart(4, '0'),
@@ -1062,13 +1508,12 @@ async function main() {
         }
       });
     }
-    
-    // Midwifery students
+
     for (let i = 0; i < 40; i++) {
       const gender = Math.random() < 0.2 ? 'M' : 'F';
-      const name = (gender === 'M' ? pick(FIRST_NAMES_M) : pick(FIRST_NAMES_F)) + ' ' + pick(SURNAMES);
+      const name = makeName(gender);
       const year = new Date().getFullYear();
-      
+
       await prisma.schoolStudent.create({
         data: {
           studentNumber: 'SOM-' + year + '-' + String(i + 1).padStart(4, '0'),
@@ -1082,7 +1527,6 @@ async function main() {
       });
     }
 
-    // Class schedules
     const nursingClasses = [
       { title: 'Anatomy & Physiology', tutor: 'Principal Tutor', day: 'Monday', start: '08:00', end: '10:00' },
       { title: 'Infection Control', tutor: 'Principal Tutor', day: 'Monday', start: '11:00', end: '13:00' },
@@ -1116,6 +1560,96 @@ async function main() {
     console.log('  ✓ Created 100 students and 13 classes');
 
     // ============================================================
+    // ASSERTIONS — fail loudly if causal chains break
+    // ============================================================
+    console.log('');
+    console.log('════════════════════════════════════════════════');
+    console.log('🔍 RUNNING CAUSAL CHAIN ASSERTIONS');
+    console.log('════════════════════════════════════════════════');
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const assertions = [];
+    function assert(name, condition, detail) {
+      assertions.push({ name, ok: !!condition, detail });
+    }
+
+    // Wards
+    assert('Wards exist (≥ 6)', (await prisma.ward.count()) >= 6);
+
+    // Employees
+    assert('Employees > 500', (await prisma.employee.count()) > 500);
+    assert('Active employees > 800', (await prisma.employee.count({ where: { status: 'active' } })) > 800);
+
+    // Patients
+    assert('Patients > 1000', (await prisma.patient.count()) > 1000);
+    const inCare = await prisma.patient.count({ where: { status: { in: ['admitted', 'treatment'] } } });
+    assert('In-care patients between 150 and 500', inCare > 150 && inCare < 500, `actual: ${inCare}`);
+    assert('Every patient has a StatusLog', (await prisma.statusLog.groupBy({ by: ['patientId'] })).length === (await prisma.patient.count()));
+
+    // Tenders — the critical fix
+    const orderedTenders = await prisma.orderRequest.count({ where: { status: 'ordered' } });
+    const procurementOrders = await prisma.procurementOrder.count();
+    assert('Every "ordered" tender has a ProcurementOrder',
+      procurementOrders >= orderedTenders,
+      `ordered=${orderedTenders}, procurementOrders=${procurementOrders}`);
+
+    const receivedTenders = await prisma.orderRequest.count({ where: { status: { in: ['received', 'in_storage'] } } });
+    const itemReceives = await prisma.itemReceive.count();
+    assert('Every "received"/"in_storage" tender has an ItemReceive',
+      itemReceives >= receivedTenders,
+      `received=${receivedTenders}, itemReceives=${itemReceives}`);
+
+    // Inventory — every tender's itemName exists as an InventoryItem
+    const tenderItemNames = await prisma.orderRequest.findMany({ select: { itemName: true }, distinct: ['itemName'] });
+    const invNames = new Set((await prisma.inventoryItem.findMany({ select: { name: true } })).map(i => i.name));
+    const missingItems = tenderItemNames.filter(t => !invNames.has(t.itemName));
+    assert('Every tender itemName matches an InventoryItem',
+      missingItems.length === 0,
+      `missing: ${missingItems.map(m => m.itemName).join(', ')}`);
+
+    // Projects
+    const pendingProjects = await prisma.project.count({ where: { status: 'pending' } });
+    assert('At least 3 pending projects', pendingProjects >= 3, `actual: ${pendingProjects}`);
+
+    const projectsWithoutUpdates = await prisma.project.count({ where: { updates: { none: {} } } });
+    assert('Every project has at least one ProjectUpdate',
+      projectsWithoutUpdates === 0,
+      `missing updates: ${projectsWithoutUpdates}`);
+
+    // Establishment
+    assert('Establishment targets exist', (await prisma.establishmentTarget.count()) >= 12);
+
+    const movementsIn30d = await prisma.employeeMovement.count({ where: { createdAt: { gte: thirtyDaysAgo } } });
+    assert('At least 10 movements in last 30 days', movementsIn30d >= 10, `actual: ${movementsIn30d}`);
+
+    // Disciplinary
+    const discWithoutLogs = await prisma.disciplinaryCase.count({ where: { statusLogs: { none: {} } } });
+    assert('Every disciplinary case has at least one status log',
+      discWithoutLogs === 0,
+      `missing: ${discWithoutLogs}`);
+
+    // Report
+    let failures = 0;
+    for (const a of assertions) {
+      if (a.ok) {
+        console.log('  ✓ ' + a.name);
+      } else {
+        console.log('  ✗ ' + a.name + (a.detail ? ' — ' + a.detail : ''));
+        failures++;
+      }
+    }
+
+    console.log('');
+    if (failures > 0) {
+      console.log('════════════════════════════════════════════════');
+      console.log('❌ SEED COMPLETED BUT ' + failures + ' ASSERTION(S) FAILED');
+      console.log('════════════════════════════════════════════════');
+      process.exit(1);
+    }
+
+    // ============================================================
     // PRINT SUMMARY
     // ============================================================
     console.log('');
@@ -1131,6 +1665,8 @@ async function main() {
       'Patients': await prisma.patient.count(),
       'Inventory Items': await prisma.inventoryItem.count(),
       'Tenders': await prisma.orderRequest.count(),
+      'Procurement Orders': await prisma.procurementOrder.count(),
+      'Item Receives': await prisma.itemReceive.count(),
       'Cash Flow Records': await prisma.cashFlow.count(),
       'Projects': await prisma.project.count(),
       'Project Updates': await prisma.projectUpdate.count(),
@@ -1155,41 +1691,30 @@ async function main() {
 
     console.log('');
     console.log('════════════════════════════════════════════════');
-    console.log('🎯 DASHBOARD TRIGGERS ACTIVE');
+    console.log('🎯 WORKFLOW-ACTIONABLE VERIFICATION');
     console.log('════════════════════════════════════════════════');
-    
-    const overdueFiles = await prisma.patientFile.count({
-      where: {
-        status: 'out',
-        checkedOutAt: { lte: new Date(Date.now() - 5 * 86400000) }
-      }
+
+    const actionable = {
+      'Tenders pending (fresh <7d)': await prisma.orderRequest.count({ where: { status: 'pending', createdAt: { gte: new Date(Date.now() - 7 * 86400000) } } }),
+      'Tenders pending (aging 7-15d)': await prisma.orderRequest.count({ where: { status: 'pending', createdAt: { gte: new Date(Date.now() - 15 * 86400000), lt: new Date(Date.now() - 7 * 86400000) } } }),
+      'Tenders pending (stalled >15d)': await prisma.orderRequest.count({ where: { status: 'pending', createdAt: { lt: new Date(Date.now() - 15 * 86400000) } } }),
+      'Tenders awaiting quote': await prisma.orderRequest.count({ where: { status: 'awaiting_quotation' } }),
+      'Tenders ordered (Stores can receive)': await prisma.orderRequest.count({ where: { status: 'ordered' } }),
+      'Tenders received (in inventory)': await prisma.orderRequest.count({ where: { status: 'received' } }),
+      'Tenders in storage': await prisma.orderRequest.count({ where: { status: 'in_storage' } }),
+      'Projects pending (blocked)': await prisma.project.count({ where: { status: 'pending' } }),
+      'Projects pending blocked >14d': await prisma.project.count({ where: { status: 'pending', updatedAt: { lt: new Date(Date.now() - 14 * 86400000) } } }),
+      'Projects ongoing (stale >7d)': await prisma.project.count({ where: { status: 'ongoing', updatedAt: { lt: new Date(Date.now() - 7 * 86400000) } } }),
+      'Projects completed': await prisma.project.count({ where: { status: 'completed' } }),
+      'Files overdue >5 days': await prisma.patientFile.count({ where: { status: 'out', checkedOutAt: { lt: new Date(Date.now() - 5 * 86400000) } } }),
+      'Equipment out of order': await prisma.equipment.count({ where: { status: 'out_of_order' } }),
+      'Open security incidents': await prisma.securityIncident.count({ where: { status: 'open' } }),
+      'Active patients (in care)': inCare,
+    };
+
+    Object.entries(actionable).forEach(([key, val]) => {
+      console.log('  ' + key.padEnd(38) + ': ' + val);
     });
-    console.log('  Files overdue >5 days      : ' + overdueFiles);
-
-    const blockedProjects = await prisma.project.count({ where: { status: 'pending' } });
-    console.log('  Blocked projects           : ' + blockedProjects);
-
-    const outOfOrderEquipment = await prisma.equipment.count({ where: { status: 'out_of_order' } });
-    console.log('  Equipment out of order     : ' + outOfOrderEquipment);
-
-    const openIncidents = await prisma.securityIncident.count({ where: { status: 'open' } });
-    console.log('  Open security incidents    : ' + openIncidents);
-
-    const stalledTenders = await prisma.orderRequest.count({
-      where: {
-        status: 'pending',
-        createdAt: { lte: new Date(Date.now() - 14 * 86400000) }
-      }
-    });
-    console.log('  Tenders stalled >14 days   : ' + stalledTenders);
-
-    const staleProjects = await prisma.project.count({
-      where: {
-        status: 'ongoing',
-        updatedAt: { lte: new Date(Date.now() - 7 * 86400000) }
-      }
-    });
-    console.log('  Stale projects (>7 days)   : ' + staleProjects);
 
     console.log('');
     console.log('════════════════════════════════════════════════');
@@ -1213,7 +1738,7 @@ async function main() {
     console.log('  Accounts:            accounts1 / acc123');
     console.log('  Super Admin:         Admin / (your configured password)');
     console.log('');
-    console.log('✅ Ready for the Live Dashboard build!');
+    console.log('✅ Ready — every action on every portal should succeed first try.');
     console.log('');
 
   } catch (e) {

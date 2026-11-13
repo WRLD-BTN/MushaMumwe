@@ -10,110 +10,105 @@
   <link rel="stylesheet" href="style.css">
 
   <style>
-    /* Glowing effect for header buttons */
     @keyframes redGoldGlow {
       0% { box-shadow: 0 0 2px #dc2626, 0 0 2px #d97706; border-color: #dc2626; }
       50% { box-shadow: 0 0 10px #dc2626, 0 0 18px #d97706; border-color: #d97706; }
       100% { box-shadow: 0 0 2px #dc2626, 0 0 2px #d97706; border-color: #dc2626; }
     }
-    
-    .glow-btn {
-      animation: redGoldGlow 2s infinite ease-in-out;
-      border: 1.5px solid #dc2626;
-      background: transparent;
-      transition: all 0.3s ease;
-      cursor: pointer;
-    }
+    .glow-btn { animation: redGoldGlow 2s infinite ease-in-out; border: 1.5px solid #dc2626; background: transparent; transition: all 0.3s ease; cursor: pointer; }
+    [data-theme="light"] .glow-btn { color: #991b1b; background: #fef2f2; }
+    [data-theme="dark"] .glow-btn { color: #fca5a5; background: #450a0a; }
+    .glow-btn:hover { animation: none; box-shadow: 0 0 15px rgba(217, 119, 6, 0.6) !important; border-color: #b45309 !important; }
 
-    [data-theme="light"] .glow-btn {
-      color: #991b1b;
-      background: #fef2f2;
-    }
-
-    [data-theme="dark"] .glow-btn {
-      color: #fca5a5;
-      background: #450a0a;
-    }
-
-    .glow-btn:hover {
-      animation: none;
-      box-shadow: 0 0 15px rgba(217, 119, 6, 0.6) !important;
-      border-color: #b45309 !important;
-    }
-
-    /* Custom Install Modal */
-    #installModal {
-      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.6); z-index: 9999;
-      align-items: center; justify-content: center;
-    }
+    #installModal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center; }
     #installModal.active { display: flex; }
-    .install-box {
-      background: var(--surface); color: var(--text); padding: 24px; border-radius: 12px;
-      max-width: 420px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-      text-align: center;
-    }
+    .install-box { background: var(--surface); color: var(--text); padding: 24px; border-radius: 12px; max-width: 420px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
     .install-box h3 { margin-top: 0; color: var(--primary); font-size: 20px; margin-bottom: 12px; }
     .install-box p { font-size: 14px; line-height: 1.5; margin-bottom: 16px; color: var(--text-muted); }
     .install-box ul { text-align: left; font-size: 14px; padding-left: 20px; margin-bottom: 20px; line-height: 1.6; color: var(--text); }
-    .install-box button {
-      background: var(--primary); color: white; border: none; padding: 10px 24px;
-      border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;
-    }
+    .install-box button { background: var(--primary); color: white; border: none; padding: 10px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
     .install-box button:hover { background: var(--primary-hover); }
+
+    .hamburger-btn { display: none; background: transparent; border: 1.5px solid var(--board-line); color: var(--board-text); width: 40px; height: 40px; border-radius: 6px; cursor: pointer; padding: 0; align-items: center; justify-content: center; transition: all 0.15s; }
+    .hamburger-btn:hover { border-color: var(--primary); }
+    .hamburger-btn-inner { display: block; width: 18px; height: 2px; background: currentColor; border-radius: 1px; position: relative; }
+    .hamburger-btn-inner::before, .hamburger-btn-inner::after { content: ''; position: absolute; left: 0; width: 18px; height: 2px; background: currentColor; border-radius: 1px; }
+    .hamburger-btn-inner::before { top: -6px; }
+    .hamburger-btn-inner::after { top: 6px; }
+
+    .header-secondary { display: flex; justify-content: space-between; align-items: center; padding: 10px 28px; background: var(--board-surface); border-bottom: 1px solid var(--board-line); flex-wrap: wrap; gap: 10px; }
+    .mobile-menu-panel { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: var(--board-surface); border-bottom: 1px solid var(--board-line); padding: 16px 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+    .mobile-menu-panel.active { display: block; }
+    .mobile-menu-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 99; }
+    .mobile-menu-backdrop.active { display: block; }
+
+    @media (max-width: 768px) { .hamburger-btn { display: inline-flex; } .header-secondary { display: none; } }
+    @media (min-width: 769px) { .mobile-menu-panel, .mobile-menu-backdrop { display: none !important; } }
+
+    .morning-brief {
+      background: linear-gradient(135deg, var(--board-surface) 0%, var(--board-surface-2) 100%);
+      border: 1.5px solid var(--board-line);
+      border-left: 6px solid var(--primary);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+    .morning-brief h3 { margin: 0 0 8px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--board-muted); font-weight: 800; }
+    .morning-brief p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--board-text); font-weight: 500; }
   </style>
 
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW failed:', err));
-      });
+      window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW failed:', err)); });
     }
-
-    // PWA Install logic
     let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-    });
-
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
     function installApp() {
       if (deferredPrompt) {
         deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            console.log('User accepted the A2HS prompt');
-          }
-          deferredPrompt = null;
-        });
-      } else {
-        document.getElementById('installModal').classList.add('active');
-      }
+        deferredPrompt.userChoice.then((choiceResult) => { if (choiceResult.outcome === 'accepted') console.log('User accepted A2HS'); deferredPrompt = null; });
+      } else { document.getElementById('installModal').classList.add('active'); }
     }
+    function toggleMobileMenu() { document.getElementById('mobileMenuPanel').classList.toggle('active'); document.getElementById('mobileMenuBackdrop').classList.toggle('active'); }
+    function closeMobileMenu() { document.getElementById('mobileMenuPanel').classList.remove('active'); document.getElementById('mobileMenuBackdrop').classList.remove('active'); }
   </script>
 </head>
 <body class="live-board">
 
   <div class="topbar">
-    <div class="brand">
-      <h1 id="boardTitle">SALLY MUGABE CENTRAL HOSPITAL</h1>
-      <div class="sub">COMMAND CENTER</div>
+    <div class="brand"><h1 id="boardTitle">SALLY MUGABE CENTRAL HOSPITAL</h1></div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div class="pulse-wrap"><span class="live-dot" id="liveDot"></span><span class="sync-text" id="syncText">CONNECTING</span></div>
+      <div class="clock" id="clock">--:--:--</div>
+      <button class="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Menu"><span class="hamburger-btn-inner"></span></button>
     </div>
-    <div class="pulse-wrap">
-      <span class="live-dot" id="liveDot"></span>
-      <span class="sync-text" id="syncText">CONNECTING</span>
+  </div>
+
+  <div class="header-secondary">
+    <div class="brand" style="display: flex; align-items: center; gap: 12px;">
+      <span class="sub" id="headerSubtitle" style="font-size: 12px; color: var(--board-muted); font-family: var(--font-mono); font-weight: 600; letter-spacing: 1px;">COMMAND CENTER &middot; <span id="apiTarget">connecting...</span></span>
     </div>
-    <div class="clock" id="clock">--:--:--</div>
-    
-    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
-      <span id="themeIcon">DARK</span>
-    </button>
-    
-    <!-- GLOWING INSTALL APP BUTTON -->
-    <button class="staff-login-link glow-btn" style="margin-left: 6px; padding: 7px 13px; font-family: var(--font-mono); font-size: 11px; border-radius: 6px; font-weight: 700;" onclick="installApp()">Install App</button>
-    
-    <!-- GLOWING STAFF LOGIN BUTTON -->
-    <a href="/dashboard" class="staff-login-link glow-btn" style="margin-left: 6px; padding: 7px 13px; font-family: var(--font-mono); font-size: 11px; border-radius: 6px; text-decoration: none; font-weight: 700;">Staff Login</a>
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()"><span id="themeIcon">DARK</span></button>
+      <button class="staff-login-link glow-btn" style="padding: 7px 13px; font-family: var(--font-mono); font-size: 11px; border-radius: 6px; font-weight: 700; cursor: pointer;" onclick="installApp()">Install App</button>
+      <a href="/dashboard" class="staff-login-link glow-btn" style="padding: 7px 13px; font-family: var(--font-mono); font-size: 11px; border-radius: 6px; text-decoration: none; font-weight: 700;">Staff Login</a>
+    </div>
+  </div>
+
+  <div id="mobileMenuBackdrop" class="mobile-menu-backdrop" onclick="closeMobileMenu()"></div>
+  <div id="mobileMenuPanel" class="mobile-menu-panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <div>
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--board-muted);">Command Center</div>
+        <div id="apiTargetMobile" style="font-size: 12px; font-family: var(--font-mono); color: var(--board-text); font-weight: 600; margin-top: 4px;">world.local:4000</div>
+      </div>
+      <button style="background: transparent; border: none; color: var(--board-text); font-size: 20px; cursor: pointer; padding: 8px;" onclick="closeMobileMenu()">&times;</button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="theme-toggle" id="themeToggleMobile" onclick="toggleTheme(); closeMobileMenu();" style="padding: 12px 16px; text-align: left; font-size: 13px; border-radius: 6px;"><span id="themeIconMobile">DARK MODE</span></button>
+      <button class="staff-login-link glow-btn" style="padding: 12px 16px; font-family: var(--font-mono); font-size: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; text-align: left;" onclick="installApp(); closeMobileMenu();">Install App</button>
+      <a href="/dashboard" class="staff-login-link glow-btn" style="padding: 12px 16px; font-family: var(--font-mono); font-size: 12px; border-radius: 6px; text-decoration: none; font-weight: 700; text-align: left;">Staff Login</a>
+    </div>
   </div>
 
   <!-- TIME RANGE SELECTOR -->
@@ -126,22 +121,30 @@
     </div>
   </div>
 
-  <!-- TOP STRIP: 4 TILES -->
+  <!-- MORNING BRIEF -->
+  <div style="padding: 20px 28px 0 28px;">
+    <div class="morning-brief" id="morningBriefCard" style="display: none;">
+      <h3>Morning Brief <span id="briefTimestamp" style="font-weight: 500; text-transform: none; letter-spacing: 0; margin-left: 8px; color: var(--board-muted);"></span></h3>
+      <p id="morningBriefText">Loading today's operational brief...</p>
+    </div>
+  </div>
+
+  <!-- TOP STRIP -->
   <div style="padding: 20px 28px 0 28px;">
     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-      <div class="widget-stat admitted" style="padding: 18px; background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 8px;">
+      <div class="widget-stat admitted clickable-card" onclick="openBreakdown('patients-by-ward')" style="padding: 18px; background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 8px;">
         <div class="widget-number" id="statPatients" style="color: var(--status-admitted);">-</div>
         <div class="widget-label" style="margin-top: 8px;">Patients In Care</div>
         <div id="statPatientsTrend" style="font-size: 12px; margin-top: 8px; font-weight: 700;">-</div>
       </div>
 
-      <div class="widget-stat" style="padding: 18px; background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 8px;">
+      <div class="widget-stat clickable-card" onclick="openBreakdown('employees-list')" style="padding: 18px; background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 8px;">
         <div class="widget-number" id="statEmployees" style="color: var(--primary);">-</div>
         <div class="widget-label" style="margin-top: 8px;">Employees Active</div>
         <div id="statEmployeesTrend" style="font-size: 12px; margin-top: 8px; font-weight: 700;">-</div>
       </div>
 
-      <div class="widget-stat pending" style="padding: 18px; background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 8px;">
+      <div class="widget-stat pending clickable-card" onclick="openBreakdown('tenders-list')" style="padding: 18px; background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 8px;">
         <div class="widget-number" id="statTenders" style="color: var(--status-treatment);">-</div>
         <div class="widget-label" style="margin-top: 8px;">Pending Tenders</div>
         <div id="statTendersTrend" style="font-size: 12px; margin-top: 8px; font-weight: 700;">-</div>
@@ -155,15 +158,15 @@
     </div>
   </div>
 
-  <!-- CLINICAL OUTCOMES STRIP -->
+  <!-- CLINICAL OUTCOMES -->
   <div style="padding: 20px 28px 0 28px;">
     <div style="background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 10px; padding: 20px 22px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
         <h3 class="section-title warning" style="margin: 0;">Clinical Outcomes</h3>
         <span id="clinicalPeriodLabel" class="section-period-label">Today</span>
       </div>
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
-        <div style="padding: 16px 18px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+        <div class="clickable-card" onclick="openBreakdown('admitted-list')" style="padding: 16px 18px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: start;">
             <div>
               <div id="clinicalAdmitted" style="font-size: 36px; font-weight: 900; color: var(--status-admitted); line-height: 1; letter-spacing: -1px;">-</div>
@@ -173,7 +176,7 @@
           </div>
         </div>
 
-        <div style="padding: 16px 18px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+        <div class="clickable-card" onclick="openBreakdown('discharged-list')" style="padding: 16px 18px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: start;">
             <div>
               <div id="clinicalDischarged" style="font-size: 36px; font-weight: 900; color: var(--status-discharged); line-height: 1; letter-spacing: -1px;">-</div>
@@ -183,7 +186,7 @@
           </div>
         </div>
 
-        <div style="padding: 16px 18px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px; cursor: pointer;" onclick="openDeathsModal()" title="Click for breakdown">
+        <div onclick="openDeathsModal()" style="padding: 16px 18px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px; cursor: pointer;" title="Click for breakdown">
           <div style="display: flex; justify-content: space-between; align-items: start;">
             <div>
               <div id="clinicalDeceased" style="font-size: 36px; font-weight: 900; color: #991b1b; line-height: 1; letter-spacing: -1px;">-</div>
@@ -199,21 +202,201 @@
   <!-- PATIENT DISTRIBUTION -->
   <div style="padding: 20px 28px 0 28px;">
     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-      <div class="stat admitted">
+      <div class="stat admitted clickable-card" onclick="openBreakdown('distribution-admitted')">
         <div><span class="n" id="countAdmitted">0</span><span class="pct" id="pctAdmitted">0%</span></div>
         <div class="l">Admitted</div>
       </div>
-      <div class="stat treatment">
+      <div class="stat treatment clickable-card" onclick="openBreakdown('distribution-treatment')">
         <div><span class="n" id="countTreatment">0</span><span class="pct" id="pctTreatment">0%</span></div>
         <div class="l">In Treatment</div>
       </div>
-      <div class="stat discharged">
+      <div class="stat discharged clickable-card" onclick="openBreakdown('distribution-discharged')">
         <div><span class="n" id="countDischarged">0</span><span class="pct" id="pctDischarged">0%</span></div>
         <div class="l">Discharged</div>
       </div>
-      <div class="stat deceased">
+      <div class="stat deceased clickable-card" onclick="openBreakdown('distribution-deceased')">
         <div><span class="n" id="countDeceased">0</span><span class="pct" id="pctDeceased">0%</span></div>
         <div class="l">Deceased</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECTS -->
+  <div style="padding: 28px 28px 0 28px;">
+    <div style="background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 10px; padding: 20px 22px;">
+      <div style="margin-bottom: 14px;">
+        <h3 class="section-title info" style="margin: 0; color: var(--board-text); background: transparent;">Projects</h3>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+        <div class="clickable-card" onclick="openBreakdown('projects-list', { status: 'ongoing' })" style="padding: 16px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="projOngoing" style="font-size: 32px; font-weight: 900; color: #2563eb; line-height: 1;">-</div>
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">Ongoing</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('projects-list', { status: 'pending' })" style="padding: 16px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="projPending" style="font-size: 32px; font-weight: 900; color: #dc2626; line-height: 1;">-</div>
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">Blocked</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('projects-list', { status: 'completed' })" style="padding: 16px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="projCompleted" style="font-size: 32px; font-weight: 900; color: #16a34a; line-height: 1;">-</div>
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">Completed</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('projects-list', { status: 'pending' })" style="padding: 16px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+           <!-- Placeholder for critical projects or total -->
+           <div id="projTotal" style="font-size: 32px; font-weight: 900; color: var(--board-text); line-height: 1;">-</div>
+           <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">Total</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINANCE -->
+  <div style="padding: 20px 28px 0 28px;">
+    <div id="financeSection" style="background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 10px; padding: 20px 22px;">
+      <div style="margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <h3 class="section-title healthy" style="margin: 0;">Finance</h3>
+        <a id="financeLoginLink" href="/dashboard" style="display: none; font-size: 11px; font-weight: 700; color: var(--primary); text-decoration: none; padding: 4px 10px; background: var(--primary-light); border-radius: 999px;">Staff login required</a>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+        <div class="clickable-card" onclick="openBreakdown('cashflow-list')" style="padding: 16px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="finUsdNet" style="font-size: 28px; font-weight: 900; color: var(--board-text); line-height: 1;">-</div>
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">USD Net (Today)</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('cashflow-list')" style="padding: 16px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="finZwgNet" style="font-size: 28px; font-weight: 900; color: var(--board-text); line-height: 1;">-</div>
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">ZWG Net (Today)</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('cashflow-list')" style="padding: 16px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="finTxnCount" style="font-size: 28px; font-weight: 900; color: var(--board-text); line-height: 1;">-</div>
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">Transactions Today</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESTABLISHMENT -->
+  <div style="padding: 20px 28px 0 28px;">
+    <div style="background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 10px; padding: 20px 22px;">
+      <div style="margin-bottom: 12px;">
+        <h3 class="section-title warning" style="margin: 0 0 4px 0;">Establishment Movements</h3>
+        <div style="font-size: 11px; font-weight: 600; color: var(--board-muted); text-transform: uppercase; letter-spacing: 0.5px;">Last 30 days</div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
+        <div class="clickable-card" onclick="openBreakdown('movements-list')" style="padding: 14px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="estTotal" style="font-size: 24px; font-weight: 900; color: var(--board-text); line-height: 1;">-</div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--board-muted); margin-top: 6px;">Total</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('movements-list')" style="padding: 14px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="estTransfers" style="font-size: 24px; font-weight: 900; color: #2563eb; line-height: 1;">-</div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--board-muted); margin-top: 6px;">Transfers</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('movements-list')" style="padding: 14px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="estRetirements" style="font-size: 24px; font-weight: 900; color: #d97706; line-height: 1;">-</div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--board-muted); margin-top: 6px;">Retirements</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('movements-list')" style="padding: 14px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="estResignations" style="font-size: 24px; font-weight: 900; color: #dc2626; line-height: 1;">-</div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--board-muted); margin-top: 6px;">Resignations</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <h3 class="section-title warning" style="margin: 0 0 4px 0;">Headcount vs Target</h3>
+        <div style="font-size: 11px; font-weight: 600; color: var(--board-muted); text-transform: uppercase; letter-spacing: 0.5px;">Current snapshot</div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+        <div class="clickable-card" onclick="openBreakdown('headcount-by-dept')" style="padding: 14px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="estUnder" style="font-size: 24px; font-weight: 900; color: #dc2626; line-height: 1;">-</div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--board-muted); margin-top: 6px;">Understaffed</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('headcount-by-dept')" style="padding: 14px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="estOver" style="font-size: 24px; font-weight: 900; color: #ea580c; line-height: 1;">-</div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--board-muted); margin-top: 6px;">Overstaffed</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LABOUR RELATIONS -->
+  <div style="padding: 20px 28px 0 28px;">
+    <div style="background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 10px; padding: 20px 22px;">
+      <div style="margin-bottom: 14px;">
+        <h3 class="section-title urgent" style="margin: 0;">Labour Relations</h3>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px;">
+        <div class="clickable-card" onclick="openBreakdown('disciplinary-list')" style="padding: 14px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="discTotal" style="font-size: 24px; font-weight: 900; color: var(--board-text); line-height: 1;">-</div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--board-muted); margin-top: 6px;">Total</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('disciplinary-list')" style="padding: 14px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="discOpen" style="font-size: 24px; font-weight: 900; color: #dc2626; line-height: 1;">-</div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--board-muted); margin-top: 6px;">Open</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('disciplinary-list')" style="padding: 14px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="discInvestigation" style="font-size: 24px; font-weight: 900; color: #2563eb; line-height: 1;">-</div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--board-muted); margin-top: 6px;">Investigating</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('disciplinary-list')" style="padding: 14px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="discResolved" style="font-size: 24px; font-weight: 900; color: #16a34a; line-height: 1;">-</div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--board-muted); margin-top: 6px;">Resolved</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('disciplinary-list')" style="padding: 14px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="discDismissed" style="font-size: 24px; font-weight: 900; color: #64748b; line-height: 1;">-</div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--board-muted); margin-top: 6px;">Dismissed</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('disciplinary-list')" style="padding: 14px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="disc30d" style="font-size: 24px; font-weight: 900; color: var(--board-text); line-height: 1;">-</div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--board-muted); margin-top: 6px;">Last 30d</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVENTORY -->
+  <div style="padding: 20px 28px 0 28px;">
+    <div style="background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 10px; padding: 20px 22px;">
+      <div style="margin-bottom: 14px;">
+        <h3 class="section-title info" style="margin: 0; color: var(--board-text); background: transparent;">Inventory</h3>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+        <div class="clickable-card" onclick="openBreakdown('inventory-list')" style="padding: 16px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="invTotal" style="font-size: 28px; font-weight: 900; color: var(--board-text); line-height: 1;">-</div>
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">Total Items</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('inventory-list', { bucket: 'critical' })" style="padding: 16px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="invCritical" style="font-size: 28px; font-weight: 900; color: #dc2626; line-height: 1;">-</div>
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">Critical (&lt;10)</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('inventory-list', { bucket: 'low' })" style="padding: 16px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="invLow" style="font-size: 28px; font-weight: 900; color: #ea580c; line-height: 1;">-</div>
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">Low (10-49)</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('inventory-list', { bucket: 'adequate' })" style="padding: 16px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="invAdequate" style="font-size: 28px; font-weight: 900; color: #16a34a; line-height: 1;">-</div>
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">Adequate (50+)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SYSTEM -->
+  <div style="padding: 20px 28px 0 28px;">
+    <div style="background: var(--board-surface); border: 1.5px solid var(--board-line); border-radius: 10px; padding: 20px 22px;">
+      <div style="margin-bottom: 14px;">
+        <h3 class="section-title healthy" style="margin: 0;">System</h3>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+        <div class="clickable-card" onclick="openBreakdown('users-by-department')" style="padding: 16px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="itTotalUsers" style="font-size: 28px; font-weight: 900; color: var(--primary); line-height: 1;">-</div>
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">System Users</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('audit-recent')" style="padding: 16px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="auditRecent" style="font-size: 28px; font-weight: 900; color: var(--board-text); line-height: 1;">-</div>
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">Audit Entries</div>
+        </div>
+        <div class="clickable-card" onclick="openBreakdown('equipment-out-of-order')" style="padding: 16px; background: var(--board-surface-2); border: 1.5px solid var(--board-line); border-radius: 8px;">
+          <div id="bioOutOfOrder" style="font-size: 28px; font-weight: 900; color: #dc2626; line-height: 1;">-</div>
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--board-muted); margin-top: 8px;">Equipment Out of Order</div>
+        </div>
       </div>
     </div>
   </div>
@@ -232,7 +415,7 @@
 
   <!-- DEPARTMENT DIRECTORY -->
   <div style="padding: 28px 28px 0 28px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
       <h3 class="section-title healthy" style="margin: 0;">Department Directory</h3>
       <button id="backToCategoriesBtn" class="pill-btn" style="display: none; padding: 4px 12px; font-size: 11px;" onclick="showCategoryView()">Back to Categories</button>
     </div>
@@ -272,29 +455,43 @@
   </div>
 
   <div class="footer-note">
-    Live data from database via REST and Socket.io — real-time updates enabled
+    Live data from database via REST and Socket.io - real-time updates enabled
   </div>
 
-  <!-- ALERTS MODAL -->
+  <!-- MODALS -->
   <div id="alertsModalBackdrop" class="patient-modal-backdrop" onclick="closeAlertsModal()"></div>
   <div id="alertsModal" class="patient-modal">
     <div class="patient-modal-head">
       <div><h3>Attention Required</h3><span class="modal-count" id="alertsModalCount"></span></div>
-      <button class="patient-modal-close" onclick="closeAlertsModal()">×</button>
+      <button class="patient-modal-close" onclick="closeAlertsModal()">&times;</button>
     </div>
     <div class="patient-modal-body"><div id="alertsModalBody"></div></div>
-    <div class="patient-modal-footer">Click outside or press ESC to close</div>
+    <div class="patient-modal-footer">Click any row for the specific records</div>
   </div>
 
-  <!-- DEATHS BREAKDOWN MODAL -->
   <div id="deathsModalBackdrop" class="patient-modal-backdrop" onclick="closeDeathsModal()"></div>
   <div id="deathsModal" class="patient-modal">
     <div class="patient-modal-head">
       <div><h3>Deaths Breakdown</h3><span class="modal-count" id="deathsModalCount"></span></div>
-      <button class="patient-modal-close" onclick="closeDeathsModal()">×</button>
+      <button class="patient-modal-close" onclick="closeDeathsModal()">&times;</button>
     </div>
     <div class="patient-modal-body"><div id="deathsModalBody"></div></div>
-    <div class="patient-modal-footer">Aggregated data only — no patient identities shown</div>
+    <div class="patient-modal-footer">Aggregated data only - no patient identities shown</div>
+  </div>
+
+  <div id="breakdownModalBackdrop" class="patient-modal-backdrop" onclick="closeBreakdownModal()"></div>
+  <div id="breakdownModal" class="patient-modal">
+    <div class="patient-modal-head">
+      <div>
+        <h3 id="breakdownModalTitle">Breakdown</h3>
+        <span class="modal-count" id="breakdownModalCount"></span>
+      </div>
+      <button class="patient-modal-close" onclick="closeBreakdownModal()">&times;</button>
+    </div>
+    <div class="patient-modal-body">
+      <div id="breakdownModalBody"></div>
+    </div>
+    <div class="patient-modal-footer">Click outside or press ESC to close</div>
   </div>
 
   <!-- CUSTOM INSTALL MODAL -->
@@ -302,13 +499,11 @@
     <div class="install-box">
       <h3>Install the SMCH App</h3>
       <p>Because you are on a local network (HTTP), your browser requires a manual step to add the app to your home screen or desktop.</p>
-      
       <ul>
-        <li><strong>On Android/Chrome:</strong> Tap the 3 dots (⋮) and select <strong>"Add to Home screen"</strong>.</li>
-        <li><strong>On iPhone/Safari:</strong> Tap the Share icon (⎋) and select <strong>"Add to Home Screen"</strong>.</li>
-        <li><strong>On PC/Chrome:</strong> Click the 3 dots (⋮) and select <strong>"Install App"</strong>.</li>
+        <li><strong>On Android/Chrome:</strong> Tap the 3 dots and select <strong>"Add to Home screen"</strong>.</li>
+        <li><strong>On iPhone/Safari:</strong> Tap the Share icon and select <strong>"Add to Home Screen"</strong>.</li>
+        <li><strong>On PC/Chrome:</strong> Click the 3 dots and select <strong>"Install App"</strong>.</li>
       </ul>
-      
       <button onclick="document.getElementById('installModal').classList.remove('active')">Got it</button>
     </div>
   </div>

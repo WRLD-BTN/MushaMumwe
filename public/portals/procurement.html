@@ -2,6 +2,7 @@
   <h2>Procurement</h2>
   <p class="muted">Manage tender requests and supplier orders.</p>
 
+  <!-- SUMMARY STRIP -->
   <div class="disc-summary" id="procSummary" style="margin-bottom:20px;">
     <div class="disc-summary-item">
       <div class="disc-summary-num" id="proc-procPending">0</div>
@@ -21,16 +22,22 @@
     </div>
   </div>
 
+  <!-- TABS -->
   <div class="dept-tabs">
     <button class="dept-tab active" data-tab="active" onclick="switchProcTab(this)">Active Board</button>
     <button class="dept-tab" data-tab="history" onclick="switchProcTab(this)">Tender History</button>
   </div>
 
   <!-- ============================================================ -->
-  <!-- ACTIVE BOARD TAB                                              -->
+  <!-- TAB 1: ACTIVE BOARD                                          -->
   <!-- ============================================================ -->
   <div id="procTabActive" class="proc-tab-panel active">
+
+    <!-- Active tender list with status filters -->
     <div class="card">
+      <div class="card-head">
+        <h3>Active Tenders</h3>
+      </div>
       <div class="filter-bar" id="proc-activeFilters" style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;">
         <button class="filter-btn active" data-filter="pending" onclick="setProcActiveFilter(this)">Pending</button>
         <button class="filter-btn" data-filter="awaiting_quotation" onclick="setProcActiveFilter(this)">Awaiting Quote</button>
@@ -41,20 +48,84 @@
       </div>
       <div id="proc-pendingOrdersList"></div>
     </div>
+
+    <!-- Native New Tender Request (owned by Procurement) -->
+    <div class="card">
+      <h3>New Tender Request</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Originator Department:</label>
+          <select id="proc-reqOriginator">
+            <option value="Procurement">Procurement</option>
+            <option value="Medical">Medical</option>
+            <option value="Nurses">Nurses</option>
+            <option value="Mortuary">Mortuary</option>
+            <option value="School of Nursing">School of Nursing</option>
+            <option value="School of Midwifery">School of Midwifery</option>
+            <option value="Biomedical Equipment">Biomedical Equipment</option>
+            <option value="Radiography">Radiography</option>
+            <option value="Catering">Catering</option>
+            <option value="Security">Security</option>
+            <option value="Laundry">Laundry</option>
+            <option value="Health Information">Health Information</option>
+            <option value="Accounts">Accounts</option>
+            <option value="HR">HR</option>
+            <option value="Stores">Stores</option>
+            <option value="IT">IT</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Item Name: <span class="req">*</span></label>
+          <input type="text" id="proc-reqItemName" placeholder="e.g. Office Chairs">
+        </div>
+        <div class="form-group">
+          <label>Quantity: <span class="req">*</span></label>
+          <input type="number" id="proc-reqQuantity" min="1">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Reason: <span class="req">*</span></label>
+        <textarea id="proc-reqReason" rows="2" placeholder="Why is this needed?"></textarea>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <button class="primary-btn" onclick="submitTenderRequest('proc')">Submit Request</button>
+        <div id="proc-requestMessage" style="font-weight:600;font-size:13px;"></div>
+      </div>
+    </div>
+
+    <!-- Native My Department Tenders (owned by Procurement) -->
+    <div class="card">
+      <div class="card-head">
+        <h3>My Department Tenders <span class="lock-badge">LOCKED TO YOUR DEPARTMENT</span></h3>
+        <div class="card-head-actions">
+          <input type="text" class="search-input" id="proc-tenderSearch" placeholder="Search tenders..." oninput="filterTenders()">
+          <button class="pill-btn" onclick="printMyTenders()">Print</button>
+        </div>
+      </div>
+      <div class="tender-filters" id="proc-tenderFilters">
+        <button class="filter-btn active" data-filter="all" onclick="setTenderFilter(this)">All</button>
+        <button class="filter-btn" data-filter="pending" onclick="setTenderFilter(this)">Pending</button>
+        <button class="filter-btn" data-filter="awaiting_quotation" onclick="setTenderFilter(this)">Awaiting Quotation</button>
+        <button class="filter-btn" data-filter="ordered" onclick="setTenderFilter(this)">Ordered</button>
+        <button class="filter-btn" data-filter="received" onclick="setTenderFilter(this)">Received</button>
+      </div>
+      <div id="proc-tenderTrackerList" class="tender-tracker"></div>
+    </div>
   </div>
 
   <!-- ============================================================ -->
-  <!-- TENDER HISTORY TAB                                           -->
+  <!-- TAB 2: TENDER HISTORY — all tenders ever issued               -->
   <!-- ============================================================ -->
   <div id="procTabHistory" class="proc-tab-panel" style="display:none;">
     <div class="card">
       <div class="card-head">
-        <h3>Tender History - All Departments</h3>
+        <h3>Tender History — All Tenders Ever Issued</h3>
         <div class="card-head-actions">
           <button class="pill-btn" onclick="printTenderHistory()">Print History</button>
         </div>
       </div>
 
+      <!-- Summary -->
       <div class="disc-summary" style="margin-bottom:16px;">
         <div class="disc-summary-item">
           <div class="disc-summary-num" id="hTotal">0</div>
@@ -82,6 +153,17 @@
         </div>
       </div>
 
+      <!-- Date preset row -->
+      <div class="tender-filters" id="histRangeRow" style="margin-bottom:14px; display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+        <span class="muted" style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-right:4px;">Date Issued:</span>
+        <button class="filter-btn active" id="hist-range-all" onclick="setHistoryRange('all')">All Time</button>
+        <button class="filter-btn" id="hist-range-today" onclick="setHistoryRange('today')">Today</button>
+        <button class="filter-btn" id="hist-range-week" onclick="setHistoryRange('week')">This Week</button>
+        <button class="filter-btn" id="hist-range-month" onclick="setHistoryRange('month')">This Month</button>
+        <button class="filter-btn" id="hist-range-year" onclick="setHistoryRange('year')">This Year</button>
+      </div>
+
+      <!-- Filter bar -->
       <div class="filter-bar" style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;align-items:flex-end;">
         <div class="form-group" style="margin:0;min-width:220px;flex:1;">
           <label>Search</label>
@@ -98,7 +180,7 @@
             <option value="completed">Completed</option>
           </select>
         </div>
-        <div class="form-group" style="margin:0;min-width:160px;">
+        <div class="form-group" style="margin:0;min-width:180px;">
           <label>Department</label>
           <select id="histDept" onchange="loadTenderHistory()">
             <option value="all">All Departments</option>
@@ -122,11 +204,11 @@
         </div>
         <div class="form-group" style="margin:0;min-width:140px;">
           <label>From</label>
-          <input type="date" id="histFrom" onchange="loadTenderHistory()">
+          <input type="date" id="histFrom" onchange="onHistoryCustomDateChange()">
         </div>
         <div class="form-group" style="margin:0;min-width:140px;">
           <label>To</label>
-          <input type="date" id="histTo" onchange="loadTenderHistory()">
+          <input type="date" id="histTo" onchange="onHistoryCustomDateChange()">
         </div>
         <div class="form-group" style="margin:0;">
           <button class="ghost-btn" onclick="clearHistoryFilters()">Clear</button>
@@ -134,7 +216,7 @@
       </div>
 
       <div class="muted" id="histCount" style="margin-bottom:8px;"></div>
-      <div id="proc-tenderHistoryList" class="tender-tracker" style="max-height: 400px; overflow-y: auto;"></div>
+      <div id="proc-tenderHistoryList" class="tender-tracker"></div>
     </div>
   </div>
 </div>

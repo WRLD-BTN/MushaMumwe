@@ -1,9 +1,10 @@
-const CACHE_NAME = 'mushamumwe-v3'; // <--- Bumped to v3
+const CACHE_NAME = 'mushamumwe-v5';
 const ASSETS = [
   '/',
   '/portal',
   '/style.css',
   '/js/core.js',
+  '/js/liveboard.js',
   '/logo.jpg'
 ];
 
@@ -25,9 +26,8 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Don't intercept API calls
   if (e.request.url.includes('/api/')) return;
-  
+
   e.respondWith(
     caches.match(e.request).then((response) => {
       return response || fetch(e.request);

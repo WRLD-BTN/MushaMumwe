@@ -638,3 +638,43 @@ body.live-board { background: var(--board-bg); color: var(--board-text); min-hei
   .widget-number { font-size: 32px; }
   .footer-note { padding: 16px 16px 12px 16px; }
 }
+/* ============================================================
+   CLICKABLE WIDGETS + TILE GLOW
+   ============================================================ */
+
+.clickable-card {
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.clickable-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary) !important;
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.15), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.clickable-card:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+#alertsTile {
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#alertsTile:hover {
+  transform: translateY(-2px);
+  border-color: #dc2626 !important;
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.2), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+[onclick="openDeathsModal()"] {
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+[onclick="openDeathsModal()"]:hover {
+  transform: translateY(-2px);
+  border-color: #dc2626 !important;
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.2), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
